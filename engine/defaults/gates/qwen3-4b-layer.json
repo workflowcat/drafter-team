@@ -1,0 +1,50 @@
+{
+ "names": [
+  "bias",
+  "logp_first",
+  "logp_min",
+  "margin",
+  "mid_word",
+  "heal_len",
+  "word_len",
+  "claude",
+  "cyrillic",
+  "line_words",
+  "heal_logp",
+  "words_agree",
+  "words_has",
+  "punct_word",
+  "after_space"
+ ],
+ "w": [
+  0.8645,
+  -1.3244,
+  2.6179,
+  1.4535,
+  -1.1282,
+  0.409,
+  -0.2336,
+  0.5215,
+  0.3829,
+  0.0323,
+  1.2137,
+  0.6064,
+  -0.1433,
+  0.1246,
+  -0.6288
+ ],
+ "from": "big-q4b-lr5-s10.jsonl (catalog round, fitted on the model's own trial recording, numbers only)",
+ "th": {
+  "ai": 0.4,
+  "chat": 0.4
+ },
+ "more": 0.5,
+ "max_words": 3,
+ "words": [
+  2,
+  0.6,
+  1
+ ],
+ "words_first": false,
+ "boost": 0.3
+}

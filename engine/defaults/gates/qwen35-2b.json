@@ -1,0 +1,50 @@
+{
+ "names": [
+  "bias",
+  "logp_first",
+  "logp_min",
+  "margin",
+  "mid_word",
+  "heal_len",
+  "word_len",
+  "claude",
+  "cyrillic",
+  "line_words",
+  "heal_logp",
+  "words_agree",
+  "words_has",
+  "punct_word",
+  "after_space"
+ ],
+ "w": [
+  0.7017,
+  -1.0103,
+  2.3238,
+  1.1098,
+  -0.7681,
+  0.4973,
+  -0.1224,
+  0.1708,
+  0.3611,
+  0.1104,
+  1.0692,
+  1.2603,
+  -0.4175,
+  -0.1977,
+  -0.105
+ ],
+ "from": "big-qwen35-2b-base.jsonl (catalog round, fitted on the model's own trial recording, numbers only)",
+ "th": {
+  "ai": 0.4,
+  "chat": 0.4
+ },
+ "more": 0.5,
+ "max_words": 3,
+ "words": [
+  2,
+  0.6,
+  1
+ ],
+ "words_first": false,
+ "boost": 0.3
+}

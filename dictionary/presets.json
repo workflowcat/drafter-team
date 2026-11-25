@@ -1,0 +1,23 @@
+[
+  {"keys": [";doc", ";gdoc"], "title": "New Google Doc", "url": "https://docs.new"},
+  {"keys": [";sheet", ";gsheet"], "title": "New Google Sheet", "url": "https://sheets.new"},
+  {"keys": [";slides", ";deck"], "title": "New Google Slides", "url": "https://slides.new"},
+  {"keys": [";form"], "title": "New Google Form", "url": "https://forms.new"},
+  {"keys": [";gmeet", ";call"], "title": "Start a Google Meet", "url": "https://meet.new"},
+  {"keys": [";event"], "title": "New calendar event", "url": "https://cal.new"},
+  {"keys": [";keep"], "title": "New Google Keep note", "url": "https://keep.new"},
+  {"keys": [";site"], "title": "New Google Site", "url": "https://sites.new"},
+  {"keys": [";drawing"], "title": "New Google Drawing", "url": "https://drawings.new"},
+  {"keys": [";notion"], "title": "New Notion page", "url": "https://notion.new"},
+  {"keys": [";figma"], "title": "New Figma file", "url": "https://figma.new"},
+  {"keys": [";figjam"], "title": "New FigJam board", "url": "https://figjam.new"},
+  {"keys": [";linear"], "title": "New Linear issue", "url": "https://linear.new"},
+  {"keys": [";repo"], "title": "New GitHub repo", "url": "https://repo.new"},
+  {"keys": [";gist"], "title": "New GitHub gist", "url": "https://gist.new"},
+  {"keys": [";claude"], "title": "New Claude chat", "url": "https://claude.ai/new"},
+  {"keys": [";chatgpt", ";gpt"], "title": "New ChatGPT chat", "url": "https://chatgpt.com/"},
+  {"keys": [";tldraw", ";board"], "title": "New tldraw board", "url": "https://www.tldraw.com/new"},
+  {"keys": [";excalidraw"], "title": "New Excalidraw sketch", "url": "https://excalidraw.com/"},
+  {"keys": [";gmail", ";compose"], "title": "New Gmail message", "url": "https://mail.google.com/mail/?view=cm&fs=1"},
+  {"keys": [";drive"], "title": "Open Google Drive", "url": "https://drive.google.com/drive/my-drive"}
+]

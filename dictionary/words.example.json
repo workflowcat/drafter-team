@@ -1,0 +1,15 @@
+{
+ "about": "The user's own words, shared by Drafter (completions lean towards them) and Voice Notes (Whisper hint, spelling fixes). Edit `words`; `terms`, `heard` and `keep` are rebuilt from it by Drafter on every save. The live copy is data/words.json (never in git); this file is the made-up seed for a new install.",
+ "updated": "2026-11-14",
+ "terms": ["Marta Example", "Ostap Sample", "Northwind", "Lanterna", "Drafter"],
+ "heard": {"north wind": "Northwind"},
+ "keep": [],
+ "words": [
+  {"text": "Marta Example", "lang": "en", "kind": "name", "source": "seed"},
+  {"text": "Ostap Sample", "lang": "en", "kind": "name", "source": "seed"},
+  {"text": "Northwind", "lang": "en", "kind": "project", "source": "seed", "heard": ["north wind"]},
+  {"text": "Lanterna", "lang": "en", "kind": "project", "source": "seed"},
+  {"text": "Drafter", "lang": "en", "kind": "term", "source": "seed"}
+ ],
+ "loose_heard": {}
+}

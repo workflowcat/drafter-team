@@ -1,0 +1,15 @@
+# Use scripts/setup.sh, or uv with --overrides requirements-overrides.txt.
+# Direct imports; versions from the working Python 3.12.12 environment.
+-c requirements-lock.txt
+
+# Text engine and weekly training
+mlx==0.32.4
+mlx-lm==0.32.2
+numpy==2.5.4
+huggingface-hub==2.2.0
+
+# Voice: both readers are needed for the current features
+mlx-whisper==0.4.3
+parakeet-mlx==0.5.3
+# who said what in a call: speaker voice vectors (engine/speakers.py), ONNX runtime inside, no torch
+sherpa-onnx==2.0.1

@@ -1,0 +1,159 @@
+"""Knowledge pack fixtures only. No personal files, server, app or models."""
+import json
+from pathlib import Path
+import sqlite3
+import sys
+import tempfile
+import unittest
+from unittest.mock import patch
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'engine'))
+import know
+
+
+class PackBuild(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory(); self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+        self.db = self.root / 'aleph.sqlite'
+        con = sqlite3.connect(self.db)
+        con.executescript('''CREATE TABLE things(id TEXT PRIMARY KEY,kind TEXT,name TEXT,short TEXT,scope TEXT);
+          CREATE TABLE names(name TEXT,thing TEXT);
+          CREATE TABLE facts(subj TEXT,rel TEXT,obj TEXT,value TEXT,since INT,until INT,scope TEXT);''')
+        con.executemany('INSERT INTO things VALUES (?,?,?,?,?)', [
+            ('h','person','Ганна Онищенко','Hanna','work'),
+            ('m','person','Максим Ковальський',None,'work'),
+            ('b','project','Base',None,'work'), ('t','tool','DataKit',None,'work'),
+            ('o','org','Sample Office',None,'work'), ('r','repo','codex-kit',None,'work'),
+            ('p','person','Private Sentinel','SecretAlias','private'),
+            ('g','group','Excluded Group',None,'work'), ('w','worker','Excluded Worker',None,'work')])
+        con.executemany('INSERT INTO names VALUES (?,?)', [('Hanna Onyshchenko','h'), ('SecretAlias','p')])
+        con.executemany('INSERT INTO facts VALUES (?,?,?,?,?,?,?)', [
+            ('h','handle',None,'hanna@example.test',0,None,'work'),
+            ('h','handle',None,'+380 44 555 0100',0,None,'work'),
+            ('h','handle',None,'tg:hanna_demo',0,None,'work'),
+            ('h','handle',None,'440000123',0,None,'work'),
+            ('h','handle',None,'hidden@example.test',0,None,'private'),
+            ('p','handle',None,'private@example.test',0,None,'work'),
+            ('h','works_at','p','hidden org',0,None,'work'),
+            ('h','works_at','o',None,0,None,'work'),
+            ('h','role',None,'Demo\nwriter',0,None,'work'),
+            ('h','last_contact',None,None,100000,None,'work'),
+            ('h','handle',None,'expired@example.test',0,10,'work')])
+        con.commit(); con.close()
+        self.dictionary = self.root / 'words.json'
+        self.dictionary.write_text(json.dumps({'words': [
+            {'text':'CustomTerm','kind':'term'}, {'text':'Private Sentinel','source':'aleph'},
+            {'text':'Scoped Secret','scope':'private'}, {'text':'FreshRepo','kind':'project'}]}))
+        self.snips = self.root / 'snippets.json'; self.snips.write_text(json.dumps({';thanks':'Thanks again', ';link':'https://example.test', ';field':'Hi {name}'}))
+        self.out = self.root / 'know.json'
+
+    def build(self, **kw):
+        return know.build(self.out, db=self.db, dictionary=self.dictionary, snippets=self.snips, now=100000, **kw)
+
+    def test_private_thing_alias_fact_and_object_never_exported(self):
+        pack = self.build()
+        output = self.out.read_text() + self.out.with_name('known-words.txt').read_text()
+        for secret in ('Private', 'Secret', 'hidden', 'private@example', 'Excluded', 'expired@example'):
+            self.assertNotIn(secret, output)
+        h = next(e for e in pack['entries'] if e['name'].startswith('Ганна'))
+        self.assertEqual(h['handles'], {'email':['hanna@example.test'], 'phone':['+380 44 555 0100'], 'tg':['hanna_demo']})
+        self.assertEqual((h['role'], h['org']), ('Demo writer', 'Sample Office'))
+        self.assertNotIn('440000123', output)
+        self.assertEqual({e['kind'] for e in pack['entries']}, {'person','project','tool','org','repo','term','phrase'})
+
+    def test_tokens_surnames_forms_and_common_guard(self):
+        p = self.build(common={'datakit'})
+        h = p['entries'][0]
+        self.assertIn('Онищенко', h['tokens']); self.assertIn('Ганною', h['forms'])
+        self.assertIn('Hanna', h['tokens']); self.assertIn('Ганні', h['forms'])
+        self.assertIn('base', next(e for e in p['entries'] if e['name']=='Base')['common'])
+        self.assertIn('datakit', next(e for e in p['entries'] if e['name']=='DataKit')['common'])
+        words = self.out.with_name('known-words.txt').read_text().splitlines()
+        self.assertIn('Ковальському', words)
+        self.assertNotIn('Ганна Онищенко', words)
+        self.assertFalse(list(self.root.glob('.know.json*')))
+
+    def test_heat_sent_usage_and_frequent_lowercase(self):
+        p = self.build(lines=['ask Hanna about DataKit'] * 6 + ['base base base'] * 5)
+        h = p['entries'][0]
+        self.assertEqual(h['heat'], 17)
+        base = next(e for e in p['entries'] if e['name']=='Base')
+        self.assertLess(base['heat'], 2)  # ordinary lowercase mentions never heat a project
+        pix = next(e for e in p['entries'] if e['name']=='DataKit')
+        self.assertGreater(pix['heat'], base['heat'])
+        p = self.build(lines=['use customterm'] * 5)
+        self.assertIn('customterm', next(e for e in p['entries'] if e['name']=='CustomTerm')['common'])
+
+    def test_reload_and_people_endpoint_data(self):
+        self.build(); reader = know.Pack(self.out)
+        self.assertEqual(reader.people('онищ')[0]['handles']['email'], ['hanna@example.test'])
+        self.assertEqual(reader.people('Secret'), [])
+        self.assertEqual(reader.people('h'), [])
+        know.atomic(self.out, json.dumps({'entries': []}))
+        self.assertEqual(reader.people('han'), [])
+        self.build(); self.assertEqual(len(reader.people('han')), 1)
+        self.out.unlink(); self.assertEqual(reader.people('han'), [])
+
+    def test_missing_database_does_not_overwrite_pack(self):
+        self.build(); old = self.out.read_bytes()
+        with self.assertRaises(sqlite3.OperationalError):
+            know.build(self.out, db=self.root / 'absent', dictionary=self.dictionary, snippets=self.snips)
+        self.assertEqual(self.out.read_bytes(), old)
+
+
+class Language(unittest.TestCase):
+    def test_case_endings(self):
+        for word, forms in {
+            'Максим': ['Максима','Максиму','Максимом'], 'Аліна':['Аліни','Аліні','Аліною'],
+            'Сергій':['Сергія','Сергію','Сергієм'], 'Юрій':['Юрія','Юрію'],
+            'Коваленко':['Коваленка','Коваленку','Коваленком'], 'Мельничук':['Мельничука','Мельничуком'],
+            'Романюк':['Романюка','Романюку'], 'Ковальська':['Ковальської','Ковальській','Ковальською'],
+            'Ковальський':['Ковальського','Ковальському','Ковальським'], 'Марія':['Марії','Марією'],
+            'Ольга':['Ользі'], 'Леся':['Лесі','Лесею']}.items():
+            with self.subTest(word=word): self.assertTrue(set(forms) <= know.case_forms(word))
+        self.assertEqual(know.case_forms('Коваленко', female=True, surname=True), set())
+        self.assertEqual(know.case_forms('Smith'), set())
+
+    def test_conservative_gender_aliases_and_foreign_names(self):
+        def forms(name, aliases=()): return know.person_forms({'name':name, 'aliases':list(aliases)})
+        self.assertFalse(any(know.CYRILLIC.fullmatch(w) for w in forms('Hannah Sample')))
+        self.assertNotIn('Коваленка', forms('Любов Коваленко', ['Коваленко']))
+        self.assertIn('Любові', forms('Любов Коваленко'))
+        self.assertNotIn('Онищенка', forms('Ганна Онищенко', ['Онищенко']))
+        self.assertNotIn('Коваленка', forms('Нінель Коваленко'))
+        self.assertIn('Микити', forms('Микита Коваленко'))
+        self.assertIn('Коваленка', forms('Микита Коваленко'))
+        self.assertIn('Коломійця', forms('Максим Коломієць'))
+        self.assertNotIn('Коломіця', forms('Максим Коломієць'))
+        self.assertNotIn('Коваленка', forms('Невідоме Коваленко'))
+        self.assertIn('Ковальського', forms('Vitalii Kovalskyi', ['Віталій Ковальський']))
+        self.assertIn('Віталій', forms('Vitalii Kovalskyi'))
+        self.assertFalse(any('Ковалск' in w for w in forms('Vitalii Kovalskyi')))
+        self.assertEqual(know.transliterate('Ковальський'), 'Kovalskyi')
+        self.assertEqual(know.transliterate('Віталій'), 'Vitalii')
+        self.assertTrue(all(w[0].isupper() for w in forms('hanna', ['Ганна'])))
+
+    def test_first_name_instrumental_preserves_existing_gates(self):
+        def forms(name, aliases=()): return know.person_forms({'name': name, 'aliases': list(aliases)})
+        for name, expected in (('Ганна', 'Ганною'), ('Микита', 'Микитою'), ('Марія', 'Марією')):
+            with self.subTest(name=name):
+                self.assertIn(expected, forms(name + ' Коваленко'))
+        self.assertIn('Марією', forms('Mariia Sample'))
+        self.assertNotIn('Іванною', forms('Іванна Коваленко'))  # unknown first name stays gated
+        self.assertNotIn('Ганною', forms('Ганна', ['Микита']))  # conflicting genders stay gated
+        self.assertNotIn('Коваленком', forms('Марія Коваленко'))
+        # Exercise another vowel before -я without expanding the recognized-name table.
+        self.assertNotIn('Зоєю', forms('Зоя'))
+        with patch.object(know, 'FEMALE', know.FEMALE | {'Зоя'}):
+            self.assertIn('Зоєю', forms('Зоя'))
+            self.assertNotIn('Зоєю', forms('Ганна Зоя'))  # no new surname rule
+
+    def test_transliteration(self):
+        for a, b in [('Юра','Yura'), ('Ганна','Hanna'), ('Сергій','Serhii'), ('Аліна','Alina')]:
+            self.assertIn(b, know.first_variants(a)); self.assertIn(a, know.first_variants(b))
+        self.assertEqual(know.transliterate('Коваленко'), 'Kovalenko')
+        self.assertEqual(know.transliterate('Kovalenko'), '')
+        self.assertIn('Сергій', know.first_variants('Serhiy'))
+
+if __name__ == '__main__': unittest.main()

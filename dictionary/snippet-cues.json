@@ -1,0 +1,18 @@
+[
+  {
+    "keys": [
+      ";mail",
+      ";email",
+      ";e"
+    ],
+    "pattern": "(?i)(\\b(my|our|the)\\s+e-?mail(\\s+address)?(\\s+is)?|\\be-?mail(\\s+address)?\\s*:|\\b(write|email|reach)\\s+(to\\s+)?(me|us)\\s+at|\\bмій\\s+(і|е|e-?)?мейл|\\bмоя\\s+(пошта|електронка)|\\bпишіть\\s+на|\\bпиши\\s+на\\s+(пошту|мейл|імейл)|\\bімейл\\s*:|\\bпошта\\s*:)[\\s:—-]*$"
+  },
+  {
+    "keys": [
+      ";cal",
+      ";calendar",
+      ";book"
+    ],
+    "pattern": "(?i)(\\b(my\\s+)?(calendar|booking|scheduling)\\s+link(\\s+is)?|\\bbook\\s+(a\\s+)?(time|call|slot|meeting)(\\s+(here|with\\s+me))?|\\bpick\\s+a\\s+(time|slot)(\\s+here)?|\\bлінк\\s+на\\s+(мій\\s+)?календар|\\bпосилання\\s+на\\s+(мій\\s+)?календар|\\b(за)?бронюй(те)?\\s+час|\\bобери(ть)?\\s+(зручний\\s+)?час(\\s+тут)?)[\\s:—-]*$"
+  }
+]

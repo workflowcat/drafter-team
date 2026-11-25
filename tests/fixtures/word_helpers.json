@@ -1,0 +1,36 @@
+{
+  "words": [
+    {"text": "", "word": ""},
+    {"text": "   ", "word": "   "},
+    {"text": "  paper boat", "word": "  paper "},
+    {"text": "paper  boat", "word": "paper "},
+    {"text": "paper\tboat", "word": "paper"},
+    {"text": "paper\nboat", "word": "paper"},
+    {"text": "\t\npaper boat", "word": "\t\npaper "},
+    {"text": "paper\r\nboat", "word": "paper"},
+    {"text": "\u00a0paper boat", "word": "\u00a0paper "},
+    {"text": "paper\u00a0boat", "word": "paper"},
+    {"text": "paper\u2028boat", "word": "paper"},
+    {"text": "boat, next", "word": "boat, "},
+    {"text": "(boat!) next", "word": "(boat!) "},
+    {"text": "can't float", "word": "can't "},
+    {"text": "well-made boat", "word": "well-made "},
+    {"text": "ning next", "word": "ning "},
+    {"text": "unfinished", "word": "unfinished"},
+    {"text": "caf\u00e9 boat", "word": "caf\u00e9 "},
+    {"text": "cafe\u0301 boat", "word": "cafe\u0301 "},
+    {"text": "\ud83d\ude80 boat", "word": "\ud83d\ude80 "}
+  ],
+  "spans": [
+    {"name": "empty", "tokens": [], "pos": 0, "end": 0, "probabilities": []},
+    {"name": "healing token ignored", "tokens": [["", 0.1], ["boat", 0.9], ["boat ", 0.2]], "pos": 0, "end": 4, "probabilities": [0.9]},
+    {"name": "punctuation belongs to word", "tokens": [["paper", 0.8], ["paper boat", 0.9], ["paper boat,", 0.7], ["paper boat, ", 0.1]], "pos": 5, "end": 11, "probabilities": [0.9, 0.7]},
+    {"name": "token includes trailing space", "tokens": [["paper", 0.8], ["paper boat ", 0.9]], "pos": 5, "end": 10, "probabilities": [0.9]},
+    {"name": "inter-word space belongs to later word", "tokens": [["paper", 0.8], ["paper ", 0.2], ["paper boat", 0.9]], "pos": 6, "end": 10, "probabilities": [0.2, 0.9]},
+    {"name": "newline belongs to later word", "tokens": [["paper", 0.8], ["paper\n", 0.2], ["paper\nboat", 0.9]], "pos": 6, "end": 10, "probabilities": [0.2, 0.9]},
+    {"name": "overshoot by more than one excluded", "tokens": [["paper", 0.8], ["paper boat x", 0.9]], "pos": 5, "end": 9, "probabilities": []},
+    {"name": "partial word tokens", "tokens": [["ni", 0.8], ["ning", 0.9], ["ning ", 0.1]], "pos": 0, "end": 4, "probabilities": [0.8, 0.9]},
+    {"name": "python scalar offsets", "tokens": [["caf\u00e9", 0.8], ["caf\u00e9 boat", 0.9], ["caf\u00e9 boat ", 0.1]], "pos": 4, "end": 9, "probabilities": [0.9]},
+    {"name": "empty trailing token", "tokens": [["paper", 0.8], ["paper boat", 0.9], ["", 0.1]], "pos": 5, "end": 10, "probabilities": [0.9]}
+  ]
+}

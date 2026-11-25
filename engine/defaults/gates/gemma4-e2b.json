@@ -1,0 +1,50 @@
+{
+ "names": [
+  "bias",
+  "logp_first",
+  "logp_min",
+  "margin",
+  "mid_word",
+  "heal_len",
+  "word_len",
+  "claude",
+  "cyrillic",
+  "line_words",
+  "heal_logp",
+  "words_agree",
+  "words_has",
+  "punct_word",
+  "after_space"
+ ],
+ "w": [
+  0.7738,
+  -1.4479,
+  2.7863,
+  1.2066,
+  -0.6382,
+  0.3227,
+  -0.2578,
+  0.351,
+  0.6185,
+  0.065,
+  1.0721,
+  1.487,
+  -0.6002,
+  -0.1252,
+  -0.1587
+ ],
+ "from": "big-gemma4-e2b-base.jsonl (catalog round, fitted on the model's own trial recording, numbers only)",
+ "th": {
+  "ai": 0.4,
+  "chat": 0.4
+ },
+ "more": 0.5,
+ "max_words": 3,
+ "words": [
+  2,
+  0.6,
+  1
+ ],
+ "words_first": false,
+ "boost": 0.3
+}

@@ -1,0 +1,16 @@
+data/
+.venv/
+__pycache__/
+*.pyc
+build/
+app/icon/Drafter.iconset/
+app/icon/preview.png
+.venv-lean/
+.uv-cache/
+.uv-python/
+.venv-full/
+bench/out/
+# the live dictionary holds the user's contacts: data/words.json (dictionary/words.json is a link to it)
+dictionary/words.json
+# downloaded model data (scripts/download_thesaurus.py): not ours to publish
+models/

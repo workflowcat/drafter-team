@@ -1,0 +1,37 @@
+{
+ "measured": "M4 Pro 24 GB, 15 November 2026: held-137 (137 lines, 8,149 keys), 24 tokens a key, each model under its own refit gate (docs/rounds/2026-11-15-big.md, docs/rounds/2026-11-15-q35.md); qwen3-4b-mine 16 November 2026 (docs/rounds/2026-11-16-q4b.md)",
+ "columns": {
+  "disk_gb": "4-bit weights on disk",
+  "memory_gb": "MLX peak while typing the held set",
+  "cap_gb": "engine memory guard while this model is loaded",
+  "p50_ms / p95_ms": "ms to the first whole word at a key",
+  "words_shown / words_all": "words right from the caret, as Tab Tab Tab: at the keys its gate shows / at every key",
+  "kept_per_1k": "letters a Tab takes that are his next letters, per 1,000 typed",
+  "first_word_pct": "the first word is his next word, at every key",
+  "layer": "his trained layer: true = live's data/adapters; a path = that folder under data/ (data/layers/<name>, outside git); false = none",
+  "gate": "live = data/gate.json; a file under engine/defaults/ = fitted on this model's trial recording (bench/catalog_gates.py)"
+ },
+ "models": [
+  {"id": "live", "name": "Qwen3 1.7B + my style", "repo": "mlx-community/Qwen3-1.7B-4bit", "rev": null,
+   "disk_gb": 0.98, "memory_gb": 2.74, "cap_gb": 3.6, "p50_ms": 48, "p95_ms": 126,
+   "words_shown": 1.77, "words_all": 0.91, "kept_per_1k": 293, "first_word_pct": 42.9,
+   "languages": ["uk", "en"], "layer": true, "gate": "live"},
+  {"id": "qwen35-2b", "name": "Qwen3.5 2B", "repo": "Muesli-HQ/qwen35-2b-base-cotypist-mlx-4bit",
+   "rev": "2434da7449586e5e676ce03f5f34008e5df85ba8",
+   "disk_gb": 1.06, "memory_gb": 1.89, "cap_gb": 4.5, "p50_ms": 59, "p95_ms": 142,
+   "words_shown": 1.65, "words_all": 0.83, "kept_per_1k": 253, "first_word_pct": 40.9,
+   "languages": ["uk", "en"], "layer": false, "gate": "gates/qwen35-2b.json"},
+  {"id": "qwen3-4b", "name": "Qwen3 4B Instruct", "repo": "mlx-community/Qwen3-4B-Instruct-2507-4bit", "rev": null,
+   "disk_gb": 2.28, "memory_gb": 2.92, "cap_gb": 5.5, "p50_ms": 72, "p95_ms": 228,
+   "words_shown": 1.73, "words_all": 0.87, "kept_per_1k": 269, "first_word_pct": 40.1,
+   "languages": ["uk", "en"], "layer": false, "gate": "gates/qwen3-4b.json"},
+  {"id": "qwen3-4b-mine", "name": "Qwen3 4B + my style", "repo": "mlx-community/Qwen3-4B-Instruct-2507-4bit", "rev": null,
+   "disk_gb": 2.31, "memory_gb": 4.23, "cap_gb": 5.5, "p50_ms": 73, "p95_ms": 165,
+   "words_shown": 1.75, "words_all": 0.97, "kept_per_1k": 318, "first_word_pct": 45.9,
+   "languages": ["uk", "en"], "layer": "layers/qwen3-4b", "gate": "gates/qwen3-4b-layer.json"},
+  {"id": "gemma4-e2b", "name": "Gemma 4 E2B", "repo": "mlx-community/gemma-4-e2b-4bit", "rev": null,
+   "disk_gb": 3.61, "memory_gb": 3.14, "cap_gb": 5.0, "p50_ms": 75, "p95_ms": 153,
+   "words_shown": 1.51, "words_all": 0.74, "kept_per_1k": 237, "first_word_pct": 40.0,
+   "languages": ["uk", "en"], "layer": false, "gate": "gates/gemma4-e2b.json"}
+ ]
+}

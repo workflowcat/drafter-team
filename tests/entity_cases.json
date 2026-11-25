@@ -1,0 +1,1084 @@
+{
+ "about": "Made-up records only. engine/entities.py and app/EntityRules.swift must both produce these strings (tests/test_entities.py, tests/entity_rules.swift).",
+ "today": "2026-11-14",
+ "records": [
+  {
+   "id": "aleph:person:hanna-tkach",
+   "kind": "person",
+   "name": "Ганна Ткач",
+   "aliases": [
+    "Hanna Tkach",
+    "Ганна",
+    "HT"
+   ],
+   "who": "finance lead, at Lantern Labs",
+   "targets": {
+    "obsidian": "Entities/People/Hanna Tkach",
+    "mail": "hanna@example.com",
+    "tg": "hanna_example",
+    "aleph": "person:hanna-tkach"
+   },
+   "handles": {
+    "email": [
+     "hanna@example.com"
+    ],
+    "tg": [
+     "hanna_example"
+    ],
+    "phone": [
+     "+380 00 000 0000"
+    ]
+   },
+   "related": [
+    "aleph:org:lantern-labs",
+    "aleph:project:lantern"
+   ],
+   "pack": {
+    "facts": [
+     {
+      "text": "writes in Ukrainian, prefers short messages",
+      "source": "vault",
+      "date": "2026-11-02",
+      "quote": false
+     },
+     {
+      "text": "works on Lantern",
+      "source": "Aleph",
+      "date": "2026-11-10",
+      "quote": false
+     },
+     {
+      "text": "email hanna@example.com",
+      "source": "Aleph",
+      "date": "",
+      "quote": false
+     }
+    ],
+    "pointers": [
+     {
+      "label": "Note",
+      "value": "/Volumes/sample/Notes Vault/Entities/People/Hanna Tkach.md",
+      "path": true
+     },
+     {
+      "label": "Aleph",
+      "value": "person:hanna-tkach",
+      "path": false
+     }
+    ],
+    "newest": "2026-11-10"
+   },
+   "heat": 6
+  },
+  {
+   "id": "aleph:org:lantern-labs",
+   "kind": "org",
+   "name": "Lantern Labs",
+   "aliases": [
+    "LANTERN"
+   ],
+   "who": "client; we build their ordering tool",
+   "targets": {
+    "obsidian": "Entities/Organizations/Lantern Labs"
+   },
+   "handles": {},
+   "related": [
+    "aleph:project:lantern"
+   ],
+   "pack": {
+    "facts": [
+     {
+      "text": "client, code name LANTERN on the team board",
+      "source": "board",
+      "date": "2026-11-12",
+      "quote": false
+     }
+    ],
+    "pointers": [
+     {
+      "label": "Note",
+      "value": "/Volumes/sample/Notes Vault/Entities/Organizations/Lantern Labs.md",
+      "path": true
+     },
+     {
+      "label": "Board",
+      "value": "https://board.example/c/LANTERN",
+      "path": false
+     }
+    ],
+    "newest": "2026-11-12"
+   },
+   "heat": 3
+  },
+  {
+   "id": "aleph:project:lantern",
+   "kind": "project",
+   "name": "Lantern",
+   "aliases": [
+    "Лантерн"
+   ],
+   "who": "ordering tool for Lantern Labs",
+   "targets": {
+    "obsidian": "Stories/Lantern"
+   },
+   "handles": {},
+   "related": [
+    "aleph:person:hanna-tkach",
+    "aleph:worker:lantern-gate"
+   ],
+   "pack": {
+    "facts": [
+     {
+      "text": "status: active",
+      "source": "vault",
+      "date": "2026-11-11",
+      "quote": false
+     },
+     {
+      "text": "next: invoice export",
+      "source": "Aleph",
+      "date": "2026-11-11",
+      "quote": true
+     }
+    ],
+    "pointers": [
+     {
+      "label": "Repo",
+      "value": "/Volumes/sample/Codius/lantern",
+      "path": true
+     },
+     {
+      "label": "Story",
+      "value": "/Volumes/sample/Notes Vault/Stories/Lantern.md",
+      "path": true
+     }
+    ],
+    "newest": "2026-11-11"
+   },
+   "heat": 9
+  },
+  {
+   "id": "aleph:worker:lantern-gate",
+   "kind": "tool",
+   "name": "lantern-gate",
+   "aliases": [],
+   "who": "Cloudflare Worker that holds Lantern storage",
+   "targets": {},
+   "handles": {},
+   "related": [
+    "aleph:project:lantern"
+   ],
+   "pack": {
+    "facts": [],
+    "pointers": [
+     {
+      "label": "Code",
+      "value": "/Volumes/sample/Codius/lantern-gate",
+      "path": true
+     },
+     {
+      "label": "URL",
+      "value": "https://lantern-gate.example.workers.dev",
+      "path": false
+     }
+    ],
+    "newest": ""
+   },
+   "heat": 2
+  },
+  {
+   "id": "vault:Stories/Old Thing.md",
+   "kind": "doc",
+   "name": "Old pricing sheet",
+   "aliases": [],
+   "who": "",
+   "targets": {},
+   "handles": {},
+   "related": [],
+   "pack": {
+    "facts": [
+     {
+      "text": "sent to a made-up client",
+      "source": "vault",
+      "date": "2025-01-10",
+      "quote": false
+     }
+    ],
+    "pointers": [
+     {
+      "label": "File",
+      "value": "/Volumes/sample/docs/pricing.pdf",
+      "path": true
+     }
+    ],
+    "newest": "2025-01-10"
+   },
+   "heat": 1
+  },
+  {
+   "id": "aleph:project:long",
+   "kind": "project",
+   "name": "Very Long Made Up Project Name",
+   "aliases": [],
+   "who": "a made-up description that goes on and on about what the project does for whom and why it matters at all to anyone",
+   "targets": {},
+   "handles": {},
+   "related": [],
+   "pack": {
+    "facts": [
+     {
+      "text": "made-up fact number 0 that is fairly long and says a lot of things about nothing in particular at all",
+      "source": "vault",
+      "date": "2026-11-01",
+      "quote": false
+     },
+     {
+      "text": "made-up fact number 1 that is fairly long and says a lot of things about nothing in particular at all",
+      "source": "vault",
+      "date": "2026-11-02",
+      "quote": true
+     },
+     {
+      "text": "made-up fact number 2 that is fairly long and says a lot of things about nothing in particular at all",
+      "source": "vault",
+      "date": "2026-11-03",
+      "quote": false
+     },
+     {
+      "text": "made-up fact number 3 that is fairly long and says a lot of things about nothing in particular at all",
+      "source": "vault",
+      "date": "2026-11-04",
+      "quote": true
+     }
+    ],
+    "pointers": [
+     {
+      "label": "Repo",
+      "value": "/Volumes/sample/Codius/a-very-long-made-up-repository-name-for-testing-the-budget",
+      "path": true
+     },
+     {
+      "label": "URL",
+      "value": "https://example.com/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "path": false
+     },
+     {
+      "label": "Note",
+      "value": "/Volumes/sample/Notes Vault/Stories/Very Long Made Up Project Name.md",
+      "path": true
+     }
+    ],
+    "newest": "2026-11-04"
+   },
+   "heat": 1
+  }
+ ],
+ "lines": [
+  {
+   "id": "aleph:person:hanna-tkach",
+   "level": 1,
+   "expect": ""
+  },
+  {
+   "id": "aleph:person:hanna-tkach",
+   "level": 2,
+   "expect": "- **Ганна Ткач** - finance lead, at Lantern Labs. `/Volumes/sample/Notes Vault/Entities/People/Hanna Tkach.md`"
+  },
+  {
+   "id": "aleph:person:hanna-tkach",
+   "level": 3,
+   "expect": "- **Ганна Ткач** (person) - finance lead, at Lantern Labs. writes in Ukrainian, prefers short messages (vault, 2026-11-02). works on Lantern (Aleph, 2026-11-10). email hanna@example.com (Aleph). Note: `/Volumes/sample/Notes Vault/Entities/People/Hanna Tkach.md` · Aleph: person:hanna-tkach"
+  },
+  {
+   "id": "aleph:org:lantern-labs",
+   "level": 1,
+   "expect": ""
+  },
+  {
+   "id": "aleph:org:lantern-labs",
+   "level": 2,
+   "expect": "- **Lantern Labs** - client; we build their ordering tool. `/Volumes/sample/Notes Vault/Entities/Organizations/Lantern Labs.md`"
+  },
+  {
+   "id": "aleph:org:lantern-labs",
+   "level": 3,
+   "expect": "- **Lantern Labs** (org) - client; we build their ordering tool. client, code name LANTERN on the team board (board, 2026-11-12). Note: `/Volumes/sample/Notes Vault/Entities/Organizations/Lantern Labs.md` · Board: https://board.example/c/LANTERN"
+  },
+  {
+   "id": "aleph:project:lantern",
+   "level": 1,
+   "expect": ""
+  },
+  {
+   "id": "aleph:project:lantern",
+   "level": 2,
+   "expect": "- **Lantern** - ordering tool for Lantern Labs. `/Volumes/sample/Codius/lantern`"
+  },
+  {
+   "id": "aleph:project:lantern",
+   "level": 3,
+   "expect": "- **Lantern** (project) - ordering tool for Lantern Labs. status: active (vault, 2026-11-11). “next: invoice export” (Aleph, 2026-11-11). Repo: `/Volumes/sample/Codius/lantern` · Story: `/Volumes/sample/Notes Vault/Stories/Lantern.md`"
+  },
+  {
+   "id": "aleph:worker:lantern-gate",
+   "level": 1,
+   "expect": ""
+  },
+  {
+   "id": "aleph:worker:lantern-gate",
+   "level": 2,
+   "expect": "- **lantern-gate** - Cloudflare Worker that holds Lantern storage. `/Volumes/sample/Codius/lantern-gate`"
+  },
+  {
+   "id": "aleph:worker:lantern-gate",
+   "level": 3,
+   "expect": "- **lantern-gate** (tool) - Cloudflare Worker that holds Lantern storage; no recent notes. Code: `/Volumes/sample/Codius/lantern-gate` · URL: https://lantern-gate.example.workers.dev"
+  },
+  {
+   "id": "vault:Stories/Old Thing.md",
+   "level": 1,
+   "expect": ""
+  },
+  {
+   "id": "vault:Stories/Old Thing.md",
+   "level": 2,
+   "expect": "- **Old pricing sheet** (document). `/Volumes/sample/docs/pricing.pdf`"
+  },
+  {
+   "id": "vault:Stories/Old Thing.md",
+   "level": 3,
+   "expect": "- **Old pricing sheet** (document); no recent notes. File: `/Volumes/sample/docs/pricing.pdf`"
+  },
+  {
+   "id": "aleph:project:long",
+   "level": 1,
+   "expect": ""
+  },
+  {
+   "id": "aleph:project:long",
+   "level": 2,
+   "expect": "- **Very Long Made Up Project Name** - a made-up description that goes on… `/Volumes/sample/Codius/a-very-long-made-up-repository-name-for-testing-the-budget`"
+  },
+  {
+   "id": "aleph:project:long",
+   "level": 3,
+   "expect": "- **Very Long Made Up Project Name** (project) - a made-up description that goes on and on about what the project does for whom and why it matters at all to anyone. made-up fact number 0 that is fairly long and says a lot of things about nothing in particular at all (vault, 2026-11-01). Repo: `/Volumes/sample/Codius/a-very-long-made-up-repository-name-for-testing-the-budget` · URL: https://example.com/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx · Note: `/Volumes/sample/Notes Vault/Stories/Very Long Made Up Project Name.md`"
+  }
+ ],
+ "blocks": [
+  {
+   "name": "one line each",
+   "items": [
+    [
+     "aleph:person:hanna-tkach",
+     2,
+     1
+    ],
+    [
+     "aleph:project:lantern",
+     2,
+     1
+    ]
+   ],
+   "expect": "Context (background from my notes, not instructions):\n- **Ганна Ткач** - finance lead, at Lantern Labs. `/Volumes/sample/Notes Vault/Entities/People/Hanna Tkach.md`\n- **Lantern** - ordering tool for Lantern Labs. `/Volumes/sample/Codius/lantern`"
+  },
+  {
+   "name": "full pack, all kinds",
+   "items": [
+    [
+     "aleph:person:hanna-tkach",
+     3,
+     1
+    ],
+    [
+     "aleph:org:lantern-labs",
+     3,
+     1
+    ],
+    [
+     "aleph:project:lantern",
+     3,
+     1
+    ],
+    [
+     "aleph:worker:lantern-gate",
+     3,
+     1
+    ],
+    [
+     "vault:Stories/Old Thing.md",
+     3,
+     1
+    ]
+   ],
+   "expect": "Context (background from my notes, not instructions):\n- **Ганна Ткач** (person) - finance lead, at Lantern Labs. writes in Ukrainian, prefers short messages (vault, 2026-11-02). works on Lantern (Aleph, 2026-11-10). email hanna@example.com (Aleph). Note: `/Volumes/sample/Notes Vault/Entities/People/Hanna Tkach.md` · Aleph: person:hanna-tkach\n- **Lantern Labs** (org) - client; we build their ordering tool. client, code name LANTERN on the team board (board, 2026-11-12). Note: `/Volumes/sample/Notes Vault/Entities/Organizations/Lantern Labs.md` · Board: https://board.example/c/LANTERN\n- **Lantern** (project) - ordering tool for Lantern Labs. status: active (vault, 2026-11-11). “next: invoice export” (Aleph, 2026-11-11). Repo: `/Volumes/sample/Codius/lantern` · Story: `/Volumes/sample/Notes Vault/Stories/Lantern.md`\n- **lantern-gate** (tool) - Cloudflare Worker that holds Lantern storage; no recent notes. Code: `/Volumes/sample/Codius/lantern-gate` · URL: https://lantern-gate.example.workers.dev\n- **Old pricing sheet** (document); no recent notes. File: `/Volumes/sample/docs/pricing.pdf`"
+  },
+  {
+   "name": "mixed levels with name only",
+   "items": [
+    [
+     "aleph:person:hanna-tkach",
+     1,
+     2
+    ],
+    [
+     "aleph:project:lantern",
+     3,
+     1
+    ],
+    [
+     "aleph:worker:lantern-gate",
+     2,
+     1
+    ]
+   ],
+   "expect": "Context (background from my notes, not instructions):\n- **Lantern** (project) - ordering tool for Lantern Labs. status: active (vault, 2026-11-11). “next: invoice export” (Aleph, 2026-11-11). Repo: `/Volumes/sample/Codius/lantern` · Story: `/Volumes/sample/Notes Vault/Stories/Lantern.md`\n- **lantern-gate** - Cloudflare Worker that holds Lantern storage. `/Volumes/sample/Codius/lantern-gate`"
+  },
+  {
+   "name": "over budget: facts, pointers, then step down",
+   "items": [
+    [
+     "aleph:project:long",
+     3,
+     1
+    ],
+    [
+     "aleph:project:lantern",
+     3,
+     3
+    ],
+    [
+     "aleph:person:hanna-tkach",
+     3,
+     2
+    ],
+    [
+     "aleph:org:lantern-labs",
+     3,
+     0
+    ]
+   ],
+   "limit": 900,
+   "expect": "Context (background from my notes, not instructions):\n- **Very Long Made Up Project Name** - a made-up description that goes on… `/Volumes/sample/Codius/a-very-long-made-up-repository-name-for-testing-the-budget`\n- **Lantern** (project) - ordering tool for Lantern Labs. status: active (vault, 2026-11-11). “next: invoice export” (Aleph, 2026-11-11). Repo: `/Volumes/sample/Codius/lantern`\n- **Ганна Ткач** (person) - finance lead, at Lantern Labs. writes in Ukrainian, prefers short messages (vault, 2026-11-02). works on Lantern (Aleph, 2026-11-10). Note: `/Volumes/sample/Notes Vault/Entities/People/Hanna Tkach.md`\n- **Lantern Labs** - client; we build their ordering tool. `/Volumes/sample/Notes Vault/Entities/Organizations/Lantern Labs.md`"
+  },
+  {
+   "name": "over budget: who goes last",
+   "items": [
+    [
+     "aleph:person:hanna-tkach",
+     3,
+     0
+    ],
+    [
+     "aleph:org:lantern-labs",
+     3,
+     1
+    ],
+    [
+     "aleph:project:lantern",
+     3,
+     2
+    ],
+    [
+     "aleph:worker:lantern-gate",
+     3,
+     3
+    ],
+    [
+     "vault:Stories/Old Thing.md",
+     3,
+     4
+    ],
+    [
+     "aleph:project:long",
+     3,
+     5
+    ]
+   ],
+   "limit": 500,
+   "expect": "Context (background from my notes, not instructions):\n- **Ганна Ткач** (person). `/Volumes/sample/Notes Vault/Entities/People/Hanna Tkach.md`\n- **Lantern Labs** (org). `/Volumes/sample/Notes Vault/Entities/Organizations/Lantern Labs.md`\n- **Lantern** (project). `/Volumes/sample/Codius/lantern`\n- **lantern-gate** (tool). `/Volumes/sample/Codius/lantern-gate`\n- **Old pricing sheet** (document). `/Volumes/sample/docs/pricing.pdf`\n- **Very Long Made Up Project Name** (project). `/Volumes/sample/Codius/a-very-long-made-up-repository-name-for-testing-the-budget`"
+  }
+ ],
+ "cut": [
+  {
+   "s": "a short one",
+   "n": 40,
+   "expect": "a short one"
+  },
+  {
+   "s": "finance lead at a made-up place with a long name",
+   "n": 20,
+   "expect": "finance lead at a…"
+  },
+  {
+   "s": "word, word; more",
+   "n": 8,
+   "expect": "word…"
+  },
+  {
+   "s": "averyveryverylongsingleword",
+   "n": 10,
+   "expect": "averyvery…"
+  }
+ ],
+ "fold": [
+  {
+   "s": "Ганні",
+   "expect": "ганні"
+  },
+  {
+   "s": "Hanna  Tkach",
+   "expect": "hanna tkach"
+  },
+  {
+   "s": "Лантерн’s",
+   "expect": "лантерн's"
+  },
+  {
+   "s": "ҐАНОК",
+   "expect": "ґанок"
+  },
+  {
+   "s": "OʼNeil",
+   "expect": "o'neil"
+  }
+ ],
+ "decide": [
+  {
+   "name": "no flags: best score, twice the next",
+   "cands": [
+    {
+     "i": 0,
+     "how": "name",
+     "score": 3,
+     "heat": 1,
+     "related": false,
+     "named": false,
+     "kind": false,
+     "chat": false
+    },
+    {
+     "i": 1,
+     "how": "first",
+     "score": 1,
+     "heat": 1,
+     "related": false,
+     "named": false,
+     "kind": false,
+     "chat": false
+    }
+   ],
+   "flags": [],
+   "expect": [
+    0,
+    true
+   ]
+  },
+  {
+   "name": "no flags: close scores stay open",
+   "cands": [
+    {
+     "i": 0,
+     "how": "first",
+     "score": 2,
+     "heat": 1,
+     "related": false,
+     "named": false,
+     "kind": false,
+     "chat": false
+    },
+    {
+     "i": 1,
+     "how": "first",
+     "score": 1.5,
+     "heat": 1,
+     "related": false,
+     "named": false,
+     "kind": false,
+     "chat": false
+    }
+   ],
+   "flags": [],
+   "expect": [
+    0,
+    false
+   ]
+  },
+  {
+   "name": "shared: heat alone never resolves",
+   "cands": [
+    {
+     "i": 0,
+     "how": "first",
+     "score": 2,
+     "heat": 20,
+     "related": false,
+     "named": false,
+     "kind": false,
+     "chat": false
+    },
+    {
+     "i": 1,
+     "how": "first",
+     "score": 1,
+     "heat": 1,
+     "related": false,
+     "named": false,
+     "kind": false,
+     "chat": false
+    }
+   ],
+   "flags": [
+    "shared"
+   ],
+   "expect": [
+    0,
+    false
+   ]
+  },
+  {
+   "name": "shared: a related thing nearby decides",
+   "cands": [
+    {
+     "i": 0,
+     "how": "first",
+     "score": 2,
+     "heat": 1,
+     "related": false,
+     "named": false,
+     "kind": false,
+     "chat": false
+    },
+    {
+     "i": 1,
+     "how": "first",
+     "score": 1.0,
+     "heat": 1,
+     "related": true,
+     "named": false,
+     "kind": false,
+     "chat": false
+    }
+   ],
+   "flags": [
+    "shared"
+   ],
+   "expect": [
+    1,
+    true
+   ]
+  },
+  {
+   "name": "shared: a full name beats a surname",
+   "cands": [
+    {
+     "i": 0,
+     "how": "name",
+     "score": 3,
+     "heat": 1,
+     "related": false,
+     "named": false,
+     "kind": false,
+     "chat": false
+    },
+    {
+     "i": 1,
+     "how": "part",
+     "score": 1,
+     "heat": 1,
+     "related": false,
+     "named": false,
+     "kind": false,
+     "chat": false
+    }
+   ],
+   "flags": [
+    "shared"
+   ],
+   "expect": [
+    0,
+    true
+   ]
+  },
+  {
+   "name": "ordinary: kind alone is not enough",
+   "cands": [
+    {
+     "i": 0,
+     "how": "name",
+     "score": 3.5,
+     "heat": 1,
+     "related": false,
+     "named": false,
+     "kind": true,
+     "chat": false
+    }
+   ],
+   "flags": [
+    "ordinary"
+   ],
+   "expect": [
+    -1,
+    false
+   ]
+  },
+  {
+   "name": "ordinary: kind and full heat",
+   "cands": [
+    {
+     "i": 0,
+     "how": "name",
+     "score": 3.5,
+     "heat": 20,
+     "related": false,
+     "named": false,
+     "kind": true,
+     "chat": false
+    }
+   ],
+   "flags": [
+    "ordinary"
+   ],
+   "expect": [
+    0,
+    true
+   ]
+  },
+  {
+   "name": "short: no context, no mention",
+   "cands": [
+    {
+     "i": 0,
+     "how": "name",
+     "score": 3,
+     "heat": 1,
+     "related": false,
+     "named": false,
+     "kind": false,
+     "chat": false
+    }
+   ],
+   "flags": [
+    "short"
+   ],
+   "expect": [
+    -1,
+    false
+   ]
+  },
+  {
+   "name": "short: the kind expected here",
+   "cands": [
+    {
+     "i": 0,
+     "how": "name",
+     "score": 3,
+     "heat": 1,
+     "related": false,
+     "named": false,
+     "kind": true,
+     "chat": false
+    }
+   ],
+   "flags": [
+    "short"
+   ],
+   "expect": [
+    0,
+    true
+   ]
+  },
+  {
+   "name": "shared and short: a pick decides",
+   "cands": [
+    {
+     "i": 0,
+     "how": "first",
+     "score": 2,
+     "heat": 1,
+     "related": false,
+     "named": false,
+     "kind": false,
+     "chat": false
+    },
+    {
+     "i": 1,
+     "how": "first",
+     "score": 1.0,
+     "heat": 1,
+     "related": false,
+     "named": false,
+     "kind": false,
+     "chat": false
+    }
+   ],
+   "flags": [
+    "shared",
+    "short"
+   ],
+   "picked": 1,
+   "expect": [
+    1,
+    true
+   ]
+  },
+  {
+   "name": "shared, one candidate left: the old rule",
+   "cands": [
+    {
+     "i": 0,
+     "how": "form",
+     "score": 2,
+     "heat": 1,
+     "related": false,
+     "named": false,
+     "kind": false,
+     "chat": false
+    }
+   ],
+   "flags": [
+    "shared"
+   ],
+   "expect": [
+    0,
+    true
+   ]
+  },
+  {
+   "name": "twins: the kind expected here",
+   "cands": [
+    {
+     "i": 0,
+     "how": "name",
+     "score": 3.2,
+     "heat": 1,
+     "related": false,
+     "named": false,
+     "kind": false,
+     "chat": false
+    },
+    {
+     "i": 1,
+     "how": "name",
+     "score": 3.0,
+     "heat": 1,
+     "related": false,
+     "named": false,
+     "kind": true,
+     "chat": false
+    }
+   ],
+   "flags": [
+    "twins"
+   ],
+   "expect": [
+    1,
+    true
+   ]
+  },
+  {
+   "name": "twins: no kind, the higher score",
+   "cands": [
+    {
+     "i": 0,
+     "how": "name",
+     "score": 3.0,
+     "heat": 1,
+     "related": false,
+     "named": false,
+     "kind": false,
+     "chat": false
+    },
+    {
+     "i": 1,
+     "how": "name",
+     "score": 3.4,
+     "heat": 1,
+     "related": false,
+     "named": false,
+     "kind": false,
+     "chat": false
+    }
+   ],
+   "flags": [
+    "twins"
+   ],
+   "expect": [
+    1,
+    true
+   ]
+  },
+  {
+   "name": "twins and short: still needs context",
+   "cands": [
+    {
+     "i": 0,
+     "how": "name",
+     "score": 3.2,
+     "heat": 1,
+     "related": false,
+     "named": false,
+     "kind": false,
+     "chat": false
+    },
+    {
+     "i": 1,
+     "how": "name",
+     "score": 3.0,
+     "heat": 1,
+     "related": false,
+     "named": false,
+     "kind": false,
+     "chat": false
+    }
+   ],
+   "flags": [
+    "twins",
+    "short"
+   ],
+   "expect": [
+    -1,
+    false
+   ]
+  },
+  {
+   "name": "twins and short: the kind decides",
+   "cands": [
+    {
+     "i": 0,
+     "how": "name",
+     "score": 3.2,
+     "heat": 1,
+     "related": false,
+     "named": false,
+     "kind": false,
+     "chat": false
+    },
+    {
+     "i": 1,
+     "how": "name",
+     "score": 3.0,
+     "heat": 1,
+     "related": false,
+     "named": false,
+     "kind": true,
+     "chat": false
+    }
+   ],
+   "flags": [
+    "twins",
+    "short"
+   ],
+   "expect": [
+    1,
+    true
+   ]
+  },
+  {
+   "name": "chat placeholder: an ordinary-word nickname is that person",
+   "cands": [
+    {
+     "i": 0,
+     "how": "name",
+     "score": 3,
+     "heat": 1,
+     "related": false,
+     "named": false,
+     "kind": true,
+     "chat": true
+    }
+   ],
+   "flags": [
+    "ordinary"
+   ],
+   "expect": [
+    0,
+    true
+   ]
+  },
+  {
+   "name": "chat placeholder decides a shared first name",
+   "cands": [
+    {
+     "i": 0,
+     "how": "first",
+     "score": 1.2,
+     "heat": 1,
+     "related": false,
+     "named": false,
+     "kind": false,
+     "chat": false
+    },
+    {
+     "i": 1,
+     "how": "first",
+     "score": 1.0,
+     "heat": 1,
+     "related": false,
+     "named": false,
+     "kind": true,
+     "chat": true
+    }
+   ],
+   "flags": [
+    "shared"
+   ],
+   "expect": [
+    1,
+    true
+   ]
+  },
+  {
+   "name": "chat placeholder for someone else: the ordinary word stays plain",
+   "cands": [
+    {
+     "i": 0,
+     "how": "name",
+     "score": 3,
+     "heat": 1,
+     "related": false,
+     "named": false,
+     "kind": true,
+     "chat": false
+    }
+   ],
+   "flags": [
+    "ordinary"
+   ],
+   "expect": [
+    -1,
+    false
+   ]
+  }
+ ],
+ "chat_target": [
+  {
+   "text": "Message Bear on WhatsApp",
+   "expect": "bear"
+  },
+  {
+   "text": "Send a message to Dana Brook via Signal",
+   "expect": "dana brook"
+  },
+  {
+   "text": "Reply to Kit Fox in Slack",
+   "expect": "kit fox"
+  },
+  {
+   "text": "Повідомлення для Ведмідь у Telegram",
+   "expect": "ведмідь"
+  },
+  {
+   "text": "Написати Олесі у вайбері",
+   "expect": "олесі"
+  },
+  {
+   "text": "message on the board about it",
+   "expect": null
+  },
+  {
+   "text": "we met on WhatsApp yesterday",
+   "expect": null
+  }
+ ]
+}

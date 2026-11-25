@@ -1,0 +1,5 @@
+<!doctype html><meta charset="utf-8"><title>Drafter rich test</title>
+<body style="font:15px -apple-system;padding:24px;background:#fff">
+<p>Rich text box test. Nothing here leaves the Mac.</p>
+<div id="ce" contenteditable style="border:1px solid #ccc;padding:8px;width:520px;min-height:80px"><p>⟦drafter-test⟧ Привіт, можемо поговорити завтра</p></div>
+<script>const ce=document.getElementById("ce");const f=()=>{ce.focus();const r=document.createRange();r.selectNodeContents(ce);r.collapse(false);const s=getSelection();s.removeAllRanges();s.addRange(r)};f();addEventListener("focus",f)</script>

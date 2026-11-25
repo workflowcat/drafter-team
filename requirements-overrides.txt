@@ -1,0 +1,8 @@
+# uv dependency overrides for Drafter's pinned voice readers, macOS / Python 3.12.
+# Impossible markers remove these dependency edges and their unused children.
+# Runtime replacements live in engine/stand_ins.py; never patch site-packages.
+# torch is only used by mlx_whisper's unused weight-conversion utility.
+torch ; python_version < '0'
+librosa ; python_version < '0'
+numba ; python_version < '0'
+scipy ; python_version < '0'

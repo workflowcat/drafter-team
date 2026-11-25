@@ -1,0 +1,571 @@
+[
+ {
+  "name": "spell latin: old spelling becomes heard",
+  "entries": [
+   {
+    "id": "a",
+    "kind": "company",
+    "uk": "",
+    "latin": "Larkspur Labs",
+    "forms": [],
+    "short": [],
+    "heard": [],
+    "phones": [],
+    "emails": [],
+    "links": [],
+    "context": {
+     "lines": 0,
+     "chats": 0,
+     "chat_ids": [],
+     "apps": {},
+     "last_seen": ""
+    },
+    "sources": [],
+    "hidden": false
+   }
+  ],
+  "edits": [
+   {
+    "op": "spell",
+    "id": "a",
+    "latin": "Larkspur Lab"
+   }
+  ],
+  "fields": [
+   "uk",
+   "latin",
+   "short",
+   "heard",
+   "hidden",
+   "links",
+   "phones",
+   "context"
+  ],
+  "expect": {
+   "a": {
+    "uk": "",
+    "latin": "Larkspur Lab",
+    "short": [],
+    "heard": [
+     "Larkspur Labs"
+    ],
+    "hidden": false,
+    "links": [],
+    "phones": [],
+    "context": {
+     "lines": 0,
+     "chats": 0,
+     "chat_ids": [],
+     "apps": {},
+     "last_seen": ""
+    }
+   }
+  }
+ },
+ {
+  "name": "spell back drops it from heard",
+  "entries": [
+   {
+    "id": "a",
+    "kind": "person",
+    "uk": "Орин",
+    "latin": "Oryn",
+    "forms": [],
+    "short": [],
+    "heard": [],
+    "phones": [],
+    "emails": [],
+    "links": [],
+    "context": {
+     "lines": 0,
+     "chats": 0,
+     "chat_ids": [],
+     "apps": {},
+     "last_seen": ""
+    },
+    "sources": [],
+    "hidden": false
+   }
+  ],
+  "edits": [
+   {
+    "op": "spell",
+    "id": "a",
+    "latin": "Orin"
+   },
+   {
+    "op": "spell",
+    "id": "a",
+    "latin": "Oryn"
+   }
+  ],
+  "fields": [
+   "uk",
+   "latin",
+   "short",
+   "heard",
+   "hidden",
+   "links",
+   "phones",
+   "context"
+  ],
+  "expect": {
+   "a": {
+    "uk": "Орин",
+    "latin": "Oryn",
+    "short": [],
+    "heard": [
+     "Orin"
+    ],
+    "hidden": false,
+    "links": [],
+    "phones": [],
+    "context": {
+     "lines": 0,
+     "chats": 0,
+     "chat_ids": [],
+     "apps": {},
+     "last_seen": ""
+    }
+   }
+  }
+ },
+ {
+  "name": "spell same is a no-op on names",
+  "entries": [
+   {
+    "id": "a",
+    "kind": "person",
+    "uk": "",
+    "latin": "Orin",
+    "forms": [],
+    "short": [],
+    "heard": [],
+    "phones": [],
+    "emails": [],
+    "links": [],
+    "context": {
+     "lines": 0,
+     "chats": 0,
+     "chat_ids": [],
+     "apps": {},
+     "last_seen": ""
+    },
+    "sources": [],
+    "hidden": false
+   }
+  ],
+  "edits": [
+   {
+    "op": "spell",
+    "id": "a",
+    "latin": "Orin"
+   }
+  ],
+  "fields": [
+   "uk",
+   "latin",
+   "short",
+   "heard",
+   "hidden",
+   "links",
+   "phones",
+   "context"
+  ],
+  "expect": {
+   "a": {
+    "uk": "",
+    "latin": "Orin",
+    "short": [],
+    "heard": [],
+    "hidden": false,
+    "links": [],
+    "phones": [],
+    "context": {
+     "lines": 0,
+     "chats": 0,
+     "chat_ids": [],
+     "apps": {},
+     "last_seen": ""
+    }
+   }
+  }
+ },
+ {
+  "name": "hide then show",
+  "entries": [
+   {
+    "id": "a",
+    "kind": "person",
+    "uk": "",
+    "latin": "Orin",
+    "forms": [],
+    "short": [],
+    "heard": [],
+    "phones": [],
+    "emails": [],
+    "links": [],
+    "context": {
+     "lines": 0,
+     "chats": 0,
+     "chat_ids": [],
+     "apps": {},
+     "last_seen": ""
+    },
+    "sources": [],
+    "hidden": false
+   },
+   {
+    "id": "b",
+    "kind": "person",
+    "uk": "",
+    "latin": "Pell",
+    "forms": [],
+    "short": [],
+    "heard": [],
+    "phones": [],
+    "emails": [],
+    "links": [],
+    "context": {
+     "lines": 0,
+     "chats": 0,
+     "chat_ids": [],
+     "apps": {},
+     "last_seen": ""
+    },
+    "sources": [],
+    "hidden": false
+   }
+  ],
+  "edits": [
+   {
+    "op": "hide",
+    "id": "a"
+   },
+   {
+    "op": "hide",
+    "id": "b"
+   },
+   {
+    "op": "hide",
+    "id": "b",
+    "on": false
+   }
+  ],
+  "fields": [
+   "uk",
+   "latin",
+   "short",
+   "heard",
+   "hidden",
+   "links",
+   "phones",
+   "context"
+  ],
+  "expect": {
+   "a": {
+    "uk": "",
+    "latin": "Orin",
+    "short": [],
+    "heard": [],
+    "hidden": true,
+    "links": [],
+    "phones": [],
+    "context": {
+     "lines": 0,
+     "chats": 0,
+     "chat_ids": [],
+     "apps": {},
+     "last_seen": ""
+    }
+   },
+   "b": {
+    "uk": "",
+    "latin": "Pell",
+    "short": [],
+    "heard": [],
+    "hidden": false,
+    "links": [],
+    "phones": [],
+    "context": {
+     "lines": 0,
+     "chats": 0,
+     "chat_ids": [],
+     "apps": {},
+     "last_seen": ""
+    }
+   }
+  }
+ },
+ {
+  "name": "merge folds names, handles, context and links",
+  "entries": [
+   {
+    "id": "a",
+    "kind": "person",
+    "uk": "Орин Вейл",
+    "latin": "Oryn Vale",
+    "forms": [],
+    "short": [
+     "Ori"
+    ],
+    "heard": [],
+    "phones": [
+     "+1 000"
+    ],
+    "emails": [],
+    "links": [
+     "p"
+    ],
+    "context": {
+     "lines": 3,
+     "chats": 1,
+     "chat_ids": [
+      "c1"
+     ],
+     "apps": {
+      "Claude": 3
+     },
+     "last_seen": "2026-01-02"
+    },
+    "sources": [],
+    "hidden": false
+   },
+   {
+    "id": "b",
+    "kind": "person",
+    "uk": "",
+    "latin": "Orin Vale",
+    "forms": [],
+    "short": [],
+    "heard": [
+     "oren"
+    ],
+    "phones": [
+     "+1 000",
+     "+2 000"
+    ],
+    "emails": [],
+    "links": [
+     "a",
+     "q"
+    ],
+    "context": {
+     "lines": 2,
+     "chats": 2,
+     "chat_ids": [
+      "c1",
+      "c2"
+     ],
+     "apps": {
+      "Claude": 1,
+      "Beeper": 1
+     },
+     "last_seen": "2026-03-04"
+    },
+    "sources": [],
+    "hidden": false
+   },
+   {
+    "id": "p",
+    "kind": "project",
+    "uk": "",
+    "latin": "Bramble",
+    "forms": [],
+    "short": [],
+    "heard": [],
+    "phones": [],
+    "emails": [],
+    "links": [
+     "b"
+    ],
+    "context": {
+     "lines": 0,
+     "chats": 0,
+     "chat_ids": [],
+     "apps": {},
+     "last_seen": ""
+    },
+    "sources": [],
+    "hidden": false
+   },
+   {
+    "id": "q",
+    "kind": "project",
+    "uk": "",
+    "latin": "Thistle",
+    "forms": [],
+    "short": [],
+    "heard": [],
+    "phones": [],
+    "emails": [],
+    "links": [],
+    "context": {
+     "lines": 0,
+     "chats": 0,
+     "chat_ids": [],
+     "apps": {},
+     "last_seen": ""
+    },
+    "sources": [],
+    "hidden": false
+   }
+  ],
+  "edits": [
+   {
+    "op": "merge",
+    "id": "b",
+    "into": "a"
+   }
+  ],
+  "fields": [
+   "uk",
+   "latin",
+   "short",
+   "heard",
+   "hidden",
+   "links",
+   "phones",
+   "context"
+  ],
+  "expect": {
+   "a": {
+    "uk": "Орин Вейл",
+    "latin": "Oryn Vale",
+    "short": [
+     "Ori",
+     "Orin Vale"
+    ],
+    "heard": [
+     "oren"
+    ],
+    "hidden": false,
+    "links": [
+     "p",
+     "q"
+    ],
+    "phones": [
+     "+1 000",
+     "+2 000"
+    ],
+    "context": {
+     "lines": 5,
+     "chats": 2,
+     "chat_ids": [
+      "c1",
+      "c2"
+     ],
+     "apps": {
+      "Claude": 4,
+      "Beeper": 1
+     },
+     "last_seen": "2026-03-04"
+    }
+   },
+   "p": {
+    "uk": "",
+    "latin": "Bramble",
+    "short": [],
+    "heard": [],
+    "hidden": false,
+    "links": [
+     "a"
+    ],
+    "phones": [],
+    "context": {
+     "lines": 0,
+     "chats": 0,
+     "chat_ids": [],
+     "apps": {},
+     "last_seen": ""
+    }
+   },
+   "q": {
+    "uk": "",
+    "latin": "Thistle",
+    "short": [],
+    "heard": [],
+    "hidden": false,
+    "links": [],
+    "phones": [],
+    "context": {
+     "lines": 0,
+     "chats": 0,
+     "chat_ids": [],
+     "apps": {},
+     "last_seen": ""
+    }
+   }
+  }
+ },
+ {
+  "name": "merge into itself or a missing entry does nothing",
+  "entries": [
+   {
+    "id": "a",
+    "kind": "person",
+    "uk": "",
+    "latin": "Orin",
+    "forms": [],
+    "short": [],
+    "heard": [],
+    "phones": [],
+    "emails": [],
+    "links": [],
+    "context": {
+     "lines": 0,
+     "chats": 0,
+     "chat_ids": [],
+     "apps": {},
+     "last_seen": ""
+    },
+    "sources": [],
+    "hidden": false
+   }
+  ],
+  "edits": [
+   {
+    "op": "merge",
+    "id": "a",
+    "into": "a"
+   },
+   {
+    "op": "merge",
+    "id": "a",
+    "into": "zz"
+   },
+   {
+    "op": "hide",
+    "id": "zz"
+   }
+  ],
+  "fields": [
+   "uk",
+   "latin",
+   "short",
+   "heard",
+   "hidden",
+   "links",
+   "phones",
+   "context"
+  ],
+  "expect": {
+   "a": {
+    "uk": "",
+    "latin": "Orin",
+    "short": [],
+    "heard": [],
+    "hidden": false,
+    "links": [],
+    "phones": [],
+    "context": {
+     "lines": 0,
+     "chats": 0,
+     "chat_ids": [],
+     "apps": {},
+     "last_seen": ""
+    }
+   }
+  }
+ }
+]

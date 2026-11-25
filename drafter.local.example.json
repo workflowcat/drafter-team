@@ -1,0 +1,31 @@
+{
+ "_settings": "Not here: the app's switches (Quick panel keys quickKey and switchKey, clipboard limits quickMax, quickDays and quickSecret, idle sleep textIdleMin and voiceIdleMin) are in Settings and data/settings.json; the theme is in Settings > Look and data/look.json (docs/themes.md).",
+ "_about": "Copy to data/drafter.local.json (never in git) and fill in. Every key is optional: with no file the Claude prompts say \"the user\" and every private integration is off. engine/local.py and app/LocalConfig.swift read it; `.venv/bin/python engine/local.py` prints what is in effect.",
+ "user": {
+  "name": "",
+  "short_name": "",
+  "own_names": [],
+  "own_stems": [],
+  "about": "",
+  "languages": ["en"],
+  "style_rules": "",
+  "timezone": "",
+  "city": "",
+  "email": ""
+ },
+ "snippets": {";mail": "", ";cal": ""},
+ "social": {"facebook_archive": ""},
+ "corpus": {"typed": true, "takes": true, "claude_code": false, "codex": false},
+ "integrations": {
+  "aleph": {"enabled": false, "url": "http://127.0.0.1:8797", "db": ""},
+  "inbox": {"enabled": false, "path": ""},
+  "beeper": {"enabled": false, "bin": ""},
+  "gam": {"enabled": false, "bin": ""},
+  "vault": {"enabled": false, "path": "", "name": "", "skill": "", "origin": ""},
+  "voice_notes": {"enabled": false, "path": "", "bundle_id": ""},
+  "claude": {"enabled": false, "bin": ""},
+  "voice_guide": {"enabled": false, "path": ""},
+  "server": {"enabled": false, "host": ""}
+ },
+ "build": {"bundle_id": "", "launchd_label": "", "nightly_label": ""}
+}

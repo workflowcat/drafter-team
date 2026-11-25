@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Optional. Filled in by scripts/install-login.sh --nightly: @LABEL@ (build.nightly_label), @HOME_DIR@ this checkout.
+     04:30 every night: log rotation, the knowledge pack, the review, and the weekly retrain when it is due. -->
+<plist version="1.0"><dict>
+  <key>Label</key><string>@LABEL@</string>
+  <key>ProgramArguments</key><array><string>/bin/zsh</string><string>@HOME_DIR@/bench/nightly.sh</string></array>
+  <key>StartCalendarInterval</key><dict><key>Hour</key><integer>4</integer><key>Minute</key><integer>30</integer></dict>
+  <key>StandardOutPath</key><string>@HOME_DIR@/data/review/nightly.log</string>
+  <key>StandardErrorPath</key><string>@HOME_DIR@/data/review/nightly.log</string>
+  <key>LowPriorityIO</key><true/><key>Nice</key><integer>10</integer>
+</dict></plist>

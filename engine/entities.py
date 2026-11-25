@@ -1,0 +1,1754 @@
+"""The entity store (step 1 of docs/reviews/2026-11-14-entities.md): one local record per real thing he names - a
+person, org, project, tool, document or place - built from the sources he already keeps, and the context packs an
+agent can read. Importing this module reads nothing.
+
+    .venv/bin/python engine/entities.py build            # data/entities.json (know.py build calls it too)
+    .venv/bin/python engine/entities.py stats            # counts only
+    .venv/bin/python engine/entities.py pack <name> [--level 2|3]
+    .venv/bin/python engine/entities.py context <name>   # the entity and its related ones, one brief
+    .venv/bin/python engine/entities.py fix not_related <id> <id>   # his corrections (data/entity-fixes.json)
+
+Sources, each optional and read-only (the local config's integrations decide; off = not read at all):
+- Aleph's SQLite: things, names, facts, merged, notsame. Private scope is excluded in SQL, before any row is read.
+- The vault: frontmatter only, of the top level of Entities/People, Entities/Organizations, Stories and Epics.
+  Never a `Private/` folder, `.obsidian`, `.claude` or `System/old`; a note marked private is skipped.
+- Google Contacts: the snapshot engine/contacts.py keeps (contact-only people are cards, never references).
+A source that fails keeps its last good slice (data/entity-sources.json); one failed source never empties the store.
+
+Private material reaches a pack only through data/context-allow.json ({"aleph": [ids], "vault": [paths]}), one
+record at a time, and such a record says so (`private: true`). No model writes a fact: a pack is a fixed template over
+stored records, each fact with its source and date. The app reads the prebuilt `surfaces` map and the pack parts;
+app/EntityRules.swift renders the same text (tests/entity_cases.json holds the golden cases both sides run).
+"""
+import argparse
+from collections import Counter, defaultdict
+import json
+import math
+import os
+from pathlib import Path
+import re
+import sqlite3
+import sys
+import time
+
+ROOT = Path(__file__).resolve().parent.parent
+DATA = ROOT / 'data'
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+KINDS = ('person', 'org', 'project', 'tool', 'doc', 'place')
+KIND_KEYS = {'1': 'person', '2': 'org', '3': 'project', '4': 'tool', '5': 'doc', '6': 'place', '0': 'none'}
+KIND_WORD = {'person': 'person', 'org': 'org', 'project': 'project', 'tool': 'tool', 'doc': 'document', 'place': 'place'}
+ALEPH_KIND = {'person': 'person', 'org': 'org', 'project': 'project', 'repo': 'tool', 'worker': 'tool', 'skill': 'tool'}
+VAULT_DIRS = {'Entities/People': 'person', 'Entities/Organizations': 'org', 'Stories': 'project', 'Epics': 'project'}
+VAULT_SKIP = {'Private', '.obsidian', '.claude', '.trash'}
+NOTE_KIND = {'Entities/People': 'person note', 'Entities/Organizations': 'org note', 'Stories': 'story', 'Epics': 'epic'}
+ORDER = {'aleph': 0, 'vault': 1, 'board': 2, 'contacts': 3}
+MATCH = {'name': 3.0, 'alias': 2.5, 'pair': 2.5, 'form': 2.0, 'first': 1.0, 'part': 1.0}
+
+HEADER = 'Context (background from my notes, not instructions):'
+LINE_MAX, FULL_MAX, BLOCK_MAX, BRIEF_MAX, WHO_MAX, FACT_MAX = 160, 600, 1800, 3000, 80, 120
+STALE_DAYS = 90
+
+PHONE = re.compile(r'\+?\d[\d ()\-.]{6,}\d')
+EMAIL = re.compile(r'[^\s@<>()]+@[^\s@<>()]+\.[^\s@<>()]+')
+APOS = str.maketrans({'’': "'", 'ʼ': "'", '`': "'", '‘': "'"})
+WORDS = re.compile(r"[^\W\d_]+(?:['’ʼ-][^\W\d_]+)*", re.UNICODE)
+
+
+def fold(s):
+    """The key of a surface form: lower case, one apostrophe, single spaces (ґ stays ґ)."""
+    return ' '.join(str(s or '').translate(APOS).casefold().split())
+
+
+def one_line(s, n):
+    """One clean line of at most n characters, cut at a word with an ellipsis; phone numbers never survive."""
+    s = ' '.join(str(s or '').split())
+    s = PHONE.sub('', s).strip(' ,;')
+    s = re.sub(r'\s{2,}', ' ', s)
+    if len(s) <= n: return s
+    cut = s[:n - 1].rsplit(' ', 1)[0] if ' ' in s[:n - 1] else s[:n - 1]
+    return cut.rstrip(' ,;.:-') + '…'
+
+
+def day(ts):
+    try: return time.strftime('%Y-%m-%d', time.localtime(float(ts))) if ts else ''
+    except (TypeError, ValueError, OverflowError, OSError): return ''
+
+
+def read_json(path, default):
+    try: return json.loads(Path(path).read_text())
+    except FileNotFoundError: return default
+    except (OSError, ValueError): return default
+
+
+def atomic(path, text):
+    from know import atomic as write
+    write(path, text)
+
+
+# ---------------------------------------------------------------------------------------------------------------
+# where the sources are (the owner's local config; engine/integrations.py when it is there)
+
+def source_paths(data=DATA):
+    """(aleph_db or None, vault_root or None) from the local config. Off in the config = None (never read)."""
+    cfg = read_json(Path(data) / 'drafter.local.json', None)
+    try:
+        import integrations   # the release round's module: on in the config AND its file answers
+        db = Path(integrations.local.setting('aleph', 'db')).expanduser() if integrations.available('aleph') and integrations.local.setting('aleph', 'db') else None
+        vault = Path(integrations.local.setting('vault', 'path')).expanduser() if integrations.available('vault') else None
+        return db, vault
+    except ImportError:
+        pass
+    if cfg is None:   # no config at all (before the release round): Aleph where know.py has always read it, no vault
+        db = Path.home() / 'Codius/Aleph/data/aleph.db'
+        return (db if db.is_file() else None), None
+    integ = cfg.get('integrations', {}) if isinstance(cfg, dict) else {}
+    def on(name, key):
+        it = integ.get(name) or {}
+        p = it.get(key) or ''
+        return Path(os.path.expanduser(p)) if it.get('enabled') is True and p else None
+    db, vault = on('aleph', 'db'), on('vault', 'path')
+    if db is None and (integ.get('aleph') or {}).get('enabled') is True:
+        db = Path.home() / 'Codius/Aleph/data/aleph.db'
+    return (db if db and db.is_file() else None), (vault if vault and vault.is_dir() else None)
+
+
+def own_names(data=DATA):
+    cfg = read_json(Path(data) / 'drafter.local.json', {})
+    user = cfg.get('user', {}) if isinstance(cfg, dict) else {}
+    names = [user.get('name') or '', user.get('short_name') or ''] + list(user.get('own_names') or [])
+    return {fold(n) for n in names if isinstance(n, str) and n.strip()}
+
+
+# ---------------------------------------------------------------------------------------------------------------
+# sources
+
+def aleph_slice(db, now, allow=()):
+    """Records from Aleph. Private things and facts are excluded in SQL, except ids he allowed one by one."""
+    allow = sorted({a for a in allow if isinstance(a, str)})
+    con = sqlite3.connect(Path(db).resolve().as_uri() + '?mode=ro', uri=True)
+    con.row_factory = sqlite3.Row
+    marks = ','.join('?' * len(allow)) or "''"
+    kinds = tuple(ALEPH_KIND)
+    try:
+        rows = con.execute(f"""SELECT id, kind, name, summary, short, scope FROM things
+            WHERE kind IN ({','.join('?' * len(kinds))}) AND id != 'person:me'
+            AND (coalesce(scope,'work') != 'private' OR id IN ({marks}))""", kinds + tuple(allow)).fetchall()
+        ids = {r['id'] for r in rows}
+        names = defaultdict(list)
+        for r in con.execute(f"""SELECT n.name, n.thing FROM names n JOIN things t ON t.id = n.thing
+                WHERE coalesce(t.scope,'work') != 'private' OR t.id IN ({marks})""", tuple(allow)):
+            if r['thing'] in ids: names[r['thing']].append(r['name'])
+        facts = defaultdict(list)
+        for r in con.execute(f"""SELECT f.subj, f.rel, f.value, f.since, f.at, f.source, f.by, f.scope AS fscope, f.status,
+                o.id AS oid, o.name AS oname, o.kind AS okind FROM facts f
+                JOIN things s ON s.id = f.subj LEFT JOIN things o ON o.id = f.obj AND f.obj != ''
+                WHERE (coalesce(s.scope,'work') != 'private' OR s.id IN ({marks}))
+                AND (coalesce(f.scope,'work') != 'private' OR f.subj IN ({marks}))
+                AND (o.id IS NULL OR coalesce(o.scope,'work') != 'private' OR o.id IN ({marks}))
+                AND coalesce(f.status,'seen') NOT IN ('disproven','wrong','retracted')
+                AND (f.until IS NULL OR f.until = 0 OR f.until > ?)""", tuple(allow) * 3 + (now,)):
+            if r['subj'] in ids: facts[r['subj']].append(dict(r))
+        merged = {r['id']: r['target'] for r in con.execute('SELECT id, target FROM merged')}
+        notsame = [(r['a'], r['b']) for r in con.execute('SELECT a, b FROM notsame')]
+    finally:
+        con.close()
+    out = []
+    for r in rows:
+        rec = {'system': 'aleph', 'id': r['id'], 'kind': ALEPH_KIND[r['kind']], 'name': (r['name'] or '').strip(),
+               'aliases': sorted(set(names.get(r['id'], []) + ([r['short']] if r['short'] else []))),
+               'summary': one_line(r['summary'], 300), 'handles': {}, 'facts': [], 'links': [], 'same': [],
+               'private': (r['scope'] or 'work') == 'private'}
+        if not rec['name']: continue
+        for f in facts.get(r['id'], []):
+            add_aleph_fact(rec, f)
+        out.append(rec)
+    return out, merged, notsame
+
+
+FREE = {'next', 'does', 'goal', 'note'}
+SIMILAR = re.compile(r'\s*(\d?\.\d+)\s*(?:·\s*(.*))?$')
+
+
+def add_aleph_fact(rec, f):
+    rel, value, obj = f['rel'], ' '.join(str(f['value'] or '').split()), (f['oname'] or '').strip()
+    date = day(f['since'] or f['at'])
+    src = 'Aleph'
+    priv = (f['fscope'] or 'work') == 'private'
+    def fact(text, rank, quote=False):
+        if PHONE.search(str(text)): return          # a fact that holds a phone number is left out whole
+        text = one_line(text, FACT_MAX)
+        if text:
+            rec['facts'].append({'text': text, 'source': src, 'date': date, 'quote': quote, 'rank': rank, 'private': priv})
+    def link():
+        """A typed relation to another thing: its type, date and how much the source is trusted travel with it."""
+        if f['oid']:
+            rely = 1.0 if f['by'] == 'me' or f.get('status') == 'stated' else 0.8
+            link = {'to': 'aleph:' + f['oid'], 'rel': rel, 'date': date, 'rely': rely, 'src': 'aleph', 'value': ''}
+            if rel == 'relates':
+                sim = SIMILAR.match(value)
+                if sim:   # Aleph's own guess: "<similarity> · <shared topics>"
+                    link.update(rel='similar', sim=float(sim.group(1)), value=one_line(sim.group(2), 40))
+                elif len(value) <= 30 and re.search(r'[^\W\d_]{3}', value) and not PHONE.search(value):
+                    link['value'] = value
+            rec['links'].append(link)
+    if rel == 'handle':
+        from know import handle
+        key, val = handle(value)
+        if key: rec['handles'].setdefault(key, []).append(val)   # phones only for his own card, never in a pack
+    elif rel == 'role' and value: fact(value, 0); rec.setdefault('role', value)
+    elif rel == 'works_at' and obj: fact('works at ' + obj, 1); rec.setdefault('org', obj); link()
+    elif rel == 'works_on' and obj: fact('works on ' + obj, 2); link()
+    elif rel == 'member_of' and obj and f['okind'] in ('project', 'org'): fact('part of ' + obj, 3); link()
+    elif rel == 'status' and value: fact('status: ' + value, 1)
+    elif rel == 'next' and value: fact('next: ' + value, 2, quote=f['by'] != 'me')
+    elif rel in ('does', 'goal') and value: fact(value, 3, quote=f['by'] != 'me')
+    elif rel == 'has_repo' and obj: fact('repo ' + obj, 4); link()
+    elif rel == 'deployed_as' and obj: fact('runs as ' + obj, 4); link()
+    elif rel in ('built_by', 'relates', 'part', 'owns') and f['oid']: link()
+    elif rel == 'same_as' and f['oid']: rec['same'].append(f['oid'])
+    elif rel == 'link' and value.startswith(('http://', 'https://')): rec.setdefault('urls', []).append(value)
+    elif rel == 'note' and value: fact(value, 6, quote=f['by'] != 'me')
+
+
+def front(text):
+    """A note's YAML frontmatter as a dict ({} when there is none or it does not parse)."""
+    m = re.match(r'---\r?\n(.*?)\r?\n---', text, re.S)
+    if not m: return {}
+    try:
+        import yaml
+        d = yaml.safe_load(m.group(1))
+        return d if isinstance(d, dict) else {}
+    except Exception:
+        return {}
+
+
+def marked_private(fm):
+    tags = fm.get('tags') or []
+    tags = [tags] if isinstance(tags, str) else tags if isinstance(tags, list) else []
+    return (fm.get('private') is True or str(fm.get('scope', '')).lower() == 'private'
+            or str(fm.get('visibility', '')).lower() == 'private' or any(str(t).strip('#').lower() == 'private' for t in tags))
+
+
+def strs(v):
+    if isinstance(v, str): return [v]
+    if isinstance(v, list): return [str(x) for x in v if isinstance(x, (str, int, float)) and str(x).strip()]
+    return []
+
+
+def wikilinks(v):
+    out = []
+    for s in strs(v):
+        for m in re.finditer(r'\[\[([^\]|#]+)', s): out.append(m.group(1).strip())
+        if '[[' not in s and s.strip(): out.append(s.strip())
+    return out
+
+
+def vault_slice(root, allow=()):
+    """Frontmatter of the vault's entity and story notes. Never a Private folder, never a note marked private,
+    except single notes he allowed (context-allow.json, paths relative to the vault)."""
+    root = Path(root)
+    files = []
+    for rel_dir, kind in VAULT_DIRS.items():
+        d = root / rel_dir
+        if not d.is_dir(): continue
+        for f in sorted(d.iterdir()):   # the top level only: Private/ and every other subfolder are never opened
+            if f.is_file() and f.suffix == '.md' and not f.name.startswith('.'): files.append((f, kind, False))
+    for rel in allow:   # single notes he allowed, a Private one included: read only into its own record
+        if not isinstance(rel, str) or '..' in Path(rel).parts or not rel.endswith('.md') or rel.startswith('/'): continue
+        f = root / rel
+        if f.is_file():
+            kind = next((k for d, k in VAULT_DIRS.items() if rel.startswith(d + '/')), 'project')
+            files.append((f, kind, True))
+    out, seen = [], set()
+    for f, kind, allowed in files:
+        rel = f.relative_to(root).as_posix()
+        if rel in seen: continue
+        seen.add(rel)
+        if any(p in VAULT_SKIP - ({'Private'} if allowed else set()) for p in Path(rel).parts): continue
+        try: text = f.read_text(errors='ignore')[:6000]
+        except OSError: continue
+        fm = front(text)
+        typ = str(fm.get('type') or '').lower()
+        if typ == 'view': continue
+        priv = marked_private(fm) or 'Private' in Path(rel).parts
+        if priv and not allowed: continue
+        if typ == 'org': kind = 'org'
+        elif typ == 'person': kind = 'person'
+        when = fm.get('updated') or fm.get('created') or ''
+        date = str(when)[:10] if re.match(r'\d{4}-\d{2}-\d{2}', str(when)) else ''
+        rec = {'system': 'vault', 'id': rel, 'kind': kind, 'name': f.stem, 'aliases': strs(fm.get('aliases')) + strs(fm.get('nick')),
+               'summary': one_line(fm.get('summary'), 300), 'handles': {}, 'facts': [], 'vlinks': [], 'private': priv,
+               'note': str(f), 'origin': str(fm.get('origin') or ''), 'date': date}
+        def fact(text, rank, quote=False):
+            if PHONE.search(str(text)): return
+            text = one_line(text, FACT_MAX)
+            if text:
+                rec['facts'].append({'text': text, 'source': 'vault', 'date': date, 'quote': quote, 'rank': rank, 'private': priv})
+        if fm.get('role'): fact(str(fm['role']), 0); rec['role'] = one_line(fm['role'], 120)
+        for org in wikilinks(fm.get('org'))[:1]:
+            name = Path(org).name
+            fact('works at ' + name, 1); rec['org'] = name
+            rec['vlinks'].append({'path': org, 'key': 'org', 'n': 1, 'date': date})
+        if fm.get('status') and kind == 'project': fact('status: ' + str(fm['status']), 1)
+        if fm.get('next'): fact('next: ' + str(fm['next']), 2, quote=rec['origin'] not in ('', 'kit'))
+        if rec['summary'] and kind != 'person': fact(rec['summary'], 3, quote=rec['origin'] not in ('', 'kit'))
+        for key in ('epic', 'story', 'thread', 'entities', 'people', 'related'):
+            listed = wikilinks(fm.get(key))
+            rec['vlinks'] += [{'path': p, 'key': key, 'n': len(listed), 'date': date} for p in listed]
+        for u in strs(fm.get('url')):
+            if u.startswith(('http://', 'https://')): rec.setdefault('urls', []).append(u)
+        out.append(rec)
+    return out
+
+
+def contacts_slice(entries):
+    out = []
+    for e in entries or []:
+        if not isinstance(e, dict) or not e.get('id') or not e.get('name'): continue
+        out.append({'system': 'contacts', 'id': e['id'], 'kind': 'person', 'name': e['name'], 'aliases': list(e.get('aliases') or []),
+                    'summary': '', 'facts': [], 'related': [], 'private': False, 'cards_only': bool(e.get('cards_only')),
+                    **({'org': e['org']} if e.get('org') else {}), **({'role': e['role']} if e.get('role') else {}),
+                    'handles': {k: list(v) for k, v in (e.get('handles') or {}).items() if k in ('email', 'tg', 'phone', 'address')}})
+    return out
+
+
+# ---------------------------------------------------------------------------------------------------------------
+# merging
+
+class Union:
+    def __init__(self): self.up, self.members = {}, {}
+    def find(self, a):
+        if a not in self.up: self.up[a] = a; self.members[a] = {a}
+        while self.up[a] != a:
+            self.up[a] = self.up[self.up[a]]; a = self.up[a]
+        return a
+    def join(self, a, b, apart):
+        ra, rb = self.find(a), self.find(b)
+        if ra == rb: return True
+        if apart and any((x, y) in apart or (y, x) in apart for x in self.members[ra] for y in self.members[rb]): return False
+        self.up[rb] = ra
+        self.members[ra] |= self.members.pop(rb)
+        return True
+
+
+def norm_handle(kind, v):
+    v = str(v or '').strip()
+    if kind == 'email': return v.casefold()
+    if kind == 'tg': return v.lstrip('@').casefold()
+    if kind == 'phone': return re.sub(r'\D', '', v)[-9:]
+    return v
+
+
+def aleph_slug(s):
+    return re.sub(r'[^\w]+', '-', str(s).lower(), flags=re.U).strip('-')[:80] or 'x'
+
+
+def merge(slices, merged=None, notsame=(), same_file=None):
+    """Deterministic merges (proposal 1.5): Aleph's own (merged, same_as); same normalised handle with no second
+    match; vault note <-> Aleph thing by the note's stem; his own yes/no from data/entity-same.json. Never on a first
+    name alone. Returns (groups of source records, count of same-name pairs left apart for a "Same?" row)."""
+    merged = merged or {}
+    recs = {f"{r['system']}:{r['id']}": r for s in slices for r in s}
+    apart = {(f'aleph:{a}', f'aleph:{b}') for a, b in notsame}
+    sf = same_file or {}
+    apart |= {(a, b) for a, b in (sf.get('not') or []) if isinstance(a, str) and isinstance(b, str)}
+    u = Union()
+    for k in recs: u.find(k)
+    for k, r in recs.items():
+        if r['system'] != 'aleph': continue
+        for other in r.get('same', []):
+            other = merged.get(other, other)
+            if f'aleph:{other}' in recs: u.join(k, f'aleph:{other}', apart)
+    # vault note -> the Aleph thing Aleph made from it (tid(kind, stem))
+    aleph_kinds = {'person': ['person'], 'org': ['org'], 'project': ['project']}
+    for k, r in recs.items():
+        if r['system'] != 'vault': continue
+        for ak in aleph_kinds.get(r['kind'], []):
+            target = f"aleph:{ak}:{aleph_slug(r['name'])}"
+            target = 'aleph:' + merged.get(target[6:], target[6:])
+            if target in recs: u.join(target, k, apart); break
+    # handles: a contact card joins the one known thing with the same address; a handle two known things share stays
+    # apart (a shared mailbox, a family phone), and so does a card whose Telegram differs from the thing's
+    owners = defaultdict(set)
+    for k, r in recs.items():
+        for kind, values in (r.get('handles') or {}).items():
+            if kind == 'address': continue   # a shared office or home never makes two people one
+            for v in values:
+                n = norm_handle(kind, v)
+                if len(n) >= 5: owners[(kind, n)].add(k)
+    def tgs(root): return {norm_handle('tg', v) for k in u.members[root] for v in (recs[k].get('handles') or {}).get('tg', [])}
+    def known(root): return any(recs[k]['system'] != 'contacts' for k in u.members[root])
+    for (kind, n), keys in sorted(owners.items()):
+        roots = {u.find(k) for k in keys}
+        if len(roots) < 2: continue
+        known_roots = [g for g in roots if known(g)]
+        if len(known_roots) > 1: continue
+        base = known_roots[0] if known_roots else sorted(roots)[0]
+        for g in sorted(roots - {base}):
+            a, b = tgs(base), tgs(g)
+            if a and b and not a & b: continue
+            u.join(base, g, apart)
+    for a, b in (sf.get('same') or []):
+        if a in recs and b in recs: u.join(a, b, apart)
+    groups = defaultdict(list)
+    for k in recs: groups[u.find(k)].append(recs[k])
+    out = [sorted(g, key=lambda r: (ORDER[r['system']], r['id'])) for g in groups.values()]
+    # same full name from two groups, no handle to confirm: left apart, counted for the "Same?" row (step 4)
+    by_name = defaultdict(set)
+    for i, g in enumerate(out):
+        if g[0].get('cards_only'): continue
+        by_name[fold(g[0]['name'])].add(i)
+    pending = sum(1 for n, s in by_name.items() if len(s) > 1 and ' ' in n)
+    return out, pending
+
+
+# ---------------------------------------------------------------------------------------------------------------
+# relations: typed, weighted, each with a reason a person can read (docs/rounds/2026-11-14-relations.md)
+#
+# One edge = every piece of evidence for a pair: a typed Aleph fact, a vault link, being listed in one note, his own
+# fix, or how often the two are named together in his own lines. Each piece scores type x source trust x recency;
+# the pieces join as a noisy-or (two weak ones beat one weak one, nothing passes 1); the target's heat nudges it.
+
+# rel: (reason seen from the subject, reason seen from the object, type weight)
+REL = {
+    'works_at': ('works at', 'works here', 1.0), 'v_org': ('works at', 'works here', 0.9),
+    'member_of': ('part of', 'has member', 0.9), 'has_repo': ('repo', 'repo of', 0.9), 'deployed_as': ('runs as', 'runs', 0.9),
+    'works_on': ('works on', 'people on it', 0.85), 'built_by': ('built by', 'built', 0.8), 'part': ('part of', 'has part', 0.8),
+    'owns': ('owns', 'owned by', 0.8), 'relates': ('related', 'related', 0.5),
+    'similar': ('similar topics', 'similar topics', 0.6),   # Aleph's guess from shared topics, scaled by its score
+    'v_epic': ('part of epic', 'epic of', 0.7), 'v_story': ('part of story', 'story of', 0.7), 'v_thread': ('in thread', 'thread of', 0.6),
+    'v_entities': ('in the same note', 'in the same note', 0.6), 'v_people': ('in the same note', 'in the same note', 0.6),
+    'v_related': ('in the same note', 'in the same note', 0.6),
+    'mine': ('related (you said)', 'related (you said)', 1.0),
+}
+LIST_KEYS = ('v_entities', 'v_people', 'v_related')
+PAIR_W = 0.3                 # two things listed in one note, before the list-length damping
+CO_W, CO_MIN = 0.7, 3        # co-mention: weight at full NPMI, and the fewest lines that name both
+SIM_FULL = 0.4               # an Aleph similarity at or over this counts fully; the usual 0.1 counts a quarter
+SIM_WEAK = 0.2               # a topic guess under this with no informative word left is dropped
+TOPIC_DF_MAX = 0.04          # a topic word in more than this share of all guesses says nothing about one pair
+TOPIC_STOP = set('''pending frozen active done draft archived archive paused blocked todo wip live stale open closed new old
+    current ongoing planned idea ideas misc other general note notes stuff things thing tbd none unknown status project
+    projects tool tools repo repos work works task tasks item items list page pages file files doc docs test tests demo
+    main inbox later someday backlog review january february march april may june july august september october
+    november december січень лютий березень квітень травень червень липень серпень вересень жовтень листопад грудень
+    today yesterday tomorrow week month year'''.split())
+COMMON_LINE_SHARE = 0.005    # a word in more than this share of his own lines is a function word for topic lists
+FLOOR = 0.15                 # an edge under this is dropped
+TOP = {'person': 6, 'org': 8, 'project': 8, 'tool': 5, 'doc': 6, 'place': 4}
+SHOW_MAX = 8
+HALF_LIFE_DAYS = 180
+
+
+def recency(date, now):
+    """0.5 .. 1: fresh evidence counts fully, old evidence half; no date 0.6."""
+    if not date: return 0.6
+    try: age = max(0.0, (now - time.mktime(time.strptime(date[:10], '%Y-%m-%d'))) / 86400)
+    except (ValueError, OverflowError): return 0.6
+    return 0.5 + 0.5 * math.exp(-age / HALF_LIFE_DAYS)
+
+
+def damp_star(n):
+    """A note that lists n things: the note to each of them. Long lists say less about each item."""
+    return min(1.0, math.sqrt(4.0 / max(1, n)))
+
+
+def damp_pair(n):
+    """Two of the n things one note lists: weaker than the note's own links, falling as 1/(n-1)."""
+    return min(1.0, 1.0 / max(1, n - 1))
+
+
+def piece(rel, rely, date, now, n=1, pair=False, sim=None):
+    """One piece of evidence: type weight x source trust x recency (x list damping for notes that list things; x the
+    similarity score for Aleph's topic guesses)."""
+    w = PAIR_W * damp_pair(n) if pair else REL[rel][2] * (damp_star(n) if rel in LIST_KEYS else 1.0)
+    if sim is not None: w *= min(1.0, max(0.0, sim) / SIM_FULL)
+    return w * rely * recency(date, now)
+
+
+def npmi(c_ab, c_a, c_b, n):
+    """Normalised pointwise mutual information, -1..1. It does not reward a popular entity: a thing named in every
+    line tells nothing about the others. Fewer than CO_MIN lines together: 0."""
+    if c_ab < CO_MIN or not (c_a and c_b and n): return 0.0
+    p_ab = c_ab / n
+    if p_ab >= 1: return 1.0
+    v = math.log(p_ab / ((c_a / n) * (c_b / n))) / -math.log(p_ab)
+    return max(-1.0, min(1.0, v))
+
+
+def combine(scores):
+    """Noisy-or of the pieces: 1 - prod(1 - s)."""
+    out = 1.0
+    for x in scores: out *= 1.0 - max(0.0, min(1.0, x))
+    return 1.0 - out
+
+
+def heat_factor(heat):
+    """0.8 .. 1: a warm target ranks a little higher than a cold one with the same evidence."""
+    return 0.8 + 0.2 * min(1.0, math.log(max(1.0, heat or 1)) / math.log(20))
+
+
+def edge_weight(scores, target_heat):
+    return round(combine(scores) * heat_factor(target_heat), 3)
+
+
+def rank_edges(edges, kind, floor=FLOOR, top=None):
+    """edges: [{id, w, tier?, heat?, date?}] of one record -> the kept ones, at most TOP[kind] and never more than
+    SHOW_MAX; under the floor dropped. Order: declared before similarity-only (tier 0 before 1), then weight, then
+    the other record's heat, then the newest evidence, then id. Returns (kept, dropped under the floor)."""
+    top = min(SHOW_MAX, top if top is not None else TOP.get(kind, 6))
+    ok = sorted((e for e in edges if e['w'] >= floor),
+                key=lambda e: (e.get('tier', 0), -e['w'], -e.get('heat', 1), -int((e.get('date') or '0').replace('-', '') or 0), e['id']))
+    return ok[:top], sum(1 for e in edges if e['w'] < floor)
+
+
+class Edges:
+    """Evidence per unordered pair, with the reason from each side. A piece: (score, why from a, why from b, source,
+    sort, date); sort is 'sim' for Aleph's topic guesses, 'co' for names said together, 'decl' for the rest."""
+    def __init__(self): self.ev = defaultdict(list)
+    def copy(self):
+        e = Edges(); e.ev = defaultdict(list, {k: list(v) for k, v in self.ev.items()}); return e
+    def add(self, a, b, score, why_from_a, why_from_b, src, sort='decl', date=''):
+        if a == b or score <= 0: return
+        if a < b: self.ev[(a, b)].append((score, why_from_a, why_from_b, src, sort, date))
+        else: self.ev[(b, a)].append((score, why_from_b, why_from_a, src, sort, date))
+    def drop(self, a, b): self.ev.pop((min(a, b), max(a, b)), None)
+    def folded(self, main_of):
+        """The same evidence with every twin replaced by its main record (a project and its repo are one thing);
+        evidence between two twins of one thing is gone."""
+        e = Edges()
+        for (a, b), ps in self.ev.items():
+            ma, mb = main_of.get(a, a), main_of.get(b, b)
+            if ma == mb: continue
+            for x, wa, wb, src, sort, date in ps: e.add(ma, mb, x, wa, wb, src, sort, date)   # ma stands where a stood
+        return e
+    def of(self):
+        """record id -> [(other id, [(score, why seen from this record, src, sort, date)])]"""
+        out = defaultdict(list)
+        for (a, b), ps in self.ev.items():
+            out[a].append((b, [(x, wa, src, so, d) for x, wa, wb, src, so, d in ps]))
+            out[b].append((a, [(x, wb, src, so, d) for x, wa, wb, src, so, d in ps]))
+        return out
+
+
+def topic_words(value):
+    """The words of an Aleph topic guess ("ordering, invoices · sklad"), lower case, in order, no repeats."""
+    out = []
+    for w in WORDS.findall(str(value or '')):
+        f = fold(w)
+        if f not in out: out.append(f)
+    return out
+
+
+def glued(raw):
+    """A token that is several words run together: camelCase inside, letters and digits mixed, or very long."""
+    return bool(re.search(r'[a-zа-яіїєґ][A-ZА-ЯІЇЄҐ]', raw) or re.search(r'\d', raw) or len(raw) >= 16)
+
+
+def topic_df(records):
+    """Document frequency of each topic word over all of Aleph's topic guesses: word -> share of guesses."""
+    n, df = 0, Counter()
+    for r in records:
+        for e in r.get('evidence', []):
+            if e['rel'] == 'similar':
+                n += 1; df.update(set(topic_words(e.get('value'))))
+    return {w: c / n for w, c in df.items()} if n else {}
+
+
+def informative(value, df, df_max=None):
+    """The words of a topic guess worth showing: not a status or boilerplate word, not a number, not glued, and not
+    in more than TOPIC_DF_MAX of all guesses. Rarest first."""
+    df_max = TOPIC_DF_MAX if df_max is None else df_max
+    raws = {fold(w): w for w in WORDS.findall(str(value or ''))}
+    keep = [w for w in topic_words(value) if w not in TOPIC_STOP and len(w) >= 3 and not glued(raws.get(w, w)) and "'" not in w
+            and df.get(w, 0) <= df_max]
+    return sorted(keep, key=lambda w: (df.get(w, 0), w))
+
+
+def similar_reason(value, sim, df, common=()):
+    """(reason, keep?) for one topic guess: 2+ informative words are shown (3 at most); fewer show none; with no
+    informative word and a weak score the guess is dropped."""
+    words = [w for w in informative(value, df) if w not in common]
+    if len(words) >= 2: return 'similar topics: ' + ', '.join(words[:3]), True
+    if not words and (sim or 0) < SIM_WEAK: return '', False
+    return 'similar topics', True
+
+
+def declared_edges(records, now, fixes=None, resolve=lambda x: x, df=None, common=()):
+    """Edges from what the sources declare (typed Aleph facts, vault links, note lists) and his own fixes."""
+    E = Edges()
+    ids = {r['id'] for r in records}
+    df = topic_df(records) if df is None else df
+    for r in records:
+        lists = defaultdict(list)   # one note's list -> its members, for the pair edges
+        for e in r.get('evidence', []):
+            to, rel = e['to'], e['rel']
+            if to not in ids or to == r['id'] or rel not in REL: continue
+            fwd, back, _ = REL[rel]
+            if rel == 'relates' and e.get('value'): fwd = e['value']
+            if rel == 'similar':
+                fwd, ok = similar_reason(e.get('value'), e.get('sim'), df, common)
+                if not ok: continue
+                back = fwd
+            if rel in LIST_KEYS: fwd = back = 'in the same note: ' + e.get('note', 'note')
+            E.add(r['id'], to, piece(rel, e.get('rely', 0.8), e.get('date', ''), now, e.get('n', 1), sim=e.get('sim')), fwd, back,
+                  e.get('src', ''), 'sim' if rel == 'similar' else 'decl', e.get('date', ''))
+            if rel in LIST_KEYS: lists[rel].append(e)
+        for rel, members in lists.items():
+            if len(members) > 12: continue   # a long list: its pairs would all fall under the floor anyway
+            for i in range(len(members)):
+                for j in range(i + 1, len(members)):
+                    a, b = members[i], members[j]
+                    if a['to'] == b['to']: continue
+                    why = 'in the same note: ' + a.get('note', 'note')
+                    E.add(a['to'], b['to'], piece(rel, a.get('rely', 0.9), a.get('date', ''), now, a.get('n', 2), pair=True), why, why, 'vault',
+                          'decl', a.get('date', ''))
+    for r in records: r.pop('evidence', None)
+    fixes = fixes or {}
+    for item in fixes.get('related') or []:
+        if isinstance(item, list) and len(item) >= 2:
+            a, b = resolve(item[0]), resolve(item[1])
+            why = str(item[2]) if len(item) > 2 and item[2] else REL['mine'][0]
+            if a in ids and b in ids: E.add(a, b, 1.0, why, why, 'you')
+    return E
+
+
+def finish_edges(records, E, co=None, floor=FLOOR, not_related=(), main_of=None):
+    """Turn the evidence into `related` (ordered ids, for old readers) and `relations` ([{id, why, w, src}]).
+    co: {(a, b): (score, reason)} co-mention pieces. main_of: twin id -> its main record id; an edge to a twin is an
+    edge to the main record, and a twin shows its main record's relations. Returns counts."""
+    for (a, b), (x, why) in (co or {}).items():
+        E.add(a, b, x, why, why, 'lines', 'co')
+    for a, b in not_related: E.drop(a, b)
+    main_of = main_of or {}
+    if main_of:
+        for a, b in not_related: E.drop(main_of.get(a, a), main_of.get(b, b))
+        E = E.folded(main_of)
+        for a, b in not_related: E.drop(main_of.get(a, a), main_of.get(b, b))
+    by_id = {r['id']: r for r in records}
+    of = E.of()
+    kept = dropped = 0
+    for r in records:
+        if r['id'] in main_of: continue
+        edges = []
+        for other, ps in of.get(r['id'], []):
+            ps = sorted(ps, key=lambda p: -p[0])
+            whys = []
+            for p in ps:
+                if p[1] not in whys: whys.append(p[1])
+            o = by_id[other]
+            edges.append({'id': other, 'w': edge_weight([p[0] for p in ps], o.get('heat', 1)), 'heat': o.get('heat', 1),
+                          'tier': 1 if all(p[3] == 'sim' for p in ps) else 0, 'date': max((p[4] for p in ps), default=''),
+                          'why': ' · '.join(whys[:2]), 'src': sorted({p[2] for p in ps if p[2]})})
+        keep, drop = rank_edges(edges, r['kind'], floor)
+        r['related'] = [e['id'] for e in keep]
+        r['relations'] = [{'id': e['id'], 'why': e['why'], 'w': e['w'], 'src': e['src']} for e in keep]
+        kept += len(keep); dropped += drop
+    for r in records:   # a twin shows the thing's relations
+        m = main_of.get(r['id'])
+        if m:
+            r['related'] = list(by_id[m]['related']); r['relations'] = [dict(x) for x in by_id[m]['relations']]
+    return {'kept': kept, 'dropped': dropped}
+
+
+# ---------------------------------------------------------------------------------------------------------------
+# ambiguous name forms: a form that points to several records, is an ordinary word, or has 4 letters or fewer
+# counts as a mention only when the context decides (app/EntityRules.swift `decide` is its twin)
+
+NEED = {'shared': 1.0, 'short': 1.0, 'ordinary': 2.0, 'twins': 0.0}
+SHORT_MAX = 4
+# what kind of thing he names where (dest as app/RefRules.swift names it)
+EXPECT = {'agent': ('tool', 'project'), 'ai': ('project', 'tool', 'person'), 'chat': ('person', 'project', 'org'), 'mail': ('person', 'org')}
+AI_APPS = {'claude', 'chatgpt', 'codex', 'perplexity', 'com.openai.chat', 'com.openai.codex', 'com.anthropic.claudefordesktop', 'com.perplexity.mac'}
+CHAT_APPS = {'beeper', 'slack', 'whatsapp', 'telegram', 'messages', 'discord', 'microsoft teams', 'signal', 'com.automattic.beeper.desktop',
+             'com.tinyspeck.slackmacgap', 'net.whatsapp.whatsapp', 'ru.keepcoder.telegram', 'com.apple.mobilesms', 'com.hnc.discord',
+             'com.microsoft.teams2', 'org.whispersystems.signal-desktop'}
+MAIL_APPS = {'mail', 'superhuman', 'spark', 'outlook', 'microsoft outlook', 'mimestream', 'com.apple.mail', 'com.superhuman.electron',
+             'com.readdle.sparkdesktop', 'com.microsoft.outlook', 'com.mimestream.mimestream'}
+AGENT_APPS = {'terminal', 'iterm2', 'ghostty', 'warp', 'kitty', 'code', 'visual studio code', 'zed', 'cursor', 'xcode', 'com.apple.terminal',
+              'com.googlecode.iterm2', 'com.mitchellh.ghostty', 'dev.warp.warp-stable', 'net.kovidgoyal.kitty', 'com.microsoft.vscode',
+              'dev.zed.zed', 'com.todesktop.230313mzl4w4u92', 'com.apple.dt.xcode'}
+
+
+def dest_of(app):
+    """The destination for an app name or bundle id from data/typed.jsonl: agent, ai, chat, mail or plain."""
+    a = str(app or '').casefold()
+    if a in AGENT_APPS: return 'agent'
+    if a in AI_APPS: return 'ai'
+    if a in CHAT_APPS: return 'chat'
+    if a in MAIL_APPS: return 'mail'
+    return 'plain'
+
+
+def flag_record(flags):
+    """How a name form is marked in the store's `surface_flags`: what it needs before it counts as a mention."""
+    return {'needs_context': any(f != 'twins' for f in flags), 'shared': 'shared' in flags, 'twins': 'twins' in flags,
+            'ordinary': 'ordinary' in flags, 'short': 'short' in flags}
+
+
+def heat_bonus(heat):
+    return min(1.0, math.log(1 + max(0.0, (heat or 1) - 1)) / math.log(20))
+
+
+def form_flags(key, hits, ordinary, own_lower, names):
+    """What a name form needs before it counts: 'shared' (several records with different names), 'twins' (several
+    records with one name: a project, its repo and its Worker), 'ordinary' (a dictionary word or a word he writes in
+    lower case), 'short' (4 letters or fewer). names: index -> the record's name. [] = nothing needed."""
+    flags = []
+    if len({i for i, _ in hits}) > 1:
+        flags.append('twins' if len({fold(names[i]) for i, _ in hits}) == 1 else 'shared')
+    if ' ' not in key:
+        slug = any(names[i] == names[i].lower() and how in ('name', 'alias') for i, how in hits)
+        if key in ordinary or (key in own_lower and not slug): flags.append('ordinary')
+        if len(key.replace('-', '').replace("'", '')) <= SHORT_MAX: flags.append('short')
+    return flags
+
+
+def support(c):
+    """How much the context backs one candidate: a related thing named nearby 2, its own fuller name nearby 2, the chat
+    box's placeholder names this person 2, the kind expected in this app 1, and then heat up to 1 (heat alone backs
+    nothing)."""
+    base = 2.0 * bool(c.get('related')) + 2.0 * bool(c.get('named')) + 2.0 * bool(c.get('chat')) + 1.0 * bool(c.get('kind'))
+    return base + heat_bonus(c.get('heat', 1)) if base else 0.0   # heat only backs a context signal, never alone
+
+
+def decide(cands, flags=(), picked=None):
+    """cands: [{i, how, score, heat, related, named, kind}]. Returns (index or None, resolved).
+    No flags: the old rule (best score; resolved when at least twice the next). A remembered pick decides.
+    Twins (one name, several records: a project and its repo): one thing named, the record of the kind expected here.
+    Shared: a stronger kind of match decides (a full name over a surname, at least 2x); otherwise the context must back
+    one candidate with at least NEED and twice the next. Ordinary or short: the context must back it with NEED.
+    If it does not: an ordinary or short form is no mention (None); a shared form stays unresolved for the chooser."""
+    if not cands: return None, False
+    if picked is not None and any(c['i'] == picked for c in cands): return picked, True
+    many = len({c['i'] for c in cands}) > 1
+    flags = [f for f in flags if f not in ('shared', 'twins') or many]
+    order = sorted(cands, key=lambda c: (-c['score'], c['i']))
+    top, second = order[0], (order[1]['score'] if len(order) > 1 else 0)
+    if not flags: return top['i'], second == 0 or top['score'] >= 2 * second
+    if 'shared' in flags and not ('ordinary' in flags or 'short' in flags):
+        bases = sorted((MATCH.get(c['how'], 1), c['i']) for c in cands)
+        if bases[-1][0] >= 2 * bases[-2][0]: return bases[-1][1], True
+    need = max(NEED[f] for f in flags)
+    by = sorted(cands, key=lambda c: (-support(c), -bool(c.get('kind')), -c['score'], c['i']))
+    s1 = support(by[0])
+    s2 = support(by[1]) if len(by) > 1 and 'shared' in flags else 0
+    if s1 >= need and s1 >= 2 * s2: return by[0]['i'], True   # twins alone: need 0, nothing to beat
+    if 'ordinary' in flags or 'short' in flags: return None, False
+    return top['i'], False
+
+
+def own_lower_words(texts, least=3, share=0.6):
+    """Words he writes in lower case in the middle of a sentence (at least `least` times and `share` of the time):
+    his ordinary words in any script, Ukrainian included."""
+    low, cap = Counter(), Counter()
+    for text in texts:
+        last = 0   # end of the previous word
+        start = True
+        for m in WORDS.finditer(text):
+            gap = text[last:m.start()]
+            if any(ch in '.!?\n:' for ch in gap): start = True
+            w = m.group()
+            if not start: (low if w[:1].islower() else cap)[fold(w)] += 1
+            start, last = False, m.end()
+    return {w for w, n in low.items() if n >= least and n >= share * (n + cap[w])}
+
+
+def scan(text, store_surfaces, flags, records, *, dest='plain', ctx_extra='', related=None, heat=None, not_this=None):
+    """The names in one line, longest first and never overlapping, each decided as the app's matcher would:
+    [(record index or None, resolved, key, candidates)]."""
+    related = related or {}
+    ctx = fold(text + ' ' + ctx_extra)
+    expect = EXPECT.get(dest, ())
+    target = chat_target(ctx)
+    toks = list(WORDS.finditer(text))
+    out, i = [], 0
+    while i < len(toks):
+        step = 1
+        for n in (3, 2, 1):
+            if i + n > len(toks): continue
+            span = toks[i:i + n]
+            if any(text[span[k].end():span[k + 1].start()].strip(' ') != '' or text[span[k].end():span[k + 1].start()] == '' for k in range(n - 1)): continue
+            raw = text[span[0].start():span[-1].end()]
+            key = fold(raw)
+            hits = store_surfaces.get(key)
+            if not hits: continue
+            capital = raw[:1].isupper()
+            before = text[:span[0].start()].rstrip(' ')
+            start = not before or before[-1] in '.!?\n:'
+            cands = []
+            for idx, how in hits:
+                r = records[idx]
+                if r.get('cards_only'): continue
+                if not capital and not (r['name'] == r['name'].lower() and r['kind'] != 'person' and how in ('name', 'alias')): continue
+                h = (heat or {}).get(idx, r.get('heat', 1))
+                sc = MATCH.get(how, 1) + (0.5 if capital and not start else 0) + heat_bonus(h)
+                rel = any(len(nm) >= 3 and nm in ctx for nm in related.get(idx, ()))
+                if len(hits) > 1 and rel: sc += 1
+                names = [fold(x) for x in [r['name']] + r.get('aliases', [])]
+                named = any(len(x) >= 3 and x != key and x in ctx for x in names)
+                chat = r['kind'] == 'person' and names_chat(key, target)
+                cands.append({'i': idx, 'how': how, 'score': sc, 'heat': h, 'related': rel, 'named': named, 'chat': chat,
+                              'kind': r['kind'] in expect or chat})
+            if not cands: continue
+            got, ok = decide(cands, flags.get(key, ()))
+            out.append((got, ok, key, [c['i'] for c in cands]))
+            step = n
+            break
+        i += step
+    return out
+
+
+# ---------------------------------------------------------------------------------------------------------------
+# his corrections: data/entity-fixes.json (never in git). Pure add_fix for the app's card ("Not related",
+# "Not this one"); the build applies the file.
+#   {"related": [[a, b, why]], "not_related": [[a, b]], "not_this": [[form, id]], "same": [[a, b]], "not_same": [[a, b]]}
+
+FIX_KINDS = ('related', 'not_related', 'not_this', 'same', 'not_same')
+FIX_OPPOSITE = {'related': 'not_related', 'not_related': 'related', 'same': 'not_same', 'not_same': 'same'}
+
+
+def _pair(a, b): return sorted([str(a), str(b)])
+
+
+def add_fix(fixes, what, a, b, why=''):
+    """A new fixes dict with one fix added (pure). related / not_related / same / not_same: a and b are record ids
+    (order does not matter); not_this: a is the name form, b the record id. A fix replaces its opposite."""
+    if what not in FIX_KINDS: raise ValueError(what)
+    out = {k: [list(x) for x in (fixes or {}).get(k) or []] for k in FIX_KINDS}
+    if what == 'not_this':
+        item = [fold(a), str(b)]
+        if item not in out['not_this']: out['not_this'].append(item)
+        return out
+    if str(a) == str(b): return out
+    key = _pair(a, b)
+    opp = FIX_OPPOSITE[what]
+    out[opp] = [x for x in out[opp] if _pair(x[0], x[1]) != key]
+    out[what] = [x for x in out[what] if _pair(x[0], x[1]) != key]
+    out[what].append(key + ([why] if what == 'related' and why else []))
+    return out
+
+
+def read_fixes(data=DATA):
+    f = read_json(Path(data) / 'entity-fixes.json', {})
+    return f if isinstance(f, dict) else {}
+
+
+def save_fix(what, a, b, why='', data=DATA):
+    """Add one fix to data/entity-fixes.json (the next build applies it)."""
+    fixes = add_fix(read_fixes(data), what, a, b, why)
+    atomic(Path(data) / 'entity-fixes.json', json.dumps(fixes, ensure_ascii=False, indent=1) + '\n')
+    return fixes
+
+# ---------------------------------------------------------------------------------------------------------------
+# one person, several records; his own name; apps stored as people; one thing under several kinds
+
+def skel(s):
+    """A loose spelling key for comparing names across scripts: transliterated, case folded, y/j as i, kh as h,
+    doubled letters single, labels in brackets left out."""
+    from know import transliterate
+    out = []
+    for w in WORDS.findall(unlabel(s)):
+        t = (transliterate(w) or w).casefold().replace("'", '').replace('-', '')
+        t = t.replace('kh', 'h').replace('y', 'i').replace('j', 'i')
+        out.append(re.sub(r'(.)\1+', r'\1', t))
+    return ' '.join(out)
+
+
+def initials_only(raw):
+    """"OP", "ЮК": a label that is only initials (2-3 capitals, one token)."""
+    t = unlabel(raw).replace('.', '')
+    return 2 <= len(t) <= 3 and t.isalpha() and t.isupper()
+
+
+def name_match(la, lb):
+    """(score, reason) for two people's labels: 3 same full name (or in the other script), 2 initials or a short
+    surname ("Hanna T." and "Hanna Tkach"), 1 the first name of one is the whole name of the other, 0 nothing."""
+    best = (0, '')
+    A = [(fold(unlabel(x)), skel(x), x) for x in la if str(x).strip()]
+    B = [(fold(unlabel(x)), skel(x), x) for x in lb if str(x).strip()]
+    for fa, sa, ra in A:
+        for fb, sb, rb in B:
+            ta, tb = sa.split(), sb.split()
+            if not ta or not tb: continue
+            got = (0, '')
+            if len(ta) >= 2 and fa == fb: got = (3, 'same full name')
+            elif len(ta) >= 2 and len(tb) >= 2 and sa == sb: got = (3, 'same name in the other script')
+            elif initials_only(ra) and len(tb) >= 2 and ''.join(t[0] for t in tb) == ta[0]: got = (2, 'initials')
+            elif initials_only(rb) and len(ta) >= 2 and ''.join(t[0] for t in ta) == tb[0]: got = (2, 'initials')
+            elif len(ta) >= 2 and len(tb) >= 2 and ta[0] == tb[0] and len(ta) == len(tb):
+                x, y = sorted([ta[-1], tb[-1]], key=len)
+                if len(x) <= 3 and y.startswith(x) and x != y: got = (2, 'short surname')
+            elif ta[0] == tb[0] and (len(ta) == 1) != (len(tb) == 1) and not initials_only(ra) and not initials_only(rb):
+                got = (1, 'first name only')
+            if got[0] > best[0]: best = got
+    return best
+
+
+def _person_facts(g, gkey, stems):
+    """labels, handles, orgs and projects (as group indices) of one group of source records."""
+    labels, handles, orgs, projects = [], set(), set(), set()
+    for r in g:
+        labels += [r['name']] + list(r.get('aliases') or [])
+        for k, vs in (r.get('handles') or {}).items():
+            if k in ('email', 'tg', 'phone'):
+                for v in vs:
+                    n = norm_handle(k, v)
+                    if len(n) >= 5: handles.add((k, n))
+        for l in r.get('links') or []:
+            t = gkey.get(l['to'])
+            if t is None: continue
+            if l['rel'] == 'works_at': orgs.add(t)
+            elif l['rel'] in ('works_on', 'member_of'): projects.add(t)
+        for l in r.get('vlinks') or []:
+            pth = l['path'] if l['path'].endswith('.md') else l['path'] + '.md'
+            t = gkey.get('vault:' + pth, stems.get(fold(Path(pth).stem)))
+            if t is None: continue
+            (orgs if l['key'] == 'org' else projects).add(t)
+    return labels, handles, orgs, projects
+
+
+def dedupe_people(groups, apart=(), own=()):
+    """One human, several records. Merges only on strong evidence: a shared handle with names that fit, or the same
+    full name (either script) and a shared org or project. Everything else that may be one person goes to a queue
+    with a score and the evidence, best first, for a one-key "Same?" answer. Groups whose name is his own (any case
+    or script) are dropped. Returns (groups, queue, counts)."""
+    apart = {tuple(x) for x in apart}
+    gkey, stem_ix = {}, defaultdict(set)
+    for gi, g in enumerate(groups):
+        for r in g:
+            gkey[f"{r['system']}:{r['id']}"] = gi
+            if r['system'] == 'vault': stem_ix[fold(Path(r['id']).stem)].add(gi)
+    stems = {k: next(iter(v)) for k, v in stem_ix.items() if len(v) == 1}
+    own = {skel(n) for n in own if len(skel(n).split()) >= 2}
+    people = [gi for gi, g in enumerate(groups) if any(r.get('kind') == 'person' for r in g) and not all(r.get('cards_only') for r in g)]
+    drop = set()
+    facts = {}
+    for gi in people:
+        facts[gi] = _person_facts(groups[gi], gkey, stems)
+        if own and any(skel(x) in own for x in facts[gi][0]): drop.add(gi)
+    buckets = defaultdict(set)
+    for gi in people:
+        if gi in drop: continue
+        for x in facts[gi][0]:
+            t = skel(x).split()
+            if not t: continue
+            if initials_only(x): buckets['i:' + t[0]].add(gi); continue
+            buckets['f:' + t[0]].add(gi)
+            if len(t) >= 2: buckets['i:' + ''.join(w[0] for w in t)].add(gi)
+    u = Union()
+    for gi in people: u.find(gi)
+    members_apart = set()
+    for a, b in apart:
+        if a in gkey and b in gkey: members_apart |= {(gkey[a], gkey[b]), (gkey[b], gkey[a])}
+    def tgs(gi): return {n for k, n in facts[gi][1] if k == 'tg'}
+    pairs = {}
+    for key, gs in buckets.items():
+        gs = sorted(gs)
+        if len(gs) > 60: continue   # a first name dozens of people share: nothing to learn from it alone
+        for i in range(len(gs)):
+            for j in range(i + 1, len(gs)):
+                a, b = gs[i], gs[j]
+                if (a, b) in pairs or (a, b) in members_apart: continue
+                score, why = name_match(facts[a][0], facts[b][0])
+                if not score: continue
+                ev = [why]
+                hand = facts[a][1] & facts[b][1]
+                org = facts[a][2] & facts[b][2]
+                proj = facts[a][3] & facts[b][3]
+                clash = bool(tgs(a) and tgs(b) and not tgs(a) & tgs(b))
+                if hand: ev.append('same ' + '/'.join(sorted({'email' if k == 'email' else 'phone' if k == 'phone' else 'username' for k, _ in hand})))
+                if org: ev.append('same org')
+                if proj: ev.append('same project')
+                if clash: ev.append('different usernames')
+                strong = not clash and ((hand and score >= 1) or (score >= 3 and (org or proj)))
+                pairs[(a, b)] = (score + 3 * bool(hand) + 2 * bool(org) + bool(proj) - 2 * clash, ev, strong)
+    merged_n = 0
+    for (a, b), (sc, ev, strong) in sorted(pairs.items(), key=lambda kv: (-kv[1][0], kv[0])):
+        if strong and u.find(a) != u.find(b) and u.join(a, b, members_apart): merged_n += 1
+    out, head_of = [], {}
+    joined = defaultdict(list)
+    for gi in range(len(groups)):
+        if gi in drop: continue
+        joined[u.find(gi) if gi in u.up else gi].append(gi)
+    for root, gis in joined.items():
+        g = sorted((r for gi in gis for r in groups[gi]), key=lambda r: (ORDER[r['system']], r['id']))
+        out.append(g)
+        for gi in gis: head_of[gi] = f"{g[0]['system']}:{g[0]['id']}"
+    queue = []
+    for (a, b), (sc, ev, strong) in pairs.items():
+        if a in drop or b in drop or head_of[a] == head_of[b] or sc < 1: continue
+        queue.append({'a': head_of[a], 'b': head_of[b], 'score': sc, 'why': ev})
+    queue.sort(key=lambda q: (-q['score'], q['a'], q['b']))
+    seen, uq = set(), []
+    for q in queue:
+        k = tuple(sorted((q['a'], q['b'])))
+        if k not in seen: seen.add(k); uq.append(q)
+    return out, uq, {'merged': merged_n, 'queued': len(uq), 'own_dropped': len(drop)}
+
+
+APP_NAMES = set("""claude chatgpt gpt codex gemini bard copilot cursor perplexity aider grok deepseek mistral siri alexa cortana
+    midjourney devin windsurf lovable replit openclaw manus""".split())
+
+
+def apps_as_people(records):
+    """A "person" that is an assistant or app: its name is a known app or one of the store's own tools, or its only
+    links are "built" to code, and it has no handle. Becomes kind tool (unless he set the kind himself). Returns the
+    ids changed."""
+    by_id = {r['id']: r for r in records}
+    tools = {fold(r['name']) for r in records if r['kind'] == 'tool'}
+    rels = defaultdict(list)   # person id -> [(rel, other id)] both ways
+    for r in records:
+        for e in r.get('evidence', []):
+            rels[r['id']].append((e['rel'], e['to'])); rels[e['to']].append((e['rel'], r['id']))
+    changed = []
+    for r in records:
+        if r['kind'] != 'person' or r.get('kind_by') != 'source' or any(r.get('handles', {}).get(k) for k in ('email', 'tg', 'phone')): continue
+        name = fold(r['name'])
+        links = rels.get(r['id'], [])
+        code = [o for rel, o in links if rel == 'built_by' and by_id.get(o, {}).get('kind') in ('tool', 'project')]
+        built_only = len(set(code)) >= 2 and len(code) == len(links)
+        if name in APP_NAMES or name in tools or built_only:
+            r['kind'], r['kind_by'] = 'tool', 'check'
+            changed.append(r['id'])
+    return changed
+
+
+def fold_twins(records):
+    """One thing under several kinds: a project, its repo and its Worker with one name. The main record (project
+    first, then the one with more sources) keeps the thing; the others point to it (`twin_of`) and give it their
+    pointers (repo path, URL). Returns twin id -> main id."""
+    by = defaultdict(list)
+    for r in records:
+        if r['kind'] in ('project', 'tool') and not r.get('cards_only'): by[fold(r['name'])].append(r)
+    main_of = {}
+    rank = {'project': 0, 'tool': 1}
+    order = {'Note': 0, 'Story': 0, 'Repo': 1, 'Code': 1, 'URL': 2, 'Aleph': 3}
+    for rs in by.values():
+        if len(rs) < 2: continue
+        main = min(rs, key=lambda r: (rank[r['kind']], -len(r['sources']), -len(r['pack']['facts']), r['id']))
+        ptrs = list(main['pack']['pointers'])
+        for r in rs:
+            if r is main: continue
+            main_of[r['id']] = main['id']
+            r['twin_of'] = main['id']
+            main.setdefault('twins', []).append(r['id'])
+            for x in r['pack']['pointers']:
+                if x['label'] != 'Aleph' and all(x['value'] != y['value'] for y in ptrs): ptrs.append(x)
+        main['pack']['pointers'] = sorted(ptrs, key=lambda x: order.get(x['label'], 4))[:3]
+    return main_of
+
+
+# chat box placeholders name the chat: "Message <name> on WhatsApp", "Повідомлення для <name> у Telegram"
+MESSENGERS = ('whatsapp|telegram|signal|instagram|messenger|linkedin|imessage|sms|slack|discord|beeper|viber|teams|twitter|'
+              'facebook|matrix|вайбері|вайбер|телеграмі|телеграм|ватсапі|ватсап|вотсапі|вотсап|сигналі|сигнал|інстаграмі|'
+              'інстаграм|месенджері|месенджер')
+CHAT_PATTERNS = [
+    r"(?:send a message to|message|write to|reply to|text) (.{1,40}?) (?:on|in|via) (?:" + MESSENGERS + r")\b",
+    r"(?:повідомлення|написати|напишіть|відповісти|відповідь)(?: для| до)? (.{1,40}?) (?:у|в|через) (?:" + MESSENGERS + r")\b",
+]
+_CHAT = [re.compile(x) for x in CHAT_PATTERNS]
+
+
+def chat_target(ctx):
+    """The person a chat box's placeholder names, in folded text ("message bear on whatsapp" -> "bear"); the last one
+    wins. None when there is no placeholder."""
+    best = None
+    for rx in _CHAT:
+        for m in rx.finditer(ctx or ''):
+            if best is None or m.start() >= best[0]: best = (m.start(), m.group(1).strip(" .,:;'\""))
+    return best[1] if best and best[1] else None
+
+
+def names_chat(key, target):
+    """The form is the chat's name or one word of it."""
+    return bool(target) and (key == target or key in target.split() or target.startswith(key + ' '))
+
+
+def name_gazetteer(records):
+    """First names to keep out of the capitalised-dictionary ordinary words: the system's list of proper names, the
+    Ukrainian first names know.py knows, and any first name his records carry in both scripts."""
+    import know
+    out = set()
+    try: out |= {fold(w) for w in Path('/usr/share/dict/propernames').read_text().split()}
+    except OSError: pass
+    for uk, la in list(know.FIRST.items()) + [(v, k) for k, v in know.EXTRA.items()]:
+        out |= {fold(uk), fold(la), skel(uk), skel(la)}
+    for n in know.MALE | know.FEMALE: out |= {fold(n), skel(n)}
+    lat, cyr = set(), set()
+    for r in records:
+        if r['kind'] != 'person': continue
+        for x in [r['name']] + r.get('aliases', []):
+            t = WORDS.findall(unlabel(x))
+            if len(t) >= 2: (cyr if is_cyrillic(t[0]) else lat).add(skel(t[0]))
+    out |= lat & cyr
+    return out
+
+# ---------------------------------------------------------------------------------------------------------------
+# one record
+
+def ordinary_words(names=()):
+    """Ordinary words, case folded: the common list, the dictionary's lower-case words, and its capitalised words
+    ("Ukrainian", "Israeli") except first names (`names`, see name_gazetteer)."""
+    from know import COMMON
+    words = set(COMMON)
+    names = set(names)
+    try:
+        for w in Path('/usr/share/dict/words').read_text().splitlines():
+            if w.islower(): words.add(w)
+            elif w[:1].isupper() and w[1:].islower() and fold(w) not in names: words.add(fold(w))
+    except OSError: pass
+    return words
+
+
+def is_cyrillic(s):
+    return bool(re.search(r'[А-Яа-яІіЇїЄєҐґ]', s or ''))
+
+
+def links_of(group, key_of, path_ids, stems):
+    """The typed links of one group's source records, resolved to record ids: [{to, rel, date, rely, src, value, n,
+    note}]. A vault link is a full path first, then a note stem that names one note only. Source records cached
+    before typed links (`related`, `related_paths`) read as plain "relates" / "related" links."""
+    out = []
+    for r in group:
+        links = r.get('links')
+        if links is None:   # an older cached slice
+            links = [{'to': 'aleph:' + x, 'rel': 'relates', 'date': '', 'rely': 0.8, 'src': 'aleph', 'value': ''} for x in r.get('related', []) if x]
+        for l in links:
+            to = key_of.get(l['to'])
+            if to: out.append({**l, 'to': to})
+        vlinks = r.get('vlinks')
+        if vlinks is None:
+            old = r.get('related_paths', [])
+            vlinks = [{'path': x, 'key': 'related', 'n': len(old), 'date': r.get('date', '')} for x in old]
+        note = next((v for d, v in NOTE_KIND.items() if r['id'].startswith(d + '/')), 'note') if r['system'] == 'vault' else 'note'
+        for l in vlinks:
+            pth = l['path'] if l['path'].endswith('.md') else l['path'] + '.md'
+            to = path_ids.get(f'vault:{pth}') or stems.get(fold(Path(pth).stem))
+            if to:
+                out.append({'to': to, 'rel': 'v_' + l['key'], 'date': l.get('date', ''), 'rely': 0.9, 'src': 'vault',
+                            'value': '', 'n': max(1, int(l.get('n') or 1)), 'note': note})
+    return out
+
+
+def make_record(group, aleph_ids, path_ids, codius=None, stems=None):
+    head = group[0]
+    rid = f"{head['system']}:{head['id']}"
+    names, aliases = [], []
+    for r in group:
+        names.append(r['name']); aliases += r.get('aliases', [])
+    name = head['name']
+    al = []
+    for a in names + aliases:
+        a = ' '.join(str(a).split())
+        if not a or fold(a) == fold(name) or EMAIL.fullmatch(a) or PHONE.fullmatch(a) or len(a) < 2: continue
+        if fold(a) not in {fold(x) for x in al}: al.append(a)
+    kind = next((r['kind'] for r in group if r['system'] == 'aleph'), head['kind'])
+    handles = defaultdict(list)
+    for r in group:
+        for k, vs in (r.get('handles') or {}).items():
+            for v in vs:
+                if v not in handles[k]: handles[k].append(v)
+    facts = sorted((f for r in group for f in r.get('facts', [])), key=lambda f: (f['rank'], -int(f['date'].replace('-', '') or 0)))
+    seen, uniq = set(), []
+    for f in facts:
+        key = fold(f['text'])
+        if key not in seen: seen.add(key); uniq.append(f)
+    role = next((r.get('role') for r in group if r.get('role')), '')
+    org = next((r.get('org') for r in group if r.get('org')), '')
+    summary = next((r['summary'] for r in group if r.get('summary')), '')
+    if kind == 'person':
+        who = ', '.join(x for x in [role, ('at ' + org) if org and fold(org) not in fold(role) else ''] if x) or summary
+    else:
+        who = summary or (uniq[0]['text'] if uniq else '')
+    who = one_line(EMAIL.sub('', who), WHO_MAX)
+    targets = {}
+    note = next((r['note'] for r in group if r['system'] == 'vault'), '')
+    vault_id = next((r['id'] for r in group if r['system'] == 'vault'), '')
+    if vault_id: targets['obsidian'] = vault_id[:-3] if vault_id.endswith('.md') else vault_id
+    if handles.get('email'): targets['mail'] = handles['email'][0]
+    if handles.get('tg'): targets['tg'] = handles['tg'][0].lstrip('@')
+    aleph_id = next((r['id'] for r in group if r['system'] == 'aleph'), '')
+    if aleph_id: targets['aleph'] = aleph_id
+    urls = [u for r in group for u in r.get('urls', [])]
+    pointers = []
+    if note: pointers.append({'label': 'Note' if kind in ('person', 'org') else 'Story', 'value': note, 'path': True})
+    if kind in ('tool', 'project') and codius and fold(name) in codius:
+        pointers.append({'label': 'Code' if kind == 'tool' else 'Repo', 'value': codius[fold(name)], 'path': True})
+    for u in urls[:1]: pointers.append({'label': 'URL', 'value': u, 'path': False})
+    if aleph_id and len(pointers) < 3: pointers.append({'label': 'Aleph', 'value': aleph_id, 'path': False})
+    evidence = links_of(group, aleph_ids, path_ids, stems or {})
+    uniq = [f for f in uniq if fold(f['text']) not in fold(who)]   # the one line already says it
+    top = uniq[:4]
+    if kind == 'person' and handles:
+        h = ('email ' + handles['email'][0]) if handles.get('email') else ('Telegram @' + handles['tg'][0].lstrip('@')) if handles.get('tg') else ''
+        if h: top = uniq[:3] + [{'text': h, 'source': 'Aleph' if aleph_id else 'contacts', 'date': '', 'quote': False, 'rank': 5, 'private': False}]
+    private = any(r.get('private') for r in group) or any(f.get('private') for f in uniq)
+    rec = {
+        'id': rid, 'kind': kind, 'name': name, 'aliases': al[:20],
+        'names': {'uk': next((n for n in [name] + al if is_cyrillic(n)), ''), 'en': next((n for n in [name] + al if not is_cyrillic(n)), '')},
+        'who': who, 'related': [], 'evidence': evidence,
+        **({'org': org} if org and kind == 'person' else {}),   # the company, for the @ mention list
+        'sources': [{'system': r['system'], 'id': r['id']} for r in group],
+        'targets': targets, 'kind_by': 'source',
+        'handles': dict(handles),   # local, for his own card; render() never puts a handle but the one fact, never a phone
+        'pack': {'facts': [{k: f[k] for k in ('text', 'source', 'date', 'quote')} for f in top], 'pointers': pointers[:3]},
+        'private': private,
+    }
+    if all(r.get('cards_only') for r in group): rec['cards_only'] = True
+    newest = max((f['date'] for f in top if f['date']), default='')
+    rec['pack']['newest'] = newest
+    return rec
+
+
+def unlabel(s):
+    """A contact's label in brackets ("(Office)", "[old]") is not part of the name."""
+    return ' '.join(re.sub(r'\([^)]*\)|\[[^\]]*\]', ' ', str(s or '')).split())
+
+
+def surfaces_for(rec, ordinary, stop, first_stop=()):
+    """Surface form -> how it matches, for one record: full name, aliases, a first+last pair, single tokens, case forms."""
+    from know import person_forms
+    out = {}
+    from know import transliterate
+    firsts = set()
+    for label in [rec['name']] + list(rec['aliases']):
+        t = WORDS.findall(unlabel(label))
+        if len(t) >= 2: firsts |= {fold(t[0]), fold(transliterate(t[0]) or t[0])}
+    def add(s, how):
+        k = fold(s)
+        if len(k) < 2 or k in stop: return
+        # an ordinary word stays out, unless it is the thing's own name or alias: then it is kept, marked, and
+        # counts only when the context decides (surface_flags)
+        if ' ' not in k and ((k in ordinary and how not in ('name', 'alias')) or (len(k) < 3 and not (how == 'alias' and s.isupper()))): return
+        if how not in ('name', 'alias') and k in first_stop and k in firsts: return   # his ordinary word as a first name: never alone
+        if k not in out or MATCH[how] > MATCH[out[k]]: out[k] = how
+    add(rec['name'], 'name')
+    for a in rec['aliases']: add(a, 'alias')
+    labels = [rec['name']] + rec['aliases']
+    for label in labels:
+        parts = WORDS.findall(unlabel(label))
+        if rec['kind'] == 'person' and len(parts) >= 2:
+            add(parts[0] + ' ' + parts[-1], 'pair')
+            add(parts[0], 'first')
+            for p in parts[1:]: add(p, 'part')
+        elif rec['kind'] != 'person' and len(parts) >= 2:
+            pass   # "Lantern Labs": the whole name only, never "Labs" alone
+    if rec['kind'] == 'person':
+        for form in person_forms({'name': unlabel(rec['name']), 'aliases': [unlabel(a) for a in rec['aliases']]}):
+            add(form, 'form')
+    return out
+
+
+def build(out=None, *, db=None, vault=None, contacts=None, lines=(), chats=(), now=None, data=None, ordinary=None, codius=None, write=True):
+    """Build data/entities.json. db / vault: a path, False (off) or None (from the local config). lines: his sent rows
+    (data/typed.jsonl); chats: [[his lines in one chat, oldest first]] (data/people.json), for names said together."""
+    data = Path(data) if data is not None else DATA
+    out = Path(out) if out is not None else data / 'entities.json'
+    now = time.time() if now is None else now
+    if db is None or vault is None:
+        cdb, cvault = source_paths(data)
+        db = cdb if db is None else db
+        vault = cvault if vault is None else vault
+    codius = Path(codius) if codius is not None else Path.home() / 'Codius'
+    try: codius = {fold(d.name): str(d) for d in codius.iterdir() if d.is_dir() and not d.name.startswith(('.', '_'))}
+    except OSError: codius = {}
+    allow = read_json(data / 'context-allow.json', {})
+    allow = allow if isinstance(allow, dict) else {}
+    cache = read_json(data / 'entity-sources.json', {})
+    cache = cache if isinstance(cache, dict) else {}
+    slices, merged, notsame, failed = {}, {}, [], []
+    if db:
+        try:
+            slices['aleph'], merged, notsame = aleph_slice(db, now, allow.get('aleph') or [])
+            cache['aleph'] = {'records': slices['aleph'], 'merged': merged, 'notsame': notsame}
+        except (sqlite3.Error, OSError) as e:
+            failed.append('aleph')
+            old = cache.get('aleph') or {}
+            slices['aleph'], merged, notsame = old.get('records', []), old.get('merged', {}), [tuple(x) for x in old.get('notsame', [])]
+    else: cache.pop('aleph', None)
+    if vault:
+        try:
+            slices['vault'] = vault_slice(vault, allow.get('vault') or [])
+            cache['vault'] = {'records': slices['vault']}
+        except OSError:
+            failed.append('vault'); slices['vault'] = (cache.get('vault') or {}).get('records', [])
+    else: cache.pop('vault', None)
+    if contacts is not None:
+        slices['contacts'] = contacts_slice(contacts)
+        cache['contacts'] = {'records': slices['contacts']}
+    else:
+        slices['contacts'] = (cache.get('contacts') or {}).get('records', [])
+    fixes = read_fixes(data)
+    ids_prev = read_json(data / 'entity-ids.json', {})
+    ids_prev = ids_prev if isinstance(ids_prev, dict) else {}
+    same_file = read_json(data / 'entity-same.json', {})
+    same_file = dict(same_file) if isinstance(same_file, dict) else {}
+    pairs = lambda k: [[ids_prev.get(a, a), ids_prev.get(b, b)] for a, b, *_ in (x for x in fixes.get(k) or [] if isinstance(x, list) and len(x) >= 2)]
+    same_file['same'] = list(same_file.get('same') or []) + pairs('same')
+    same_file['not'] = list(same_file.get('not') or []) + pairs('not_same')
+    groups, _ = merge(list(slices.values()), merged, notsame, same_file)
+    apart = {(f'aleph:{a}', f'aleph:{b}') for a, b in notsame} | {(a, b) for a, b, *_ in (same_file.get('not') or []) if isinstance(a, str) and isinstance(b, str)}
+    groups, same_queue, dstats = dedupe_people(groups, apart, own_names(data))
+    overrides = read_json(data / 'entity-overrides.json', {})
+    overrides = overrides if isinstance(overrides, dict) else {}
+    stop = {fold(s) for s in read_json(data / 'entity-stop.json', []) if isinstance(s, str)} | own_names(data)
+    # every source key -> the id of the record it ends up in
+    key_of = {}
+    for g in groups:
+        rid = f"{g[0]['system']}:{g[0]['id']}"
+        for r in g: key_of[f"{r['system']}:{r['id']}"] = rid
+    for old, new in merged.items():
+        if f'aleph:{new}' in key_of: key_of[f'aleph:{old}'] = key_of[f'aleph:{new}']
+    stems = defaultdict(set)   # a vault note's stem -> the records it can be (a link without a folder)
+    for g in groups:
+        for r in g:
+            if r['system'] == 'vault': stems[fold(Path(r['id']).stem)].add(key_of[f"vault:{r['id']}"])
+    stems = {k: next(iter(v)) for k, v in stems.items() if len(v) == 1}
+    records = []
+    for g in groups:
+        rec = make_record(g, key_of, key_of, codius, stems)
+        ov = overrides.get(rec['id']) or next((overrides[k] for k in (f"{s['system']}:{s['id']}" for s in rec['sources']) if k in overrides), None)
+        if isinstance(ov, dict) and ov.get('kind') in KINDS + ('none',):
+            if ov['kind'] == 'none': continue
+            rec['kind'], rec['kind_by'] = ov['kind'], ov.get('by', 'me')
+        records.append(rec)
+    kind_changed = apps_as_people(records)
+    model_kinds = read_json(data / 'entity-kinds.json', {})
+    for term in (model_kinds if isinstance(model_kinds, dict) else {}):
+        k = model_kinds[term]
+        if isinstance(k, dict) and k.get('kind') in KINDS and fold(term) not in stop and not any(fold(r['name']) == fold(term) for r in records):
+            records.append({'id': 'term:' + fold(term), 'kind': k['kind'], 'name': term, 'aliases': [], 'names': {}, 'who': '', 'related': [],
+                            'evidence': [], 'sources': [{'system': 'term', 'id': fold(term)}], 'targets': {}, 'kind_by': k.get('by', 'model'),
+                            'handles': {}, 'pack': {'facts': [], 'pointers': [], 'newest': ''}, 'private': False})
+    records.sort(key=lambda r: (KINDS.index(r['kind']), fold(r['name'])))
+    index = {r['id']: i for i, r in enumerate(records)}
+    main_of = fold_twins(records)
+    main_ix = {index[a]: index[b] for a, b in main_of.items()}
+    def resolve(x):
+        x = key_of.get(x, x)
+        return x if x in index else key_of.get(ids_prev.get(x, x), ids_prev.get(x, x))
+    rows = [row for row in lines]
+    chats = [list(c) for c in (chats or [])]
+    units = []   # (text, dest, the lines just before it, chat?, counts for the 30-day heat?)
+    recent = {}
+    for row in rows:
+        t, text, app = (row.get('t') or 0, row.get('text') or '', row.get('app') or '') if isinstance(row, dict) else (0, str(row), '')
+        if '⟦drafter-test⟧' in text: continue
+        d = dest_of(app)
+        prev = recent.get(app)
+        ctx = prev[1] if prev and t and prev[0] and float(t) - float(prev[0]) < 600 else ''
+        units.append((text, d, ctx, d == 'chat', not t or now - float(t) <= 30 * 86400))
+        recent[app] = (t, (ctx + ' ' + text)[-400:])
+    for c in chats:
+        ctx = ''
+        for text in c:
+            if not isinstance(text, str) or '⟦drafter-test⟧' in text: continue
+            units.append((text, 'chat', ctx, True, False)); ctx = (ctx + ' ' + text)[-400:]
+    # words in many of his own lines (function words in any language) say nothing in a topic list
+    line_df = Counter()
+    for u in units: line_df.update({fold(w) for w in WORDS.findall(u[0])})
+    common = {w for w, n in line_df.items() if n > COMMON_LINE_SHARE * max(1, len(units))}
+    # relations declared by the sources and by him; the matcher's first view of them (declared only, before heat)
+    E = declared_edges(records, now, fixes, resolve, common=common)
+    not_related = [(resolve(x[0]), resolve(x[1])) for x in fixes.get('not_related') or [] if isinstance(x, list) and len(x) >= 2]
+    for r in records:
+        r['heat'] = 1 + (0.5 if r['pack']['facts'] else 0) - (0.75 if r.get('cards_only') else 0)
+    finish_edges(records, E.copy(), None, FLOOR, not_related, main_of)
+    # name forms, each marked with what it needs before it counts as a mention
+    ordinary = ordinary_words(name_gazetteer(records)) if ordinary is None else set(ordinary)
+    own_lower = own_lower_words(u[0] for u in units)
+    surfaces = defaultdict(list)
+    for i, r in enumerate(records):
+        if r.get('cards_only'): continue
+        for k, how in surfaces_for(r, ordinary, stop, own_lower).items():
+            surfaces[k].append([i, how])
+    for form, rid in (x for x in fixes.get('not_this') or [] if isinstance(x, list) and len(x) >= 2):
+        i = index.get(resolve(rid))
+        k = fold(form)
+        if i is not None and k in surfaces:
+            surfaces[k] = [h for h in surfaces[k] if h[0] != i]
+            if not surfaces[k]: del surfaces[k]
+    names = [r['name'] for r in records]
+    flags = {k: form_flags(k, v, ordinary, own_lower, names) for k, v in surfaces.items()}
+    flags = {k: v for k, v in flags.items() if v}
+    # his lines, twice: the first pass warms the heat the second decides with; the second counts and pairs
+    related = {index[r['id']]: [fold(records[index[x]]['name']) for x in r['related']] for r in records}
+    def count(heat):
+        typed, single, pair, chat_pair = Counter(), Counter(), Counter(), Counter()
+        dropped = unresolved = resolved = 0
+        for text, d, ctx, chat, warm in units:
+            found = set()
+            for got, ok, key, cands in scan(text, surfaces, flags, records, dest=d, ctx_extra=ctx, related=related, heat=heat):
+                if got is None: dropped += 1
+                elif not ok: unresolved += 1
+                else: resolved += 1; found.add(main_ix.get(got, got))   # a repo named is its project named
+            if not found: continue
+            if warm: typed.update(found)   # his typed rows of the last 30 days make the heat
+            single.update(found)
+            for a in found:
+                for b in found:
+                    if a < b: pair[(a, b)] += 1; chat_pair[(a, b)] += chat
+        return typed, single, pair, chat_pair, {'resolved': resolved, 'unresolved': unresolved, 'dropped': dropped}
+    base_heat = {i: r['heat'] for i, r in enumerate(records)}
+    typed1 = count(base_heat)[0]
+    heat1 = {i: base_heat[i] + typed1.get(i, 0) for i in base_heat}
+    seen, single, pair, chat_pair, mstats = count(heat1)
+    for i, r in enumerate(records):
+        n = seen.get(i, 0)
+        r['seen'] = {'typed_30d': n}
+        r['heat'] = round(1 + n + (0.5 if r['pack']['facts'] else 0) - (0.75 if r.get('cards_only') else 0), 3)
+    # names said together, by NPMI: a popular name gains nothing from being everywhere
+    co = {}
+    for (a, b), c in pair.items():
+        v = npmi(c, single[a], single[b], len(units))
+        if v > 0:
+            why = 'often together in chats' if chat_pair[(a, b)] * 2 >= c else 'often together in your lines'
+            co[(records[a]['id'], records[b]['id'])] = (CO_W * v, why)
+    finish_edges(records, E.copy(), dict(co), FLOOR, not_related)
+    shown = lambda: sum(len(r['relations']) for r in records if r['id'] not in main_of)
+    unfolded = shown()
+    rstats = finish_edges(records, E, co, FLOOR, not_related, main_of)
+    rstats.update(co_pairs=len(co), twins=len(main_of), twin_lines_removed=unfolded - shown())
+    ids_map = id_map(data, records, key_of)
+    same_pending = len(same_queue)
+    # shared name forms: probably one person under several records (every pair queued at score 2+), or truly shared
+    likely = {tuple(sorted((q['a'], q['b']))) for q in same_queue if q['score'] >= 2}
+    shared = [k for k, v in flags.items() if 'shared' in v]
+    def dup(k):
+        ids = sorted({records[i]['id'] for i, _ in surfaces[k]})
+        return all((a, b) in likely for x, a in enumerate(ids) for b in ids[x + 1:])
+    dstats.update(shared_forms=len(shared), shared_probable_duplicates=sum(1 for k in shared if dup(k)))
+    dstats['shared_truly'] = dstats['shared_forms'] - dstats['shared_probable_duplicates']
+    dstats['kind_changed'] = len(kind_changed)
+    import obsidian
+    vault_notes = obsidian.NoteIndex(obsidian.cached_notes(data))
+    records = [enrich_obsidian(r, vault_notes) for r in records]
+    store = {'version': 1, 'built': now, 'built_day': day(now), 'failed': failed, 'same_pending': same_pending,
+             'same_queue': same_queue[:500], 'dedupe_stats': dstats,
+             'records': records, 'surfaces': dict(surfaces), 'surface_flags': {k: flag_record(v) for k, v in flags.items()},
+             'relation_stats': rstats, 'mention_stats': mstats}
+    if write:
+        atomic(out, json.dumps(store, ensure_ascii=False, separators=(',', ':')) + '\n')
+        atomic(data / 'entity-sources.json', json.dumps(cache, ensure_ascii=False, separators=(',', ':')) + '\n')
+        atomic(data / 'entity-ids.json', json.dumps(ids_map, ensure_ascii=False, indent=1) + '\n')
+    return store
+
+
+def id_map(data, records, key_of):
+    """data/entity-ids.json: an old id -> the id it lives on under now, so a pick or mention survives a merge."""
+    old = read_json(data / 'entity-ids.json', {})
+    old = old if isinstance(old, dict) else {}
+    now_ids = {r['id'] for r in records}
+    prev = read_json(data / 'entities.json', {})
+    for r in (prev.get('records') or []) if isinstance(prev, dict) else []:
+        rid = r.get('id')
+        if rid and rid not in now_ids:
+            for s in r.get('sources') or []:
+                k = f"{s.get('system')}:{s.get('id')}"
+                if k in key_of and key_of[k] in now_ids: old[rid] = key_of[k]; break
+    for k, v in key_of.items():
+        if k != v and k not in now_ids: old[k] = v
+    return {k: v for k, v in old.items() if k not in now_ids}
+
+
+def chat_lines(path):
+    """His own lines per chat from data/people.json ({"chats": {id: {"mine": [lines]}}}): [[lines of one chat]]."""
+    d = read_json(path, {})
+    chats = d.get('chats') if isinstance(d, dict) else None
+    return [[x for x in c.get('mine') or [] if isinstance(x, str)] for c in (chats or {}).values() if isinstance(c, dict)]
+
+
+def sent_rows(path):
+    try:
+        with Path(path).open() as f:
+            for line in f:
+                try: row = json.loads(line)
+                except ValueError: continue
+                if isinstance(row, dict) and isinstance(row.get('text'), str): yield row
+    except FileNotFoundError: return
+
+
+# ---------------------------------------------------------------------------------------------------------------
+# packs: a fixed template over stored records (the app's EntityRules.render is its twin)
+
+def enrich_obsidian(rec, rows):
+    """Read-only pointers and attributed snippets; no inferred facts or model calls."""
+    import obsidian
+    pack = rec.get('pack') or {}
+    pointers = [p for p in pack.get('pointers', []) if not p.get('value', '').startswith('obsidian://')]
+    facts = [f for f in pack.get('facts', []) if f.get('source') != 'Obsidian']
+    matches = obsidian.matching_notes([rec['name'], *rec.get('aliases', [])], rows)
+    vault = [{'label': 'Obsidian: ' + one_line(r['title'], 50), 'value': r['url'], 'path': False} for r in matches]
+    snippets = [{'text': one_line(r['text'], FACT_MAX), 'source': 'Obsidian', 'date': day(r['t']), 'quote': True} for r in matches[:1]]
+    new_pack = dict(pack, pointers=(vault + pointers)[:3], facts=(facts[:3] + snippets) if snippets else facts,
+                    obsidianVault=matches[0].get('_vault') if matches else None)
+    new_pack['newest'] = max([f.get('date', '') for f in new_pack['facts']], default='')
+    return dict(rec, pack=new_pack)
+
+
+def ptr_text(p):
+    return f"{p['label']}: `{p['value']}`" if p.get('path') else f"{p['label']}: {p['value']}"
+
+
+def stale(rec, today):
+    newest = (rec.get('pack') or {}).get('newest') or ''
+    if not newest: return True
+    try: return (time.mktime(time.strptime(today, '%Y-%m-%d')) - time.mktime(time.strptime(newest, '%Y-%m-%d'))) / 86400 > STALE_DAYS
+    except ValueError: return True
+
+
+def fact_text(f):
+    t = f['text']
+    body = f'“{t}”' if f.get('quote') else t
+    when = f", {f['date']}" if f.get('date') else ''
+    return f"{body} ({f['source']}{when})."
+
+
+def cut(s, n):
+    """one_line for text already clean: the twin of EntityRules.cut."""
+    if len(s) <= n: return s
+    head = s[:n - 1]
+    c = head.rsplit(' ', 1)[0] if ' ' in head else head
+    return c.rstrip(' ,;.:-') + '…'
+
+
+def render(rec, level, *, today, facts=None, pointers=None, who_max=None):
+    """One bullet for one entity. level 2: name, who, one pointer (<= 160); level 3: full (<= 600). Level 1: ''."""
+    if level <= 1: return ''
+    name, pack, kw = rec['name'], rec.get('pack') or {}, KIND_WORD.get(rec['kind'], rec['kind'])
+    ptrs = pack.get('pointers') or []
+    who = rec.get('who') or ''
+    if who_max is not None: who = cut(who, who_max) if who_max > 1 else ''
+    if level == 2:
+        tail = (' ' + (f"`{ptrs[0]['value']}`" if ptrs[0].get('path') else ptrs[0]['value'])) if ptrs else ''
+        base = f"- **{name}**"
+        if who:
+            room = LINE_MAX - len(base + ' - .' + tail)
+            who = cut(who, room) if room > 12 else ''
+        return base + ((f" - {who}" + ('' if who.endswith('…') else '.')) if who else f" ({kw}).") + tail
+    fs = list(pack.get('facts') or []) if facts is None else list(facts)
+    ps = list(ptrs) if pointers is None else list(pointers)
+    old = stale(rec, today)
+    while True:
+        body = f"- **{name}** ({kw})" + (f" - {who}" if who else '') + ('; no recent notes.' if old else '' if who.endswith('…') else '.')
+        if not old:
+            for f in fs: body += ' ' + fact_text(f)
+        if ps: body += ' ' + ' · '.join(ptr_text(p) for p in ps)
+        if len(body) <= FULL_MAX: return body
+        if fs and not old: fs.pop(); continue
+        if len(ps) > 1: ps = ps[:1]; continue
+        return cut(body, FULL_MAX)
+
+
+def block(items, *, today=None, limit=BLOCK_MAX):
+    """The one block at the end of a message. items: [(record, level, mentions)]. Over the budget, drop in order:
+    facts after the first two, pointers after the first, then whole entities step down to one line, the least
+    mentioned first. The name and the first pointer are never dropped."""
+    today = today or time.strftime('%Y-%m-%d')
+    items = [(r, lv, m) for r, lv, m in items if lv >= 2]
+    if not items: return ''
+    state = [{'rec': r, 'level': lv, 'm': m, 'facts': None, 'ptrs': None} for r, lv, m in items]
+    def text():
+        lines = [render(s['rec'], s['level'], today=today, facts=s['facts'], pointers=s['ptrs'], who_max=s.get('who')) for s in state]
+        return HEADER + '\n' + '\n'.join(lines)
+    t = text()
+    if len(t) <= limit: return t
+    for s in state:
+        if s['level'] == 3: s['facts'] = (s['rec'].get('pack') or {}).get('facts', [])[:2]
+    t = text()
+    if len(t) <= limit: return t
+    for s in state:
+        if s['level'] == 3: s['ptrs'] = (s['rec'].get('pack') or {}).get('pointers', [])[:1]
+    t = text()
+    order = sorted(range(len(state)), key=lambda i: (state[i]['m'], -i))
+    for i in order:
+        if len(t) <= limit: return t
+        if state[i]['level'] == 3: state[i]['level'] = 2; t = text()
+    for i in order:
+        if len(t) <= limit: return t
+        state[i]['who'] = 0; t = text()
+    return t
+
+
+def brief(records, rec, *, today=None, limit=BRIEF_MAX):
+    """"context for <name>": the entity in full, then its related ones, project first, then people, tools, documents."""
+    today = today or time.strftime('%Y-%m-%d')
+    by_id = {r['id']: r for r in records}
+    rank = {'project': 0, 'org': 1, 'person': 2, 'tool': 3, 'doc': 4, 'place': 5}
+    rel = sorted((by_id[x] for x in rec.get('related', []) if x in by_id), key=lambda r: (rank.get(r['kind'], 9), -r.get('heat', 0)))
+    out = HEADER + '\n' + render(rec, 3, today=today)
+    for r in rel:
+        line = render(r, 2, today=today)
+        if len(out) + 1 + len(line) > limit: break
+        out += '\n' + line
+    return out
+
+
+# ---------------------------------------------------------------------------------------------------------------
+# reading the store (the engine's /context and /entity, the CLI)
+
+class Store:
+    def __init__(self, path=None):
+        self.path = Path(path) if path else DATA / 'entities.json'
+        self.stamp, self.data = None, {'records': [], 'surfaces': {}}
+        import obsidian
+        self.vault_cache = obsidian.NoteCache(self.path.parent)
+
+    def reload(self):
+        try:
+            st = self.path.stat(); stamp = (st.st_mtime_ns, st.st_size)
+            if stamp == self.stamp: return self.data
+            d = json.loads(self.path.read_text())
+            if isinstance(d, dict) and isinstance(d.get('records'), list):
+                self.data, self.stamp = d, stamp
+        except FileNotFoundError:
+            self.data, self.stamp = {'records': [], 'surfaces': {}}, None
+        except (OSError, ValueError): pass
+        return self.data
+
+    def find(self, q, limit=8):
+        """Exact surface first (with how it matched), then a prefix over names and aliases, warmest first."""
+        d = self.reload(); recs = d.get('records', [])
+        q = fold(str(q or '').lstrip(';@'))
+        if len(q) < 2: return []
+        hits = [(recs[i], MATCH.get(how, 1)) for i, how in d.get('surfaces', {}).get(q, []) if i < len(recs)]
+        if not hits:
+            hits = [(r, 0.5) for r in recs if any(fold(n).startswith(q) or any(w.startswith(q) for w in fold(n).split())
+                                                  for n in [r['name']] + r.get('aliases', []))]
+        hits.sort(key=lambda x: (-x[1], x[0].get('cards_only', False), -x[0].get('heat', 0), x[0]['name']))
+        out, seen = [], set()
+        for r, _ in hits:
+            if r['id'] not in seen: seen.add(r['id']); out.append(r)
+        import obsidian
+        vault_notes = self.vault_cache.read()
+        return [enrich_obsidian(r, vault_notes) for r in out[:limit]]
+
+    def context(self, q, level=2, today=None):
+        found = [r for r in self.find(q) if not r.get('cards_only')]
+        if not found: return {'q': q, 'found': 0}
+        r = found[0]
+        level = max(1, min(3, int(level)))
+        return {'q': q, 'found': len(found), 'id': r['id'], 'name': r['name'], 'kind': r['kind'], 'level': level,
+                'text': block([(r, level, 1)], today=today) if level >= 2 else r['name'],
+                'pointers': (r.get('pack') or {}).get('pointers', []), 'private': bool(r.get('private')),
+                'built': self.data.get('built_day', ''), 'who': r.get('who', ''), 'facts': (r.get('pack') or {}).get('facts', []),
+                'others': [{'id': o['id'], 'name': o['name'], 'kind': o['kind'], 'who': o.get('who', '')} for o in found[1:5]]}
+
+    def entity(self, q):
+        return {'q': q, 'entities': [{'id': r['id'], 'name': r['name'], 'kind': r['kind'], 'who': r.get('who', ''),
+                                      'aliases': r.get('aliases', [])[:6], 'targets': {k: v for k, v in r.get('targets', {}).items() if k != 'tg'},
+                                      'related': r.get('related', [])[:6], 'relations': r.get('relations', [])[:6]}
+                                     for r in self.find(q) if not r.get('cards_only')]}
+
+    def brief(self, q, today=None):
+        found = [r for r in self.find(q) if not r.get('cards_only')]
+        if not found: return {'q': q, 'found': 0}
+        return {'q': q, 'found': len(found), 'id': found[0]['id'], 'text': brief(self.data['records'], found[0], today=today)}
+
+
+# ---------------------------------------------------------------------------------------------------------------
+# kinds for leftovers: a hook, off by default (proposal 1.3). The answer is one word from KINDS or "none".
+
+CLASSIFY_PROMPT = ('One word answer. What kind of thing is "{name}" most likely, as a name a person writes in notes? '
+                   'Choose from: person, org, project, tool, doc, place, none.')
+
+
+def classify(names, ask, data=DATA):
+    """Ask `ask(name) -> word` for each leftover name; keep only answers in the fixed list. Results go to
+    data/entity-kinds.json (by: the asker); his own overrides always win at build time."""
+    kinds = read_json(data / 'entity-kinds.json', {})
+    kinds = kinds if isinstance(kinds, dict) else {}
+    done = 0
+    for n in names:
+        if n in kinds: continue
+        word = (ask(n) or '').strip().lower().strip('.')
+        if word in KINDS or word == 'none':
+            kinds[n] = {'kind': word, 'by': getattr(ask, 'by', 'model'), 'at': day(time.time())}; done += 1
+    atomic(data / 'entity-kinds.json', json.dumps(kinds, ensure_ascii=False, indent=1) + '\n')
+    return done
+
+
+def leftovers(data=DATA):
+    """Names with no kind: dictionary terms in know.json (the pack calls them `term`)."""
+    pack = read_json(data / 'know.json', {})
+    return sorted({e['name'] for e in pack.get('entries', []) if isinstance(e, dict) and e.get('kind') == 'term' and e.get('name')})
+
+
+def ask_claude(name):
+    """Only the name and the kind list go out, and only when Settings' entityClassify is on (engine/cloud.py)."""
+    import cloud, router
+    try: st = json.loads((DATA / 'settings.json').read_text())
+    except Exception: st = {}
+    if not (cloud.allowed('entities', st) and router.online()): return None
+    import claude_worker
+    return claude_worker.ask(CLASSIFY_PROMPT.format(name=name.replace('"', '')), 20)
+ask_claude.by = 'claude'
+
+
+def ask_local(name):
+    """The warm local model through the engine's /classify route, under its guard. The route is not built yet
+    (step 4): until then this returns None and nothing is classified."""
+    import urllib.request
+    try:
+        req = urllib.request.Request('http://127.0.0.1:8798/classify', json.dumps({'name': name}).encode(), {'Content-Type': 'application/json'})
+        return json.loads(urllib.request.urlopen(req, timeout=5).read()).get('kind')
+    except Exception:
+        return None
+ask_local.by = 'local'
+
+
+def correct(entity_id, key, data=DATA):
+    """The one-key kind fix (1 person · 2 org · 3 project · 4 tool · 5 doc · 6 place · 0 not a thing)."""
+    kind = KIND_KEYS.get(str(key))
+    if not kind: return False
+    ov = read_json(data / 'entity-overrides.json', {})
+    ov = ov if isinstance(ov, dict) else {}
+    ov[entity_id] = {'kind': kind, 'by': 'me', 'at': day(time.time())}
+    atomic(data / 'entity-overrides.json', json.dumps(ov, ensure_ascii=False, indent=1) + '\n')
+    return True
+
+
+def stats(store):
+    recs = store.get('records', [])
+    kinds = Counter(r['kind'] for r in recs)
+    return {'records': len(recs), 'kinds': dict(kinds), 'cards_only': sum(1 for r in recs if r.get('cards_only')),
+            'sources': dict(Counter(s['system'] for r in recs for s in r['sources'])),
+            'merged_records': sum(1 for r in recs if len(r['sources']) > 1),
+            'obsidian_target': sum(1 for r in recs if r.get('targets', {}).get('obsidian')),
+            'with_dated_fact': sum(1 for r in recs if any(f.get('date') for f in r['pack']['facts'])),
+            'private_allowed': sum(1 for r in recs if r.get('private')),
+            'surfaces': len(store.get('surfaces', {})), 'ambiguous_surfaces': sum(1 for v in store.get('surfaces', {}).values() if len({i for i, _ in v}) > 1),
+            'forms': sum(1 for v in store.get('surfaces', {}).values() if any(h == 'form' for _, h in v)),
+            'same_pending': store.get('same_pending', 0), 'failed': store.get('failed', [])}
+
+
+if __name__ == '__main__':
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument('command', choices=['build', 'stats', 'pack', 'context', 'classify', 'fix'])
+    ap.add_argument('query', nargs='?', default='')
+    ap.add_argument('rest', nargs='*', default=[])
+    ap.add_argument('--level', type=int, default=3)
+    ap.add_argument('--out', type=Path, default=None)
+    ap.add_argument('--with', dest='asker', choices=['local', 'claude'], default='local')
+    args = ap.parse_args()
+    if args.command == 'build':
+        t0 = time.time()
+        snap = read_json(DATA / 'contacts.json', {})
+        store = build(args.out, contacts=snap.get('entries') if isinstance(snap, dict) and isinstance(snap.get('entries'), list) else None,
+                      lines=sent_rows(DATA / 'typed.jsonl'), chats=chat_lines(DATA / 'people.json'))
+        print(json.dumps({**stats(store), 'ms': int((time.time() - t0) * 1000)}))
+    elif args.command == 'stats':
+        print(json.dumps(stats(Store(args.out).reload())))
+    elif args.command == 'pack':
+        print(json.dumps(Store(args.out).context(args.query, args.level), ensure_ascii=False, indent=1))
+    elif args.command == 'context':
+        print(json.dumps(Store(args.out).brief(args.query), ensure_ascii=False, indent=1))
+    elif args.command == 'fix':   # entities.py fix not_related <id> <id> | related <id> <id> [why] | not_this <form> <id> | same | not_same
+        what, ab = args.query, args.rest
+        if what not in FIX_KINDS or len(ab) < 2: ap.error('fix ' + '|'.join(FIX_KINDS) + ' <a> <b> [why]')
+        save_fix(what, ab[0], ab[1], ' '.join(ab[2:]))
+        print('saved; the next build applies it')
+    elif args.command == 'classify':
+        print(classify(leftovers(), ask_claude if args.asker == 'claude' else ask_local), 'classified')

@@ -1,0 +1,10 @@
+<!doctype html><meta charset="utf-8"><title>Drafter chat test</title>
+<body style="font:15px -apple-system;padding:24px;background:#fff;max-width:560px">
+<p>Chat test page for fact chips. Nothing here leaves the Mac except through Drafter's own Claude settings.</p>
+<div style="border:1px solid #ddd;padding:10px;margin-bottom:10px">
+<p><b>Mila</b>: hi! the contract is ready</p>
+<p id="q"><b>Mila</b>: what's your email? I'll send it over</p>
+</div>
+<textarea id="t" rows="4" style="width:520px;font:15px -apple-system">⟦drafter-test⟧
+</textarea>
+<script>const q=new URLSearchParams(location.search).get("q");if(q)document.getElementById("q").textContent=q;const t=document.getElementById("t");t.focus();t.setSelectionRange(t.value.length,t.value.length)</script>
