@@ -11,11 +11,15 @@ ID = "vault.note"
 NEEDS = ("vault",)   # engine/integrations.py: the chip is offered only when all of these are on and answer
 TRIGGER = re.compile(r"(?i)(?:^|[\s,.])(запиши|занотуй|збережи)\s+(в|у)\s+(нотатки|волт|обсідіан|vault)|(?:^|[\s,.])(save|note)\s+(this\s+)?(to|in)\s+(the\s+)?(vault|obsidian)")
 FOLDER = "Drafter"
+INSTRUCTION = {
+    "uk": "З команди зберегти нотатку витягни коротку назву нотатки і сам текст нотатки (слова автора, без команди).",
+    "en": "From this command to save a note, take a short note title and the note text itself (the author's words, "
+          "without the command).",
+}
 
 
 def extract(line, ask):
-    f = fields(ask, "З команди зберегти нотатку витягни коротку назву нотатки і сам текст нотатки (слова автора, без команди).",
-               line, ["title", "text"])
+    f = fields(ask, INSTRUCTION, line, ["title", "text"])
     if not f.get("text"): return None
     return {"chip": f"Note in {local.setting('vault', 'name') or 'the vault'} «{f.get('title') or 'untitled'}»", "run": {"kind": "python"},
             "fields": {"title": f.get("title", ""), "text": f["text"]}}
