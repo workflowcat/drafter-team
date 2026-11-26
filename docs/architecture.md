@@ -65,8 +65,11 @@ Pure rules sit in their own files with no AppKit, so a test can check them alone
 
 All state lives in `data/` in the repo folder. It is never tracked by git. `DRAFTER_DATA` moves it elsewhere:
 the app reads it (or `DrafterData` in its `Info.plist`, from `build.data_dir` in the local config) and passes it to
-the engine and the voice process; `engine/data_dir.py` gives the engine and the scripts the same answer. With no
-`DRAFTER_DATA` and no `data/` in a clone the app cannot write to, it uses `~/Library/Application Support/Drafter`.
+the engine and the voice process; `engine/data_dir.py` gives the engine and the scripts the same answer. Training,
+the nightly job and the bench scripts write `data/` in the clone, so `DRAFTER_DATA=<folder> scripts/setup.sh` makes
+`data/` a link to that folder (`scripts/link_data.sh`, which never moves a file): then everything uses one folder.
+With no `DRAFTER_DATA` and no `data/` in a clone the app cannot write to, it uses
+`~/Library/Application Support/Drafter`.
 Paths below are written as `data/`.
 
 - `data/drafter.local.json` is your local config: your name for the prompts, your languages and which

@@ -63,8 +63,8 @@ scripts/setup.sh --models --app          # add --voice for dictation and calls
 `~/Applications/Drafter.app`. It starts nothing. `scripts/setup.sh --help` lists the options.
 
 For a team: `scripts/package_app.sh` builds a zipped `Drafter.app` in build/dist (signed with your Developer ID
-and notarized when you set them up) that teammates install without Command Line Tools. `DRAFTER_DATA` keeps your
-data in a folder outside the clone; [Architecture](docs/architecture.md) has the details.
+and notarized when you set them up) that teammates install without Command Line Tools. `DRAFTER_DATA=<folder> scripts/setup.sh`
+keeps your data in a folder outside the clone; [Architecture](docs/architecture.md) has the details.
 
 Then follow [Onboarding](docs/onboarding.md). In short:
 

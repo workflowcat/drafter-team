@@ -65,8 +65,10 @@ fi
 uv pip sync --python "$venv/bin/python" requirements-lock.txt
 "$venv/bin/python" scripts/check_install.py
 # First-run config: your name, languages and optional integrations, all in one untracked file (never in git).
-# DRAFTER_DATA puts the data folder outside this clone (engine/data_dir.py); else data/ here.
-data="${DRAFTER_DATA:-data}"
+# DRAFTER_DATA puts the data folder outside this clone: data/ here becomes a link to it (scripts/link_data.sh), so the
+# app, the engine, training and the nightly job all use that one folder. Else data/ here.
+scripts/link_data.sh
+data=data
 mkdir -p "$data"
 if [[ ! -f "$data/drafter.local.json" ]]; then
   cp drafter.local.example.json "$data/drafter.local.json"

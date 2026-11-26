@@ -30,6 +30,12 @@ cp icon/Drafter.icns "$NEW/Contents/Resources/"
 /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier $ID" "$NEW/Contents/Info.plist"
 if [[ -n "$DATA_DIR" ]]; then
   /usr/libexec/PlistBuddy -c "Add :DrafterData string $DATA_DIR" "$NEW/Contents/Info.plist"
+  # training, the nightly job and the bench scripts use data/ in the clone: it must be (a link to) the same folder
+  if [[ -z "$DRAFTER_APP_OUT" && "$(cd "${DATA_DIR/#\~/$HOME}" 2>/dev/null && pwd -P)" != "$(cd ../data 2>/dev/null && pwd -P)" ]]; then
+    echo "Note: the app keeps data in $DATA_DIR but data/ in this clone is another folder. Run" >&2
+    echo "  scripts/link_data.sh $DATA_DIR" >&2
+    echo "so training and the nightly job use the same folder." >&2
+  fi
 fi
 if [[ -n "$SIGN_ID" && "$SIGN_ID" != "-" ]]; then
   # Developer ID with the hardened runtime (needed for notarization); the entitlements keep the microphone and calendar

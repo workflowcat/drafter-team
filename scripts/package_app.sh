@@ -60,4 +60,10 @@ if [[ -n "$profile" ]]; then
 fi
 ditto -c -k --keepParent "$app" "$zip"
 echo "Packed $zip"
-echo "On a teammate's Mac: clone to $home, scripts/setup.sh --models (add --voice), unzip into ~/Applications, open it."
+baked=${DRAFTER_DATA:-$(/usr/bin/python3 engine/local.py --get data_dir)}
+if [[ -n "$baked" ]]; then
+  # the app keeps data there; setup links data/ in the clone to it, so training and the nightly job use it too
+  echo "On a teammate's Mac: clone to $home, DRAFTER_DATA=$baked scripts/setup.sh --models (add --voice), unzip into ~/Applications, open it."
+else
+  echo "On a teammate's Mac: clone to $home, scripts/setup.sh --models (add --voice), unzip into ~/Applications, open it."
+fi
