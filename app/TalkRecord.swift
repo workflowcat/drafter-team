@@ -207,16 +207,6 @@ extension Talk {
             if handoff != nil { lines.append("Walkthrough for the agent: on the clipboard (also in Drafter › Recordings)") }
             Pill.shared.show(lines.joined(separator: "\n"), seconds: 6)
             log("long note: \(text.count) chars, \(links.count) links, \(fu.count) follow-ups")
-            // follow-ups become a chip: Tab adds them to Aleph (each as a follow-up for the next working morning)
-            if !fu.isEmpty {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 6) {
-                    Offer.show(["Add \(fu.count) follow-up\(fu.count == 1 ? "" : "s") to Aleph?"] + fu.prefix(2).map { "• " + $0 }, kind: "Follow-ups", accept: "Add", seconds: 20) {
-                        Engine.shared.post("/followups", ["items": fu], timeout: 30) { j in
-                            Pill.shared.flash("Added to Aleph: \(j?["added"] as? Int ?? 0)")
-                        }
-                    }
-                }
-            }
         }
     }
 }

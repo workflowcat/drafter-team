@@ -154,7 +154,7 @@ enum KeyRules {
     static func callOfferKey(voice: Bool) -> String { voice ? "⇧ right ⌥" : "" }
 
     /// Row 4: Tab on a chip. Chips that put text at the caret (a snippet, an emoji, a copy, a fix, a lookup) are taken;
-    /// a chip that runs an outside action (calendar, reminder, Aleph task, note, opening an app, a draft elsewhere)
+    /// a chip that runs an outside action (calendar, reminder, note, opening an app, a draft elsewhere)
     /// never runs on Tab: the Tab goes to the app and a click on the chip runs it.
     static let textKinds: Set<String> = ["expand", "replace", "replaceSelection", "proofread", "reader.note", "pauseRewrite", "insert",
                                          "lookup.insert", "lookup.search", "copy"]

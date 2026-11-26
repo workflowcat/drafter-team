@@ -33,12 +33,6 @@ enum LocalConfig {
         return Set(([mail] + names).map { $0.lowercased() }.filter { !$0.isEmpty })
     }
 
-    /// Apps where Drafter stays quiet, from the config's integrations (an owner's own dictation app).
-    static var skipApps: [String] {
-        let id = integration("voice_notes")["bundle_id"] as? String ?? ""
-        return enabled("voice_notes") && !id.isEmpty ? [id] : []
-    }
-
     static func integration(_ name: String) -> [String: Any] {
         (json["integrations"] as? [String: Any])?[name] as? [String: Any] ?? [:]
     }
@@ -46,7 +40,7 @@ enum LocalConfig {
     /// The config turns it on (whether its tool answers is `available`).
     static func enabled(_ name: String) -> Bool { integration(name)["enabled"] as? Bool == true }
 
-    /// On in the config and its file is there (engine/integrations.py checks the same, plus Aleph's port). The app
+    /// On in the config and its file is there (engine/integrations.py checks the same). The app
     /// itself only asks for "gam": the Google lookups and the Google account block in Settings.
     static func available(_ name: String) -> Bool {
         guard enabled(name) else { return false }

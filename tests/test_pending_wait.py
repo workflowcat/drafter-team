@@ -26,7 +26,7 @@ class PendingWait(unittest.TestCase):
         th = threading.Thread(target=lambda: got.update(jobs=actions.take_pending(5), at=time.time()))
         th.start(); time.sleep(0.2)
         t = time.time()
-        # queue_app is what Aleph's free-slots ask goes through; nobody reports back, so it times out after 0.5 s
+        # queue_app is what a free-slots ask from a local tool goes through; nobody reports back, so it times out after 0.5 s
         r = actions.queue_app({"kind": "eventkit.free"}, wait=0.5)
         th.join(2)
         self.assertEqual([j["run"]["kind"] for j in got["jobs"]], ["eventkit.free"])

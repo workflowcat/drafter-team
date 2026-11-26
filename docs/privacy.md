@@ -1,7 +1,7 @@
 # Privacy
 
 Drafter is local by default. With nothing connected, no text leaves your Mac: suggestions, voice and history stay
-on it. One exception for Andrii's own setup: heavy background jobs may run on his own server (see "Your own server"). Sending text to a model outside the Mac is a choice you make, once, with "Connect a model".
+on it. Sending text to a model outside the Mac is a choice you make, once, with "Connect a model".
 
 ## Connect a model
 
@@ -31,26 +31,12 @@ flowchart LR
   Both are settings (`connect.fastModel`, `connect.carefulModel` in `data/settings.json`).
 - **Disconnect** turns every cloud switch off, removes the key from the Keychain and tells the engine to forget it.
 
-## Your own server
-
-Only when you turn on `integrations.server` in `data/drafter.local.json` (an ssh alias of a Linux box you control,
-with Docker), these may go to that server, and nowhere else:
-
-- **Training lines** for the weekly retrain, only with `retrainRemote` on (`bench/remote_train.py`).
-- **Background jobs** from the queue in `bench/jobs.py`: call and long-note audio for a careful re-transcribe, and
-  journal text for the search index.
-
-Each run copies its inputs to a job folder, runs in a container, brings back only the result, and deletes the folder
-and the container afterwards, on success and on failure. Nothing waits on the server: when it is down, jobs wait on the
-Mac. With the integration off (the default) there is no server and none of this.
-
 ## What never leaves the Mac
 
 - **Grey text.** The text model runs on your Mac. Keys, field text and screen text go only to the local engine on
   `127.0.0.1:8798`. That engine refuses requests from web pages.
-- **Voice.** Takes, long notes and calls are read by local models first. Audio goes nowhere else, except a careful
-  re-read on your own server (below).
-- **Training.** The corpus, the personal layer and every bench run on your Mac, unless `retrainRemote` is on.
+- **Voice.** Takes, long notes and calls are read by local models. Audio never leaves the Mac.
+- **Training.** The corpus, the personal layer and every bench run on your Mac.
 - **History.** Typed lines, drafts, takes, clipboard history, recordings, notes and logs stay in `data/`.
 - **Screen video.** `callScreenVideo` is off by default. When enabled, local `screen.mp4` stays beside the call audio.
   Capture checks excluded apps, secure input, screen lock and display sleep before capture and before writing each frame.
@@ -89,7 +75,6 @@ What goes out, per feature:
 | `ask` | a spoken question to your own notes | none: runs only on your own action |
 | `call_notes` | the live outline and the summary of a call or long note | `callNotes` (off) |
 | `entities` | the kind of a name no source knows (the name only), when you run it | `entityClassify` (off) |
-| `backoffice` | a nightly or on-demand batch: tags the day, cleans call notes, person cards, grades ghosts, the weekly review | `backOffice` (off) |
 | `voice_claude` | a Clean or Polished voice take after it went in, with names and the screen text before it; Raw never | `voiceClaude` (off) |
 | `pause_rewrite` | after a 1.5 s typing pause: the paragraph before the caret, with the ⌥Tab rework context | `pauseRewrite` (off) |
 <!-- cloud-table:end -->
@@ -116,23 +101,15 @@ flowchart LR
 
 | Name | What it is | What uses it |
 |---|---|---|
-| `aleph` | A local knowledge app on `127.0.0.1:8797` | Draft, follow-up and thread actions, person links in notes, call prep, the dictionary's names |
-| `inbox` | A local inbox app (a folder of JSON files) | Thread replies, follow-ups in call prep |
-| `beeper` | The `beeper` CLI for the Beeper chat app | Your older lines per chat, example messages, chat lines in the corpus, filling a draft box |
+| `beeper` | The `beeper` CLI for the Beeper chat app | Your older lines per chat, example messages, chat lines in the corpus |
 | `gam` | GAM, the Google Workspace admin CLI | `;docs`, `;meetings` and `;free` lookups, contacts |
 | `vault` | A notes folder | A note action, notes you wrote in the corpus |
-| `voice_notes` | An older dictation app's folder | Its words seed the dictionary; its takes join the corpus |
 | `claude` | A signed-in `claude` CLI | The Claude actions (a note, a doc, a page); picking it under "Connect a model" also turns it on |
 | `voice_guide` | A text file that describes your writing voice | The next-message prompt |
 
-No action sends a message for you. The Beeper action only fills the draft box.
+No action sends a message for you.
 
 ## What is stored, and where
-
-The optional [local MCP server](mcp.md) exposes saved recordings, notes, source search, promises and entity context
-to a client you configure. The server uses local stdio, makes no network requests and never changes saved data.
-It does not read live screen OCR, password fields or credentials; `contextPacks: false` blocks entity context.
-The client receives requested text and may send it to its own model provider. Local transport does not make that model local.
 
 Everything is in `data/` inside the repo folder. Git never tracks it.
 

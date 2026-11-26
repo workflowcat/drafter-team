@@ -1,9 +1,9 @@
-"""The command line (2026-10-21; ⌘K in Drafter's window, the floating panel from a lookup chip; ⌃⌥Space is Aleph's): one line - "забукай 30 хв з Савою завтра після обіду",
-"find a free hour on Thursday", "task: send the act to Mila by Friday", ";sig" - becomes up to three options, each one
+"""The command line (2026-10-21; ⌘K in Drafter's window, the floating panel from a lookup chip): one line - "забукай 30 хв з Савою завтра після обіду",
+"find a free hour on Thursday", "remind me to send the act on Friday", ";sig" - becomes up to three options, each one
 step he can run with Enter (nothing runs before that). Online: Claude Haiku reads the line (router.py); offline: the
 same action triggers and the local model as the chips use. Snippets live in data/snippets.json ({";key": "text"})."""
 import json, re, time
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 import actions, router, claude_worker, local
 
@@ -46,17 +46,8 @@ def option(kind, f):
             due = f.get("due")
             return {"chip": f"Reminder «{f['title']}»" + (f" · {show(datetime.fromisoformat(due))}" if due else ""),
                     "run": {"kind": "eventkit.reminder", "title": f["title"], "due": due}}
-        if kind in ("task", "draft", "note") and not actions.usable(actions.BY_ID[{"task": "followup", "draft": "beeper.draft", "note": "vault.note"}[kind]]):
+        if kind == "note" and not actions.usable(actions.BY_ID["vault.note"]):
             return None
-        if kind == "task":
-            if f.get("due") and (len(f["due"]) == 10 or f["due"].endswith("00:00")): f["due"] = f["due"][:10] + "T10:00"
-            due = f.get("due") or (datetime.now() + timedelta(days=1)).replace(hour=10, minute=0).strftime("%Y-%m-%dT%H:%M")
-            return {"id": "followup", "chip": f"Task in Aleph «{f['what']}» · {show(datetime.fromisoformat(due))}",
-                    "run": {"kind": "python"}, "fields": {"what": f["what"], "due": due}}
-        if kind == "draft":
-            a = actions.BY_ID["beeper.draft"]
-            r = a.make(f.get("who", ""), f.get("text", ""))
-            return {"id": "beeper.draft", **r} if r else None
         if kind == "note":
             return {"id": "vault.note", "chip": f"Note in {local.setting('vault', 'name') or 'the vault'} «{f.get('title') or 'untitled'}»", "run": {"kind": "python"},
                     "fields": {"title": f.get("title", ""), "text": f.get("text", "")}}
@@ -74,12 +65,10 @@ Kinds and fields (dates "YYYY-MM-DDTHH:MM" or "YYYY-MM-DD", his time zone):
 - event: book a time. title (short, calendar style, language of the line, with the person's name), start, minutes (default 30)
 - free: find free time in his calendar. from, to (days), minutes, title, earliest ("09:00"), latest ("19:00")
 - reminder: title, due
-- task: a follow-up/to-do in his task list. what, due
-- draft: a message draft to a person (never sent). who (name in nominative), text (first person, his casual voice, language of the line)
 - note: save a note. title, text
 - snippet: save a text snippet. key (starts with ;), text
 - answer: a direct short answer (a sum, a conversion, a date, a quick fact). text
-UI labels must be English. Preserve the language of authored content (titles, drafts and notes).
+UI labels must be English. Preserve the language of authored content (titles and notes).
 The most likely reading first; the others are real alternatives (e.g. book a time vs find free spots), never rewordings.
 "after lunch" = 14:00, "morning" = 10:00, "evening" = 18:00, "tomorrow" = the next day. Reply with JSON only:
 {{"options": [{{"kind": "...", "label": "2-4 words", "fields": {{...}}}}]}}

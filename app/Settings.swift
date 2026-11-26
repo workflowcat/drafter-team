@@ -1,4 +1,4 @@
-// Drafter's settings: data/settings.json, also written by the engine's /settings (Aleph) and engine/cloud.py.
+// Drafter's settings: data/settings.json, also written by the engine's /settings (local tools) and engine/cloud.py.
 import Foundation
 
 // MARK: settings
@@ -8,7 +8,7 @@ struct Settings: Codable {
     var skip: [String] = ["com.1password.1password", "com.agilebits.onepassword7", "com.apple.keychainaccess", "com.apple.Terminal",
                           "com.googlecode.iterm2", "com.mitchellh.ghostty", "com.apple.dt.Xcode", "com.microsoft.VSCode",
                           "com.todesktop.230313mzl4w4u92", "com.apple.loginwindow", "com.apple.systempreferences",
-                          "com.apple.ScreenSharing", Home.bundleID] + LocalConfig.skipApps
+                          "com.apple.ScreenSharing", Home.bundleID]
     var model: String? = nil
     var stripStyle = "composer"      // the voice strip's look (app/Pill.swift): composer, or classic (the old one row) (2026-11-14)
     var actions_off: [String] = []
@@ -49,10 +49,8 @@ struct Settings: Codable {
     var shots = true           // screenshots while a long note or call records, for brief.md (Screen Recording, local only)
     var callScreenVideo = false // opt-in local screen.mp4 for Call Studio; absent keys keep false through Settings.decode
     var recordWindow = true    // a long note or call opens the recording window (app/RecordWindow.swift) and the notch shrinks to a dot and the time (17 November 2026)
-    /// The Claude back office (17 November 2026, engine/backoffice.py): a batch, nightly or on demand, tags the day's
-    /// journal items, cleans call notes, writes people cards, grades a sample of ghosts and the weekly review; results
-    /// in data/backoffice/. The one Claude switch for slow work; never while he types. Cap: USD a day.
-    var backOffice = false
+    /// The daily Claude cap, USD a day, for the voice cleanup and the pause rewrite (one ledger,
+    /// data/backoffice/spend.json, engine/voice_claude.py). The name is older than the features that use it.
     var backOfficeCap = 0.5
     /// The pause rewrite (17 November 2026, app/PauseRewrite.swift, engine/pause_rewrite.py): after a typing pause in a
     /// field with a finished sentence, Claude Haiku rewrites the paragraph before the caret through the ⌥Tab rework path
@@ -129,7 +127,7 @@ struct Settings: Codable {
     var calendarsOff: [String] = []         // EventKit calendars left out of call names and free times (other tools' calendars)
     var voiceIdleMin = 30      // Parakeet is dropped after this many minutes without a take (read at voice start; was 4 h until 2026-11-14)
     var textIdleMin = 30       // the text model sleeps after this many minutes without typing, wakes when a field gets focus; 0 = never (2026-11-14)
-    var quickKey = QuickRules.defaultKey    // the full picker's own global key (app/Quick.swift); "" = off (the default since 17 November: ⌘⇧V held, then Space); never ⌃⌥Space or ⌘Space (Aleph)
+    var quickKey = QuickRules.defaultKey    // the full picker's own global key (app/Quick.swift); "" = off (the default since 17 November: ⌘⇧V held, then Space); never ⌃⌥Space or ⌘Space (reserved)
     var quickMax = 1000, quickDays = 30.0   // clipboard history: at most this many rows, none older (0 days = no age limit)
     var quickSecret = QuickRules.defaultSecrets   // patterns of copies never kept: API keys, card numbers, one-time codes
     var switchQuickForm = false   // ⌘⇧V held shows the small quick form (before 17 November); off: ⌘⇧V opens the full picker
@@ -172,18 +170,16 @@ struct Settings: Codable {
     var journalView = "gallery"   // "gallery": cards; "list": rows
     var journalLook = "soft"      // the list's rows: "soft" (three zones) or "grid" (the old columns)
     var cardSize = 1              // 0 small, 1 medium, 2 large (⌘- ⌘+)
-    var retrainRemote = false     // the weekly retrain trains the layer on your server (integrations.server, bench/remote_train.py); lines deleted there after each run
     var obsidianVault = ""        // opt-in local Markdown source and export folder
     /// The journal window reads typed, takes and clipboard rows from data/journal.sqlite (journal in SQLite, phase 1,
     /// 23 November 2026, app/JournalDB.swift, engine/journal_db.py; engine/ask.py's takes too); off = the JSONL files.
     var journalDB = true
-    var mcp = false               // local read-only MCP adapter (engine/mcp_server.py): off until turned on in Settings > Cloud
 
     init() {}
 
     /// The file's keys over today's defaults. A key with a value of the wrong type keeps its default alone, so a file
     /// written by the engine or an older Drafter still loads; a new property needs no line here. Keys no property has
-    /// (SettingsPlan.removed, .fixed, .removedBackOffice) are ignored, except `screen`, screenContext's old name.
+    /// (SettingsPlan.removed, .fixed, .removedTyping) are ignored, except `screen`, screenContext's old name.
     /// `cloudDefaults` is never read back: the migration mark, always "off".
     static func decode(_ data: Data) -> Settings? {
         guard let file = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
@@ -233,8 +229,8 @@ struct Settings: Codable {
     /// in the engine does the same, whichever runs first.
     /// Trimmed 2026-11-17 to the switches that still exist (engine/cloud.py DEFAULTS); an old file's removed keys are
     /// left as they are and never read.
-    static let cloudKeys = ["rework", "callNotes", "entityClassify", "backOffice", "voiceClaude", "pauseRewrite"]
-    static let neverOn: Set<String> = ["entityClassify", "backOffice", "voiceClaude", "pauseRewrite"]   // new that day, never on before: stays off (engine/cloud.py NEVER_ON)
+    static let cloudKeys = ["rework", "callNotes", "entityClassify", "voiceClaude", "pauseRewrite"]
+    static let neverOn: Set<String> = ["entityClassify", "voiceClaude", "pauseRewrite"]   // new that day, never on before: stays off (engine/cloud.py NEVER_ON)
     var cloudDefaults = "off"
     /// "Connect a model" (app/Connect.swift, engine/provider.py): which way is connected, never a key. Empty = local only.
     struct Connection: Codable, Equatable {

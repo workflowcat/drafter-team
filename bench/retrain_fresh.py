@@ -5,7 +5,7 @@ can be cut at a time (bench/make_train.py --before). Loads no model; reads his f
 
 Same sources, filters and order as `engine/memory.py build` (the 29 October layer was trained on its output plus
 data/typed.jsonl): Beeper (only with --beeper; the 8 November build had none, launchd could not find `beeper`),
-Voice Notes takes (no date), his Claude Code prompts of the last `days` (date of the turn), typed lines (their date).
+his Claude Code prompts of the last `days` (date of the turn), typed lines (their date).
 Each row: {"src", "t", "text"}; t = 0 when unknown."""
 import argparse, glob, json, os, sys, time
 from pathlib import Path
@@ -53,7 +53,6 @@ def typed(path):
 def build(out, beeper=False, days=60, typed_path=None):
     seen, rows, n = set(), [], {}
     srcs = (("beeper", ((0.0, x) for x in (M.beeper() if beeper else []))),
-            ("voice", ((0.0, x) for x in M.voice_notes())),
             ("claude", claude_prompts(days)),
             ("typed", typed(typed_path or M.DATA / "typed.jsonl")))
     for src, items in srcs:

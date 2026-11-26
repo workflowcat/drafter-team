@@ -13,11 +13,11 @@ mkdir -p data/review && { .venv/bin/python -B scripts/journal_compare.py || echo
 # Call audio older than 14 days with a transcript beside it moves to the Trash; text and notes stay
 .venv/bin/python scripts/prune_audio.py
 # Includes the optional daily Contacts refresh; missing/slow GAM keeps its cached snapshot.
-# his writing as one dated corpus (typed, takes, Claude Code and Codex prompts, Beeper, Voice Notes): training lines,
+# his writing as one dated corpus (typed, takes, Claude Code and Codex prompts, Beeper): training lines,
 # phrase memory and the word finisher read it (bench/corpus.py)
 .venv/bin/python bench/corpus.py > /dev/null
 # his working sources into local stores, read-only and incremental (engine/sources.py): mail, the whole Beeper history,
-# Docs and Drive; whom.py, the attach finder and the server journal index read them. Never style or training input.
+# Docs and Drive; whom.py and the attach finder read them. Never style or training input.
 .venv/bin/python engine/sources.py run
 .venv/bin/python engine/know.py build
 # the names reference from the pack, the entity store and his lines (data/names.json), then its derived files:
@@ -26,12 +26,6 @@ mkdir -p data/review && { .venv/bin/python -B scripts/journal_compare.py || echo
 # the ranked typo fix: word pairs he writes (data/typo-bigrams.tsv) and its gate refit on his offers (data/typo-gate.json)
 .venv/bin/python -B engine/typos.py > /dev/null
 .venv/bin/python bench/review.py "$y" > /dev/null
-# the Claude back office (engine/backoffice.py): tags, call notes, people cards, ghost grades, the weekly review;
-# only with `backOffice` on and online, under the daily cap; results in data/backoffice/
-.venv/bin/python -B engine/backoffice.py --nightly >> data/review/nightly.log 2>&1
 .venv/bin/python bench/retrain.py
-# background jobs on your server (integrations.server) (bench/jobs.py): careful re-transcribe of the day's calls and long notes, the journal
-# index; after the retrain so the two never share the server's cores. Away server: the jobs wait for the next run.
-mkdir -p data/jobs && .venv/bin/python -B bench/jobs.py nightly >> data/jobs/nightly.log 2>&1
 # Fridays: the weekly page (data/review/week-*.md)
 [[ $(date +%u) == 5 ]] && .venv/bin/python bench/week.py > /dev/null

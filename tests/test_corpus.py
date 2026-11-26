@@ -119,7 +119,7 @@ class NightlyMix(unittest.TestCase):
         self.assertEqual(C.WEIGHTS["take"], 0)
         self.assertEqual({k: v for k, v in C.WEIGHTS.items() if v}, MIX)
         # the source sizes of 14 November: 60,265 chats against 2,911 typed and 3,771 prompts
-        sizes = {"typed": 2911, "take": 1385, "cc": 3771, "codex": 33, "beeper": 60265, "vnotes": 409, "vault": 69, "fb": 2263}
+        sizes = {"typed": 2911, "take": 1385, "cc": 3771, "codex": 33, "beeper": 60265, "vault": 69, "fb": 2263}
         lines = {k: n * C.WEIGHTS[k] for k, n in sizes.items()}
         self.assertLess(lines["beeper"] / sum(lines.values()), 0.4)
         self.assertGreater(lines["typed"] + lines["cc"], lines["beeper"])

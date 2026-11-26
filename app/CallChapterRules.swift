@@ -39,12 +39,8 @@ enum CallChapterRules {
     }
 
     /// Keep both tracks and their original ends: merged display turns cannot prove a silence gap.
-    static func transcriptTurns(from data: Data, careful: Bool = false) -> [CallChapterTurn] {
-        guard let json = try? JSONSerialization.jsonObject(with: data) else { return [] }
-        let rows: [[String: Any]]
-        if careful, let object = json as? [String: Any] {
-            rows = (object["me"] as? [[String: Any]] ?? []) + (object["them"] as? [[String: Any]] ?? [])
-        } else { rows = json as? [[String: Any]] ?? [] }
+    static func transcriptTurns(from data: Data) -> [CallChapterTurn] {
+        guard let rows = (try? JSONSerialization.jsonObject(with: data)) as? [[String: Any]] else { return [] }
         return rows.compactMap { row in
             guard let text = row["text"] as? String, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
             return CallChapterTurn(start: row["start"] as? Double, end: row["end"] as? Double,

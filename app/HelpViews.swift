@@ -82,7 +82,7 @@ struct HelpView: View {
                                  stat: m.stats.map { "today: \($0["takes"]?.shown ?? 0) takes" } ?? "")
                             part("Calls and long notes", glyph: "phone", "Audio goes to disk while it records, with screenshots when the screen changes. At the end: a transcript of both sides, a title from your calendar, people, a summary and to-dos. Calls & notes shows them as notes you can search; For agent hands one to Claude or Codex. A call is recorded only when you say so.",
                                  keys: KeyMap.help("calls"))
-                            part("Actions", glyph: "sparkle", "Use the field in the title bar or Aleph's ⌘Space bar: book 30 minutes tomorrow, find a free slot, task: …, ;snippet. Haiku handles requests; the model on this Mac is the fallback. Nothing runs until you click.",
+                            part("Actions", glyph: "sparkle", "Use the field in the title bar: book 30 minutes tomorrow, find a free slot, remind me …, ;snippet. Haiku handles requests; the model on this Mac is the fallback. Nothing runs until you click.",
                                  keys: KeyMap.help("actions"))
                             part("Elsewhere", glyph: "globe", "", keys: KeyMap.help("elsewhere"))
                         }
@@ -101,7 +101,7 @@ struct HelpView: View {
                          stat: m.stats.map { "today: \($0["takes"]?.shown ?? 0) takes" } ?? "")
                     part("Calls and long notes", glyph: "phone", "Audio goes to disk while it records, with screenshots when the screen changes. At the end: a transcript of both sides, a title from your calendar, people, a summary and to-dos. Calls & notes shows them as notes you can search; For agent hands one to Claude or Codex. A call is recorded only when you say so.",
                          keys: KeyMap.help("calls"))
-                    part("Actions", glyph: "sparkle", "Use the field in the title bar or Aleph's ⌘Space bar: book 30 minutes tomorrow, find a free slot, task: …, ;snippet. Haiku handles requests; the model on this Mac is the fallback. Nothing runs until you click.",
+                    part("Actions", glyph: "sparkle", "Use the field in the title bar: book 30 minutes tomorrow, find a free slot, remind me …, ;snippet. Haiku handles requests; the model on this Mac is the fallback. Nothing runs until you click.",
                          keys: KeyMap.help("actions"))
                     part("Elsewhere", glyph: "globe", "", keys: KeyMap.help("elsewhere"))
                 }

@@ -333,13 +333,13 @@ struct DictKeys: View {
 enum DictPreview {
     static let file: [String: Any] = [
         "words": [
-            ["text": "Bramblix", "source": "aleph", "heard": ["bram blicks", "bramble x"]],
+            ["text": "Bramblix", "source": "typing", "heard": ["bram blicks", "bramble x"]],
             ["text": "Glimmerdocs", "source": "menu", "heard": ["glimmer docks"]],
-            ["text": "Larkspur", "source": "aleph"],
-            ["text": "Квітка", "source": "aleph", "heard": ["квитка"]],
+            ["text": "Larkspur", "source": "typing"],
+            ["text": "Квітка", "source": "typing", "heard": ["квитка"]],
             ["text": "Orest", "source": "typing"],
-            ["text": "Zorvox", "source": "voicenotes"],
-            ["text": "Поділ", "source": "aleph"],
+            ["text": "Zorvox", "source": "edits"],
+            ["text": "Поділ", "source": "typing"],
         ],
         "loose_heard": ["kwill o": "Quillo"],
     ]

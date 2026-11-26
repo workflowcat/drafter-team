@@ -1,7 +1,7 @@
 // The pause rewrite (17 November 2026, Andrii's design; setting `pauseRewrite`, off, with the cloud mark in Settings).
 // After PauseRewriteRules.pause seconds with no key, in a field whose paragraph before the caret holds a finished
 // sentence, a chip with a loading mark appears at the caret and the paragraph goes to engine `/pause_rewrite`: the ⌥Tab
-// rework path (engine/rework.py "polish", Claude Haiku) with the same context, under the back office's daily cap. When
+// rework path (engine/rework.py "polish", Claude Haiku) with the same context, under the daily Claude cap. When
 // the answer comes before his next key, the chip shows the rewrite with the changed words marked. Tab puts it in
 // (selects the paragraph, pastes the rewrite: never a typed Return, never a send); Backspace as the very next key takes
 // it back (Rework.takeBack, when `tabBack` is on); any other key drops the chip and goes to the app. Never in skipped

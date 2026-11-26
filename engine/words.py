@@ -3,7 +3,7 @@ well under a millisecond. The word he most often wrote after the same one or two
 clear. On the fresh replay set (bench/ngram.py, lines written after the last retrain) it was right 77% of the times
 it spoke in Claude and 63% in Beeper, against ~30% for the model's own next word.
 
-Sources (local only): data/phrases.jsonl (his Beeper, Voice Notes and Claude lines), data/typed.jsonl, data/drafts.jsonl,
+Sources (local only): data/phrases.jsonl (his Beeper and Claude lines), data/typed.jsonl, data/drafts.jsonl,
 the shared dictionary (names keep their spelling), and every line he sends while Drafter runs (`add`).
 """
 import bisect, json, os, re, threading
@@ -125,7 +125,7 @@ class Words:
 
     # Round three (2026-11-13): every source of data/corpus.jsonl (bench/corpus.py) when it is there; on held-out typed
     # lines in AI apps it was right more often and wrong less than the old sources (docs/rounds/2026-11-13-typing.md)
-    SOURCES = ("typed", "take", "cc", "codex", "beeper", "vnotes", "fb", "vault", "import")
+    SOURCES = ("typed", "take", "cc", "codex", "beeper", "fb", "vault", "import")
 
     def load(self):
         lines = []

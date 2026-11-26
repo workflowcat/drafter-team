@@ -1,16 +1,14 @@
 """Local knowledge, no models or services. Importing this module reads nothing.
 
 Build explicitly or from nightly. Readers swap whole packs on mtime changes.
-All Aleph queries exclude private rows before fetching them.
+The pack is built from Google Contacts (engine/contacts.py), the dictionary and the snippets.
 """
 import argparse
 from collections import Counter
 import json
-import math
 import os
 from pathlib import Path
 import re
-import sqlite3
 import tempfile
 import time
 
@@ -146,48 +144,11 @@ def usage(entries, lines):
     return counts, lower
 
 
-def build(out=ROOT / 'data/know.json', *, db=None, dictionary=None, snippets=None, lines=(), now=None, common=(), spell_known=None, contacts=None):
-    import integrations
-    no_aleph = db is None and not integrations.available('aleph')    # optional: off, the pack is built from the rest
-    db = Path(db) if db is not None else Path(integrations.local.setting('aleph', 'db') or '/nonexistent/aleph.db')
+def build(out=ROOT / 'data/know.json', *, dictionary=None, snippets=None, lines=(), now=None, common=(), spell_known=None, contacts=None):
     dictionary = Path(dictionary) if dictionary is not None else ROOT / 'data/words.json'
     snippets = Path(snippets) if snippets is not None else ROOT / 'data/snippets.json'
     now = time.time() if now is None else now
     entries = []
-    # Fail closed on a missing/broken source: do not replace yesterday's pack with partial knowledge.
-    if no_aleph:
-        con = sqlite3.connect(':memory:')
-        con.executescript('CREATE TABLE things(id,kind,name,short,scope); CREATE TABLE names(name,thing); '
-                          'CREATE TABLE facts(subj,rel,value,since,obj,until,scope);')
-    else:
-        con = sqlite3.connect(db.resolve().as_uri() + '?mode=ro', uri=True)
-    con.row_factory = sqlite3.Row
-    with con:
-        rows = con.execute("SELECT id, kind, name, short FROM things WHERE coalesce(scope,'work') != 'private' AND kind IN ('person','project','org','team','tool','repo')").fetchall()
-        aliases = {}
-        for row in con.execute("SELECT n.name, n.thing FROM names n JOIN things t ON t.id=n.thing WHERE coalesce(t.scope,'work') != 'private' AND t.kind IN ('person','project','org','team','tool','repo')"):
-            aliases.setdefault(row['thing'], []).append(row['name'])
-        facts = {}
-        for row in con.execute("""SELECT f.subj,f.rel,f.value,f.since,o.name AS object_name FROM facts f
-            JOIN things s ON s.id=f.subj LEFT JOIN things o ON o.id=f.obj
-            WHERE coalesce(s.scope,'work') != 'private' AND coalesce(f.scope,'work') != 'private'
-            AND coalesce(o.scope,'work') != 'private' AND (f.until IS NULL OR f.until=0 OR f.until>?)
-            AND f.rel IN ('handle','role','works_at','last_contact')""", (now,)):
-            facts.setdefault(row['subj'], []).append(dict(row))
-        for row in rows:
-            e = {'id': row['id'], 'name': row['name'], 'kind': row['kind'], 'aliases': sorted(set(aliases.get(row['id'], []) + ([row['short']] if row['short'] else []))),
-                 'handles': {}, 'role': '', 'org': '', 'last_contact': 0}
-            for fact in facts.get(row['id'], []):
-                val = (fact['value'] or '').strip()
-                if fact['rel'] == 'last_contact': e['last_contact'] = max(e['last_contact'], fact['since'] or 0)
-                elif fact['rel'] == 'role': e['role'] = ' '.join(val.split())[:160]
-                elif fact['rel'] == 'works_at': e['org'] = ' '.join((fact['object_name'] or val).split())[:160]
-                elif fact['rel'] == 'handle':
-                    key, value = handle(val)
-                    if key: e['handles'].setdefault(key, []).append(value)
-            e['handles'] = {k: sorted(set(v)) for k, v in e['handles'].items()}
-            entries.append(e)
-    con.close()
     if contacts is not None:
         from contacts import merge
         entries = merge(entries, contacts)
@@ -199,8 +160,8 @@ def build(out=ROOT / 'data/know.json', *, db=None, dictionary=None, snippets=Non
         w = {'text': w} if isinstance(w, str) else w
         name = w.get('text', '').strip()
         if not name or name.casefold() in safe_names: continue
-        # Old Aleph seeds may include records since made private; only current public records survive.
-        if w.get('scope') == 'private' or w.get('source', '').startswith('aleph') or w.get('source') in ('people', 'work'): continue
+        # a word marked private, or an old seed from a source that is gone, never joins the pack
+        if w.get('scope') == 'private' or w.get('source') in ('people', 'work'): continue
         entries.append({'name': name, 'kind': 'person' if w.get('kind') == 'name' else 'term', 'aliases': [], 'handles': {}, 'role': '', 'org': ''})
     for key, value in read(snippets, {}).items():
         if isinstance(value, str) and value.strip():
@@ -227,22 +188,11 @@ def build(out=ROOT / 'data/know.json', *, db=None, dictionary=None, snippets=Non
         e['common'] = sorted(set(e['common']) | {w.casefold() for w in e['tokens'] + e['forms'] if lower[w.casefold()] >= 5})
     counts, _ = usage(entries, lines)
     for i, e in enumerate(entries):
-        last = e.pop('last_contact', 0)
-        age = max(0, now - last) / 86400
-        e['heat'] = round((0.25 if e.get('source') == 'contacts' else 1) * (1 + counts[i] + (10 * math.exp(-age / 30) if last else 0)), 4)
+        e['heat'] = round((0.25 if e.get('source') == 'contacts' else 1) * (1 + counts[i]), 4)
     pack = {'version': 1, 'built': now, 'entries': entries}
     atomic(Path(out).with_name('known-words.txt'), '\n'.join(sorted({w for e in entries for w in e['tokens'] + e['forms']})) + '\n')
     atomic(out, json.dumps(pack, ensure_ascii=False, indent=1) + '\n')
     return pack
-
-
-def handle(value):
-    if re.fullmatch(r'[^\s@]+@[^\s@]+\.[^\s@]+', value): return 'email', value
-    if value.startswith('tg:') and value[3:].strip(): return 'tg', value[3:].strip()
-    phone = re.sub(r'^(?:tel|phone):\s*', '', value)
-    if re.fullmatch(r'\+?[\d ()-]{7,}', phone) and (phone.startswith('+') or phone != value or re.search(r'[ ()-]', phone)):
-        return 'phone', phone
-    return None, None  # chat IDs and other networks are not phone numbers
 
 
 class Pack:

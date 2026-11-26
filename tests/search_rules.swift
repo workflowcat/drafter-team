@@ -1,4 +1,4 @@
-// swiftc -O -parse-as-library app/SearchRules.swift app/SearchIndex.swift app/JournalEngine.swift app/QuickSearch.swift app/SearchAdapters.swift app/Entry.swift app/PictureLookRules.swift app/ClipRules.swift app/QuickRules.swift app/Recording.swift app/MeetingRules.swift app/CarefulTranscript.swift app/Transcript.swift app/CaptureRules.swift tests/search_rules.swift -o app/build/search-rules-test && app/build/search-rules-test
+// swiftc -O -parse-as-library app/SearchRules.swift app/SearchIndex.swift app/JournalEngine.swift app/QuickSearch.swift app/SearchAdapters.swift app/Entry.swift app/PictureLookRules.swift app/ClipRules.swift app/QuickRules.swift app/Recording.swift app/MeetingRules.swift app/Transcript.swift app/CaptureRules.swift tests/search_rules.swift -o app/build/search-rules-test && app/build/search-rules-test
 // The journal search core with made-up text in both languages: tokens, stems, the other layout, typos, the query
 // language (words, prefix, phrases, exclusions, filters, date offers), name forms, ranking order, ranges, snippets,
 // totals, did-you-mean, incremental adds, cancel.

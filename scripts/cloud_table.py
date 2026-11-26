@@ -19,7 +19,6 @@ WHAT = {
     "ask": "a spoken question to your own notes",
     "call_notes": "the live outline and the summary of a call or long note",
     "entities": "the kind of a name no source knows (the name only), when you run it",
-    "backoffice": "a nightly or on-demand batch: tags the day, cleans call notes, person cards, grades ghosts, the weekly review",
     "voice_claude": "a Clean or Polished voice take after it went in, with names and the screen text before it; Raw never",
     "pause_rewrite": "after a 1.5 s typing pause: the paragraph before the caret, with the ⌥Tab rework context",
 }

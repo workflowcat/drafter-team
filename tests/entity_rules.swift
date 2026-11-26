@@ -111,7 +111,7 @@ import Foundation
         // an older store (no surface_flags, no relations) still loads; a new one carries both
         let old = try JSONDecoder().decode(EntityStore.self, from: Data(#"{"records":[{"id":"a","kind":"tool","name":"Anvil","aliases":[],"related":["b"]}],"surfaces":{"anvil":[[0,"name"]]}}"#.utf8))
         precondition(old.surfaceFlags.isEmpty && old.records[0].relations == nil)
-        let new = try JSONDecoder().decode(EntityStore.self, from: Data(#"{"records":[{"id":"a","kind":"tool","name":"Anvil","aliases":[],"related":["b"],"relations":[{"id":"b","why":"repo of","w":0.81,"src":["aleph"]}]}],"surfaces":{"anvil":[[0,"name"]]},"surface_flags":{"anvil":{"needs_context":true,"shared":false,"ordinary":true,"short":false}}}"#.utf8))
+        let new = try JSONDecoder().decode(EntityStore.self, from: Data(#"{"records":[{"id":"a","kind":"tool","name":"Anvil","aliases":[],"related":["b"],"relations":[{"id":"b","why":"repo of","w":0.81,"src":["vault"]}]}],"surfaces":{"anvil":[[0,"name"]]},"surface_flags":{"anvil":{"needs_context":true,"shared":false,"ordinary":true,"short":false}}}"#.utf8))
         precondition(new.surfaceFlags["anvil"]?.list == ["ordinary"] && new.records[0].relations?.first?.why == "repo of")
         // flagged forms in the matcher: an ordinary-word name needs context, a shared first name needs a related thing
         var fs = store

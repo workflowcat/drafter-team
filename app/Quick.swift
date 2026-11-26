@@ -1,6 +1,6 @@
 // The Quick panel (14 November 2026; Andrii: "a quicker interaction over the last typed words… a clipboard history…
 // have Drafter read it and rewrite it… so that you can quickly copy stuff where it needs to go"). ⌃⌥V (setting
-// `quickKey`; ⌃⌥Space and ⌘Space are Aleph's) opens a small panel on the caret's screen, centred in the upper third,
+// `quickKey`; ⌃⌥Space and ⌘Space are reserved) opens a small panel on the caret's screen, centred in the upper third,
 // over any app. It lists what he copied, typed (TypedList: one row per message) and said (voice takes), newest first,
 // pins on top. The panel never becomes key: the app he is in stays in front with its caret, and the event tap hands
 // the panel its keys while it is open (Keys.handle calls `tap`), as the ⌥Tab rework list does.

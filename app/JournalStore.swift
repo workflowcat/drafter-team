@@ -37,7 +37,7 @@ final class JournalStore {
 
     /// Journal-view-only soft archive of full row IDs (including the `j:` prefix for this store's own drafts).
     /// Reversible at any time via Tidy → Archived (`unhide`); never deletes underlying history files or affects
-    /// search/MCP archives. Since 23 November 2026 engine/journal_db.py mirrors this list into data/journal.sqlite, and
+    /// search archives. Since 23 November 2026 engine/journal_db.py mirrors this list into data/journal.sqlite, and
     /// the engine's search over journal rows there (engine/ask.py's takes) leaves these rows out too.
     var hidden: Set<String> { file.hidden }
     var hiddenCount: Int { file.hidden.count }

@@ -69,8 +69,6 @@ struct CallDoc: Identifiable, Hashable {
     var merged: [String] = []   // a combined recording: the recordings and takes it was made from
     var mergedInto: String?     // this one was combined into another recording
     var mine = ""           // his own notes typed in the recording window (my-notes.md, app/RecordWindow.swift)
-    var careful: [Turn] = []    // the second transcript from the server's careful pass (careful.json, app/CarefulTranscript.swift)
-    var carefulModel = ""
     var note = ""           // the note file with the summary, when there is one
     var live = false        // still recording (raw .pcm, no .wav yet)
     var hasAudio = false
@@ -84,7 +82,7 @@ struct CallDoc: Identifiable, Hashable {
 
     static func == (a: CallDoc, b: CallDoc) -> Bool {
         a.id == b.id && a.title == b.title && a.turns.count == b.turns.count && a.points == b.points && a.live == b.live
-            && a.read == b.read && a.unread == b.unread && a.secs == b.secs && a.mine == b.mine && a.careful.count == b.careful.count
+            && a.read == b.read && a.unread == b.unread && a.secs == b.secs && a.mine == b.mine
             && a.place == b.place && a.project == b.project && a.details == b.details && a.app == b.app && a.speakers == b.speakers
             && a.mergedInto == b.mergedInto
     }
@@ -155,7 +153,6 @@ struct CallDoc: Identifiable, Hashable {
                 ?? (try? String(contentsOf: file("live.txt"), encoding: .utf8)) ?? ""
             c.turns = turns(text, call: c.call && !c.live)
         }
-        if !c.live, let k = CarefulTranscript.load(d, call: c.call, solo: c.file.isEmpty ? "" : "Speaker 1") { c.careful = k.turns; c.carefulModel = k.model }
         let n = notes[d.path] ?? notes[d.standardizedFileURL.path]
         c.note = n?.path ?? ""
         c.points = n?.points ?? []

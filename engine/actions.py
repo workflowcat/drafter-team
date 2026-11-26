@@ -52,7 +52,7 @@ SETTINGS = Path(__file__).resolve().parent.parent / "data" / "settings.json"
 
 
 def off():
-    """Action ids switched off (data/settings.json `actions_off`, set from Aleph or by hand)."""
+    """Action ids switched off (data/settings.json `actions_off`, set in Settings or by hand)."""
     try: return set(__import__("json").loads(SETTINGS.read_text()).get("actions_off", []))
     except Exception: return set()
 
@@ -104,7 +104,7 @@ def run_python(id_, fields, wait=20):
 
 
 def queue_app(run, wait=20):
-    """An app-side step with no action file (eventkit.free: free slots from his calendars, for Aleph's bar)."""
+    """An app-side step with no action file (eventkit.free: free slots from his calendars)."""
     job = {"job": _uuid.uuid4().hex[:12], "id": run.get("kind", ""), "run": run}
     ev = _threading.Event()
     with _NEW: PENDING.append(job); _RESULTS[job["job"]] = ev; _NEW.notify_all()

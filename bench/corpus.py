@@ -11,7 +11,6 @@ Sources, in the order that wins a duplicate (the same line sent, dictated and ke
   codex    his own messages in Codex sessions (~/.codex/sessions/**/*.jsonl)
   beeper   messages he sent: data/my-messages.json and data/beeper-sent.jsonl (his side only, kept up to date from the
            local Beeper app, read-only, by `beeper_sync`; lines signed "Claude:" are an agent's and stay out)
-  vnotes   Voice Notes app takes, before Drafter had voice (~/Codius/VoiceNotes/data/notes.json): dictated
   vault    notes he wrote himself in the vault (frontmatter `origin: kit` only: agent text would teach an agent's voice),
            split into paragraphs; never .obsidian, .claude, System/old, nor any people/private or Entities/Private
            scope (AGENTS.md: never read people/private). Read only.
@@ -35,11 +34,11 @@ SRC = Path(os.environ.get("DRAFTER_SRC_DATA") or DATA)   # where his files are r
 HOME = Path.home()
 OUT = DATA / "corpus.jsonl"
 COUNTS = DATA / "corpus-counts.json"
-ORDER = ("typed", "take", "cc", "codex", "beeper", "vnotes", "vault", "fb", "import")
+ORDER = ("typed", "take", "cc", "codex", "beeper", "vault", "fb", "import")
 sys.path.insert(0, str(ROOT / "engine"))
 import local, integrations
 # Each source is opt-in (open-source round, 2026-11-14): typed lines and takes by default; Claude Code and Codex sessions
-# when the local config's `corpus` says so; Beeper, Voice Notes and the vault when their integration is on; Facebook
+# when the local config's `corpus` says so; Beeper and the vault when their integration is on; Facebook
 # when social.facebook_archive names the export. sources() says which; --sources prints it.
 VAULT = Path(os.environ.get("DRAFTER_VAULT") or local.setting("vault", "path") or "/nonexistent/vault")
 ORIGIN = local.setting("vault", "origin") or ""     # frontmatter `origin:` of notes the user wrote himself
@@ -52,7 +51,7 @@ MAX_CHARS = 600
 # docs/rounds/2026-11-13-typing.md "Layers trained on other writing"): takes add fillers and cost right first words, and
 # 60,000 Beeper lines would drown his prompts, so chats 0.1 and takes 0, the mix bench/weights/train_sweep.py trains.
 # Was beeper 1 and take 0.5 until 14 November: about 60,000 of the 70,000 training lines would have been chats.
-WEIGHTS = {"typed": 2, "take": 0, "cc": 1, "codex": 1, "beeper": 0.1, "vnotes": 0.5, "vault": 0.5, "fb": 0.5, "import": 1}
+WEIGHTS = {"typed": 2, "take": 0, "cc": 1, "codex": 1, "beeper": 0.1, "vault": 0.5, "fb": 0.5, "import": 1}
 WORD = re.compile(r"[\w'’-]+", re.U)
 RUSSIAN = re.compile(r"[ыэъёЫЭЪЁ]")
 # Not his own words: harness wrappers, agent briefs pasted in, interrupted turns
@@ -233,13 +232,6 @@ def fb():
             yield post.get("ts") or 0, "Facebook", para
 
 
-def vnotes():
-    try: notes = json.loads((Path(local.setting("voice_notes", "path") or "/nonexistent") / "data/notes.json").read_text())
-    except Exception: return
-    for n in notes:
-        if n.get("text"): yield iso(n.get("date") or ""), n.get("app") or "Voice Notes", n["text"]
-
-
 def import_folders():
     """data/import/ and the config's corpus.folders."""
     out = [SRC / "import"]
@@ -264,7 +256,7 @@ def imported():
                     yield p.stat().st_mtime, "Notes", para
 
 
-READERS = {"typed": typed, "take": takes, "cc": cc, "codex": codex, "beeper": beeper, "vnotes": vnotes, "vault": vault, "fb": fb, "import": imported}
+READERS = {"typed": typed, "take": takes, "cc": cc, "codex": codex, "beeper": beeper, "vault": vault, "fb": fb, "import": imported}
 
 
 def sources():
@@ -272,7 +264,7 @@ def sources():
     c = local.config().get("corpus") or {}
     on = {"typed": c.get("typed", True) is True, "take": c.get("takes", True) is True,
           "cc": c.get("claude_code") is True, "codex": c.get("codex") is True,
-          "beeper": integrations.available("beeper"), "vnotes": integrations.available("voice_notes"),
+          "beeper": integrations.available("beeper"),
           "vault": bool(os.environ.get("DRAFTER_VAULT")) or (integrations.available("vault") and bool(ORIGIN)),
           "fb": FB.is_file(), "import": bool(import_folders())}
     return [s for s in ORDER if on.get(s)]
@@ -320,7 +312,7 @@ def build(readers=None, clip=None, dry=False, out=OUT, counts_out=COUNTS):
             k = key(text)
             if k in seen: c["same as " + seen[k]] += 1; continue
             seen[k] = src
-            d = src in ("take", "vnotes") or (src in ("typed", "cc", "codex") and dictated(text))
+            d = src == "take" or (src in ("typed", "cc", "codex") and dictated(text))
             rows.append({"src": src, "t": round(t or 0), "app": app, "text": text, "dictated": d})
             c["kept"] += 1; c["words"] += len(WORD.findall(text)); c["dictated"] += d
         counts[src] = dict(c)

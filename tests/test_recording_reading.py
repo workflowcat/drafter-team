@@ -1,4 +1,4 @@
-"""The final reading of a recording and its note, without models, Aleph or personal data."""
+"""The final reading of a recording and its note, without models or personal data."""
 import ast
 import types
 import os
@@ -62,10 +62,8 @@ class Pieces(unittest.TestCase):
 class NoteFromEvent(unittest.TestCase):
     def test_event_title_names_the_note_and_people_are_looked_up(self):
         import notes
-        asked, looked = [], []
-        with patch.object(notes, "names", return_value=[("Mila Synthetic", True)]), \
-             patch.object(notes, "aleph", side_effect=lambda path, body=None: looked.append(path) or [
-                 {"id": "p1", "name": "Mila Synthetic", "kind": "person", "scope": "work"}]):
+        asked = []
+        with patch.object(notes, "names", return_value=[("Mila Synthetic", True)]):
             r = notes.make("We agreed on the plan.", lambda p, n=60: asked.append(p) or '{"title": "Model title"}',
                            call=False, dry=True, event={"title": "Weekly sync", "people": ["Mila Synthetic"]})
         self.assertEqual(r["title"], "Weekly sync")
@@ -77,10 +75,8 @@ class NoteFromEvent(unittest.TestCase):
         people = [("Andrew Synthetic", True), ("Andrés Synthetic", True), ("Andy Synthetic", True), ("Марта", True),
                   ("Marko Synthetic", True), ("Sava Synthetic", True), ("Mila Synthetic", True), ("Mila Other", True),
                   ("Till Synthetic", True)]
-        hit = lambda path, body=None: [{"id": path, "name": __import__("urllib.parse").parse.unquote(path.split("q=")[1].split("&")[0]),
-                                        "kind": "person", "scope": "work"}]
         text = "Скажи, будь ласка, Андрій, де ми. Марта не підтвердила. Я говорив з Савою. Мілі теж написав. Тільки це, тільки то."
-        with patch.object(notes, "names", return_value=people), patch.object(notes, "aleph", side_effect=hit):
+        with patch.object(notes, "names", return_value=people):
             got = [l["name"] for l in notes.links(text)]
         self.assertEqual(sorted(got), ["Sava Synthetic", "Марта"])   # not his own name, not Marko, not one of two Lanas
 

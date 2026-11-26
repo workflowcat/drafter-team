@@ -17,7 +17,6 @@ OWNERS = {
     "ask": (),                                       # he asked his notes by voice
     "call_notes": ("callNotes",),                    # the live outline and the final call summary (transcript to Haiku)
     "entities": ("entityClassify",),                 # a kind for a leftover name: only the name goes (engine/entities.py)
-    "backoffice": ("backOffice",),                   # the batch over his day: tags, call notes, people, grades, review (engine/backoffice.py)
     "voice_claude": ("voiceClaude",),                # Claude cleans a Clean or Polished voice take after it went in (engine/voice_claude.py)
     "pause_rewrite": ("pauseRewrite",),              # a typing pause: the paragraph before the caret (engine/pause_rewrite.py)
 }
@@ -26,11 +25,11 @@ OWNERS = {
 # old settings file: nothing reads them.
 
 # Off for a new install since 2026-11-14 (open-source round): nothing goes to Claude until the user turns it on.
-DEFAULTS = {"rework": False, "callNotes": False, "entityClassify": False, "backOffice": False, "voiceClaude": False, "pauseRewrite": False}
+DEFAULTS = {"rework": False, "callNotes": False, "entityClassify": False, "voiceClaude": False, "pauseRewrite": False}
 # What a missing key meant before that day. migrate() writes these into a settings file written before the change, once,
 # so an existing user keeps exactly what he had. MARK in the file says it is done (or that the file is new).
 # entityClassify (kinds for leftover names, engine/entities.py) came on that day and was never on: it stays off.
-NEVER_ON = {"entityClassify", "backOffice", "voiceClaude", "pauseRewrite"}   # backOffice, voiceClaude, pauseRewrite: new on 2026-11-17, never on before
+NEVER_ON = {"entityClassify", "voiceClaude", "pauseRewrite"}   # voiceClaude, pauseRewrite: new on 2026-11-17, never on before
 OLD_DEFAULTS = {k: k not in NEVER_ON for k in DEFAULTS}
 MARK = "cloudDefaults"
 

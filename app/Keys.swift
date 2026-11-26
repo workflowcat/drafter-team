@@ -1,5 +1,5 @@
 // Keys: every keystroke hides or trims the ghost and asks again after a pause. Tab takes what Drafter shows at the
-// caret, Right Option = voice; the command field is ⌘K in Drafter's window (⌃⌥Space is Aleph's). Every key Drafter
+// caret, Right Option = voice; the command field is ⌘K in Drafter's window (⌃⌥Space and ⌘Space are left alone). Every key Drafter
 // has is in app/KeyMap.swift (the key map, docs/plans/2026-11-17-key-map.md); the rules are app/KeyRules.swift.
 import AppKit
 import Carbon
@@ -200,7 +200,7 @@ final class Keys {
         let code = event.getIntegerValueField(.keyboardEventKeycode)
         if type == .keyDown, code != 48 { lastTabTake = KeyRules.tabStamp(lastTabTake, aborted: false, otherKey: true) }   // not "right after a take" any more
         // the command field is ⌘K in Drafter's window; the floating command panel opens from a lookup chip only (⌃⌥Space
-        // is Aleph's side panel and ⌘Space Aleph's bar). While it is open its field takes the keys.
+        // and ⌘Space are left alone). While it is open its field takes the keys.
         if Quick.shared.tap(type, event) { return nil }   // the Quick panel (app/Quick.swift): its key, and its keys while open
         if type == .keyDown, ContextPanel.shared.isOpen {                                                    // the context preview (app/Entities.swift)
             if ContextPanel.shared.key(code, event.flags.intersection([.maskCommand, .maskControl, .maskAlternate, .maskShift]), typed) { return nil }

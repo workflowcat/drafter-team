@@ -664,7 +664,7 @@ enum CallWatch {
         Offer.show(ask(name: name, title: (event?["title"] as? String).flatMap { $0.isEmpty ? nil : $0 }, people: people),
                    kind: "Call", side: name, accept: "Record", seconds: 30, app: app) { if test { log("offer test: taken") } else { CallWatch.accept() } }
         log("call: offered for \(app)" + (test ? " (test)" : ""))
-        // call prep: who it is likely with and what is known about them (Aleph), from the call windows' titles
+        // call prep: notes from the vault cache that match the call windows' titles
         if let pid = running?.processIdentifier {
             let titles = windowTitles(pid) + [NSWorkspace.shared.frontmostApplication.map { Focus.windowTitle($0) } ?? ""]
             Engine.shared.post("/prep", ["text": titles.joined(separator: " · ")]) { j in

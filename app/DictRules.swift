@@ -12,7 +12,7 @@ enum DictRules {
         var text: String          // the word, or what he meant
         var heard: [String] = []  // what voice heard for it
         var count = 0             // Words to learn: how often he made this change
-        var source = ""           // where the word came from (menu, aleph, voicenotes, edits, typing)
+        var source = ""           // where the word came from (menu, edits, typing, dictionary)
         var loose = false         // a heard -> meant pair with no word of its own
 
         /// One key per row: the page's chosen row, SwiftUI's row id.

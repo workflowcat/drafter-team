@@ -1,5 +1,5 @@
 """Kept-running `claude` processes for the Claude helpers that are still on (2026-11-17: Claude left the live typing
-path; the pause, the early lane, proofread, fact chips, translate and the next message went, docs/rounds/2026-11-17-backoffice.md).
+path; the pause, the early lane, proofread, fact chips, translate and the next message went).
 Rework (⌥Tab, engine/rework.py) builds its worker from here: one `claude` process per system prompt (no tools, no
 settings, no MCP), capped at MAX_LIVE, stopped by one reaper after 10 idle minutes or at once when memory is low. An
 API connection (engine/provider.py) gets provider.ApiWorker with the same face.

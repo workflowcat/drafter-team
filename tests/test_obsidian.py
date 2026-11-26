@@ -14,7 +14,6 @@ import sources
 from local_search import LocalSearchIndex
 import entities
 import prep
-import mcp_server as mcp
 
 
 class VaultTests(unittest.TestCase):
@@ -27,7 +26,7 @@ class VaultTests(unittest.TestCase):
         self.configure()
 
     def configure(self, **extra):
-        (self.data / "settings.json").write_text(json.dumps({"obsidianVault": str(self.vault), "mcp": True, **extra}))
+        (self.data / "settings.json").write_text(json.dumps({"obsidianVault": str(self.vault), **extra}))
 
     def note(self, path="Orchard.md", text="# Orchard\nReview [[Demo Guest]]. #planning"):
         file = self.vault / path; file.parent.mkdir(parents=True, exist_ok=True); file.write_text(text)
@@ -142,8 +141,7 @@ Review [[Demo Guest|Guest]] and [[Orchard#Budget]] plus [[Plans/Station]]. #loca
 
     def test_prep_surfaces_notes_without_a_person_match(self):
         self.note(); self.index()
-        with patch.object(prep, "_people_about", return_value={"people": [], "lines": []}):
-            result = prep.about("Orchard planning", data_dir=self.data)
+        result = prep.about("Orchard planning", data_dir=self.data)
         self.assertEqual(result["vault_notes"][0]["title"], "Orchard")
         self.assertTrue(result["vault_notes"][0]["url"].startswith("obsidian://"))
         self.assertIn("Obsidian: Orchard", result["lines"][0])
@@ -162,20 +160,9 @@ Review [[Demo Guest|Guest]] and [[Orchard#Budget]] plus [[Plans/Station]]. #loca
         self.configure(obsidianVault="")
         self.assertEqual(entities.Store(self.data / "entities.json").context("Orchard")["pointers"], [])
         self.configure()
-        built = entities.build(data=self.data, db=False, vault=False, codius=self.root / "absent", ordinary=set(),
+        built = entities.build(data=self.data, vault=False, codius=self.root / "absent", ordinary=set(),
                                contacts=[{"id": "demo", "name": "Demo Guest"}], write=False)
         self.assertTrue(built["records"][0]["pack"]["pointers"][0]["value"].startswith("obsidian://"))
-
-    def test_mcp_obsidian_enum_search_and_disabled_gate(self):
-        self.note(); self.index()
-        service = mcp.Drafter(self.data)
-        result = service.call("drafter_search_sources", {"query": "Orchard", "kinds": ["obsidian"]})
-        self.assertEqual(result[0]["src"], "obsidian")
-        self.assertEqual(mcp.TOOL_MAP["drafter_search_sources"]["inputSchema"]["properties"]["kinds"]["maxItems"], 4)
-        self.configure(obsidianVault="")
-        self.assertEqual(service.call("drafter_search_sources", {"query": "Orchard", "kinds": ["obsidian"]}), [])
-        self.configure(mcp=False)
-        with self.assertRaises(mcp.ToolError): service.call("drafter_search_sources", {"query": "Orchard"})
 
 
 if __name__ == "__main__": unittest.main()

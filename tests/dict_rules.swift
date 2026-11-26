@@ -10,7 +10,7 @@ import Foundation
         let file: [String: Any] = [
             "words": [
                 ["text": "Zorvox", "source": "menu"],
-                ["text": "Brumblex", "source": "aleph", "heard": ["brum blacks", "brumbl"]],
+                ["text": "Brumblex", "source": "edits", "heard": ["brum blacks", "brumbl"]],
                 ["text": "ауралінк", "source": "typing"],
                 ["text": "zorvox", "source": "typing"],          // the same word twice: one row
                 ["text": "  ", "source": "menu"],

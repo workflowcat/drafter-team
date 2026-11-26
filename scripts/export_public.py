@@ -7,8 +7,7 @@
    roles, worktrees.
 2. Scans every copied text file: the owner's deny-list (required: $DRAFTER_DENY or data/public-deny.txt), home folder
    paths, email addresses, the private hosts (the deny-list's entries with a dot, so no host is named in this
-   public file), and the Aleph port on any line that does not name the optional Aleph
-   integration. Any hit fails loudly with the file and line, never the list itself.
+   public file). Any hit fails loudly with the file and line, never the list itself.
 3. `git init -b main` in the copy and stages everything, then runs tests/test_no_private.py and every test file there.
 4. With --commit, makes the one commit with that author and the Claude co-author line. No remote, no push.
 """
@@ -21,7 +20,6 @@ sys.path.insert(0, str(ROOT / "tests"))
 import public_files
 import test_no_private as nopriv
 
-ALEPH_PORT = re.compile(r"8797")
 MESSAGE = """Drafter: an offline writing helper for macOS
 
 Grey ghost text at the caret in any app from a small model on this Mac, voice on Right Option, call and long-note
@@ -66,7 +64,7 @@ def scan(target):
     hosts = [w for w in words if "." in w and " " not in w]
     if not hosts: die("the deny-list names no private host (an entry with a dot, like a domain)")
     hrx = re.compile("|".join(re.escape(h) for h in hosts), re.I)
-    found = {"deny-list name": [], "home path": [], "email": [], "private host": [], "Aleph port outside Aleph": []}
+    found = {"deny-list name": [], "home path": [], "email": [], "private host": []}
     for f in sorted(p for p in target.rglob("*") if p.is_file() and ".git" not in p.relative_to(target).parts):
         rel = f.relative_to(target)
         names_ok = str(rel) in public_files.NAME_TABLES
@@ -84,7 +82,6 @@ def scan(target):
                 if m.group(0).lower() not in nopriv.SAFE_EMAILS and not nopriv.SAFE_DOMAINS.match(m.group(1)):
                     found["email"].append(at)
             if hrx.search(line): found["private host"].append(at)
-            if ALEPH_PORT.search(line) and "aleph" not in line.lower(): found["Aleph port outside Aleph"].append(at)
     bad = {k: v for k, v in found.items() if v}
     if bad:
         for k, v in bad.items():
@@ -113,7 +110,7 @@ def main():
     n = copy_tree(target)
     print(f"copied {n} files into {target}")
     words, hosts = scan(target)
-    print(f"scan: clean (deny-list of {words} entries, {hosts} of them hosts; home paths, emails, the Aleph port)")
+    print(f"scan: clean (deny-list of {words} entries, {hosts} of them hosts; home paths, emails)")
 
     run(["git", "init", "-q", "-b", "main"], target)
     run(["git", "add", "-A"], target)

@@ -1,15 +1,13 @@
 // Transcribe a file (17 November 2026, from the tools review: MacWhisper, Transcribe): an audio or video file dropped on
 // the Drafter window or the menu bar icon, or picked with "Transcribe file…", becomes a recording like a long note.
 // The file is converted to 16 kHz mono (AudioImport) into data/calls/<time>/me.wav, then the call pipeline reads it
-// (Talk.transcribe: Parakeet, else Whisper; names from the people book; /note writes the summary and to-dos). A file of
-// 20 minutes or more also goes to the careful reading on the team server (Jobs.careful, the background-jobs rule in
-// AGENTS.md). Progress shows in the notch: a ring with the percent while it converts, a turning arc while it is read.
+// (Talk.transcribe: Parakeet, else Whisper; names from the people book; /note writes the summary and to-dos).
+// Progress shows in the notch: a ring with the percent while it converts, a turning arc while it is read.
 // The source file is never changed or moved. Files go one after another.
 import AppKit
 import UniformTypeIdentifiers
 
 enum FileTranscribe {
-    static let carefulFrom: Double = 20 * 60          // seconds: longer files also get the careful reading
     private static var queue: [URL] = []
     private(set) static var busy = false
     private static var stop = false
@@ -82,9 +80,6 @@ enum FileTranscribe {
         guard secs >= 0.5 else { try? FileManager.default.removeItem(at: dir); finish(nil, "\(name): no sound in it"); return }
         RecordNotch.shared.progress(name, nil, more: more)
         Talk.shared.transcribe(dir: dir, me: dir.appendingPathComponent("me.wav"), them: nil, call: false, live: "") { ok in
-            if secs >= carefulFrom {
-                Jobs.careful(dir) { code in log("file: careful reading for \(dir.lastPathComponent) exited \(code)") }
-            }
             finish(ok ? dir : nil, ok ? nil : "\(name): no speech found")
         }
     }

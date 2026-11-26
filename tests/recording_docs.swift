@@ -1,6 +1,6 @@
 import Foundation
 
-// swiftc -parse-as-library app/Transcript.swift app/Recording.swift app/MeetingRules.swift app/CarefulTranscript.swift app/CaptureRules.swift tests/recording_docs.swift -o app/build/recording-docs-test && app/build/recording-docs-test
+// swiftc -parse-as-library app/Transcript.swift app/Recording.swift app/MeetingRules.swift app/CaptureRules.swift tests/recording_docs.swift -o app/build/recording-docs-test && app/build/recording-docs-test
 @main
 struct RecordingDocChecks {
     static func check(_ ok: Bool, _ what: String) { if !ok { print("FAIL: " + what); exit(1) } }

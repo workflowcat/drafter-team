@@ -1,5 +1,5 @@
 """Training set for a LoRA on Andrii's own writing (local only, data/train/): every line from the phrase memory
-(Beeper messages he sent, Voice Notes takes, his prompts to Claude) and what he sent while Drafter was on, in the same
+(Beeper messages he sent, his prompts to Claude) and what he sent while Drafter was on, in the same
 shape the engine prompts with ("[App]\\n" + text). Left out, so the tests stay fair: the 30 replay items and the fresh
 set (data/replay-fresh.json, drawn again by every retrain from the lines since the last one: the rolling test set)."""
 import argparse, json, random, sys

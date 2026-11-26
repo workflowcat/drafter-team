@@ -105,14 +105,14 @@ class PhraseInputs(unittest.TestCase):
             staged = Path(folder) / 'phrases-next.jsonl'
             live.write_text('old live corpus')
             sources = {name: (lambda name=name: [f'synthetic {name} source phrase'])
-                       for name in ('beeper', 'voice_notes', 'claude_prompts', 'typed')}
+                       for name in ('beeper', 'claude_prompts', 'typed')}
             ns = extract('engine/memory.py', {'build'},
                          dict(Path=Path, time=time, json=json, OUT=live,
                               WORD=re.compile(r'\w+'), **sources))
             ns['build'](staged)
             self.assertEqual(live.read_text(), 'old live corpus')
             self.assertEqual({json.loads(line)['src'] for line in staged.read_text().splitlines()},
-                             {'beeper', 'voice', 'claude', 'typed'})
+                             {'beeper', 'claude', 'typed'})
             ns['build']()
             self.assertEqual(live.read_bytes(), staged.read_bytes())
 

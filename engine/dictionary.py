@@ -1,13 +1,13 @@
-"""The shared dictionary: data/words.json (untracked), read by Drafter and by Voice Notes.
+"""The dictionary: data/words.json (untracked), read by the typing engine and the voice engine (engine/voice.py).
 
 It holds the user's contacts and projects, so it lives in `data/`, never in git. `dictionary/words.example.json` is
 the tracked seed with made-up entries. `ensure()` moves an older `dictionary/words.json` into `data/` once (and leaves a
 link at the old place for apps that still read it there), or starts a new install from the seed.
 
 `words` is the source of truth: [{text, lang, kind, heard?, source}]. `terms`, `heard` and `keep` are written from it on
-every save in the shape Voice Notes already reads (terms = spelling, heard = mishearing -> meant, keep = left alone).
+every save in the shape the voice engine reads (terms = spelling, heard = mishearing -> meant, keep = left alone).
 
-    .venv/bin/python engine/dictionary.py seed     # Voice Notes words + Aleph people/projects + accepted typing
+    .venv/bin/python engine/dictionary.py seed     # words he accepted from Drafter at least twice
     .venv/bin/python engine/dictionary.py add "Харбінджер" uk
 """
 import json, re, sys, time
@@ -19,10 +19,7 @@ FILE = ROOT / "data" / "words.json"
 OLD = ROOT / "dictionary" / "words.json"              # tracked until 2026-11-14 (open-source round)
 SEED = ROOT / "dictionary" / "words.example.json"
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import integrations   # Voice Notes and Aleph are optional (engine/integrations.py): off, seed() skips them
-ALEPH = integrations.local.setting("aleph", "url") or "http://127.0.0.1:8797"
-VOICE = Path(integrations.local.setting("voice_notes", "path") or "/nonexistent") / "words.json"
-ABOUT = ("The user's own words, shared by Drafter (completions lean towards them) and Voice Notes (Whisper hint, spelling fixes). "
+ABOUT = ("The user's own words: completions lean towards them, and voice uses them (Whisper hint, spelling fixes). "
          "Edit `words`; `terms`, `heard` and `keep` are rebuilt from it by Drafter on every save.")
 
 
@@ -32,16 +29,15 @@ def _common():
 
 
 COMMON = _common()
-# tiny words that are never a name, even when Aleph has them as someone's short name ("The", 2026-10-19)
+# tiny words that are never a name, even when a source has them as someone's short name ("The", 2026-10-19)
 STOP = {"the", "and", "for", "you", "all", "new", "one", "two", "who", "his", "her", "our", "out", "not", "but", "are"}
 
 
 def spelling(w):
-    """Voice Notes rewrites every term case-insensitively, so a plain English word ("Cases", "Grant") would capitalise
+    """Voice rewrites every term case-insensitively, so a plain English word ("Cases", "Grant") would capitalise
     ordinary speech. Those stay in `words` for Drafter but are left out of `terms`."""
     t = w["text"]
     if w.get("kind") == "phrase": return False
-    if w.get("source") == "voicenotes": return True
     return not (" " not in t and t.lower() in COMMON)
 
 
@@ -89,11 +85,11 @@ def load(file=None):
 
 
 def save(d, file=None, store=None):
-    """Writes `words` and the shape Voice Notes reads. With the names reference (data/names.json, engine/names.py) beside
+    """Writes `words` and the shape the voice engine reads. With the names reference (data/names.json, engine/names.py) beside
     it: terms in order of use (Whisper takes the first 60), his Names-page spellings and mishearings in, hidden names out."""
     file = Path(file or FILE)
-    # Voice Notes' Whisper hint takes the first 60 terms: Voice Notes' own words and his phrases go first
-    order = {"voicenotes": 0, "menu": 1, "typing": 2, "aleph-live": 3, "aleph": 4}
+    # the Whisper hint takes the first 60 terms: the words he added himself go first
+    order = {"menu": 1, "typing": 2}
     d["words"].sort(key=lambda w: order.get(w.get("source"), 9))
     heard = dict(d.get("loose_heard", {}))
     for w in d["words"]:
@@ -162,7 +158,7 @@ def edit(old, text, heard=None, d=None):
 
 
 def loose(old, heard, meant, d=None):
-    """A heard -> meant pair with no word of its own (Voice Notes' old pairs). Empty `meant` removes it."""
+    """A heard -> meant pair with no word of its own. Empty `meant` removes it."""
     own = d is None
     d = d or load()
     d["loose_heard"].pop((old or "").strip().lower(), None)
@@ -170,13 +166,6 @@ def loose(old, heard, meant, d=None):
     if h and m and h != m.lower(): d["loose_heard"][h] = m
     if own: save(d)
     return {"heard": h, "meant": m}
-
-
-def clean_name(n):
-    n = re.sub(r"\(.*?\)", "", n or "")
-    n = "".join(ch for ch in n if ch.isalnum() or ch in " '’&.-+")   # drops emoji and decorative letters
-    n = re.sub(r"\s+", " ", n).strip(" .-")
-    return "" if re.search(r"\b[A-Z]\.$", n) else n               # "Ivan L." is a label, not a spelling
 
 
 def _own():
@@ -193,41 +182,6 @@ SKIP = re.compile(r"^[+\d\s()-]+$" + _own() + r"|📚|^_|^\.")
 
 def seed():
     d = load()
-    try:
-        if not integrations.available("voice_notes"): raise FileNotFoundError(VOICE)
-        v = json.loads(VOICE.read_text())
-        for t in v.get("terms", []): add(t, kind="term", source="voicenotes", d=d)
-        known = {w["text"].lower(): w for w in d["words"]}
-        for h, meant in v.get("heard", {}).items():
-            if meant.lower() in known: known[meant.lower()].setdefault("heard", []).append(h) if h not in known[meant.lower()].get("heard", []) else None
-            else: d["loose_heard"][h] = meant
-        d["keep"] = sorted(set(d["keep"]) | set(v.get("keep", [])))
-    except FileNotFoundError:
-        pass
-    # Aleph is the source of names (2026-10-18): people and projects, never its private scope. If Aleph is down the
-    # names already here stay as they are.
-    try:
-        if not integrations.available("aleph"): raise OSError("the aleph integration is off on this Mac")
-        # Aleph's own database, read-only (its search answers at most 100 since 2026-10-19); the API is the fallback
-        try:
-            import sqlite3
-            db = sqlite3.connect("file:" + str(integrations.local.setting("aleph", "db")) + "?mode=ro", uri=True)
-            things = [dict(zip(("id", "kind", "name", "short", "scope"), r)) for r in
-                      db.execute("select id, kind, name, short, scope from things where kind in ('person','project','org','team','tool')")]
-            db.close()
-        except Exception:
-            import urllib.request
-            things = json.loads(urllib.request.urlopen(ALEPH + "/api/find?q=&kinds=person,project,org,team,tool&limit=5000", timeout=5).read())
-        d["words"] = [w for w in d["words"] if w.get("source") not in ("people", "work", "aleph", "aleph-live")]
-        for t in things:
-            if t.get("scope") == "private": continue
-            src = "aleph-live" if t.get("heat") in ("live", "warm") else "aleph"
-            kind = "name" if t["kind"] == "person" else "project"
-            for n in {clean_name(t.get("name", "")), clean_name(t.get("short", ""))}:
-                if n and len(n) >= 3 and not SKIP.search(n) and len(n.split()) <= 3 and n.lower() not in STOP:
-                    add(n, kind=kind, source=src, d=d)
-    except Exception as e:
-        print("aleph not reachable, names kept:", e)
     # accepted typing: words he took from Drafter at least twice that look like names or terms
     acc = ROOT / "data" / "accepted.jsonl"
     if acc.exists():
@@ -237,7 +191,7 @@ def seed():
             except Exception: continue
             c.update(w for w in re.findall(r"[\w'’&-]{4,}", t) if w[0].isupper() or re.search(r"[a-z][A-Z]", w))
         for w, k in c.items():
-            if k >= 2: add(w, kind="term", source="typing", d=d)
+            if k >= 2 and not SKIP.search(w): add(w, kind="term", source="typing", d=d)   # never his own name
     out = save(d)
     print(f"{len(out['words'])} words, {len(out['terms'])} terms, {len(out['heard'])} heard, {len(out['keep'])} keep -> {FILE}")
 

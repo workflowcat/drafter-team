@@ -520,7 +520,6 @@ struct PersonEdit: Identifiable { let label: String; let person: String; let for
 private struct CallStudioSource: Hashable {
     let id: String
     let turns: [Turn]
-    let careful: Bool
     let duration: Double
     let live: Bool
 
@@ -528,9 +527,8 @@ private struct CallStudioSource: Hashable {
         let fallback = turns.map { CallChapterTurn(start: $0.start, end: nil, who: $0.who, text: $0.text) }
         guard !live else { return fallback }
         let dir = URL(fileURLWithPath: id)
-        let name = careful ? "careful.json" : "lines.json"
-        guard let data = try? Data(contentsOf: dir.appendingPathComponent(name)) else { return fallback }
-        let result = CallChapterRules.transcriptTurns(from: data, careful: careful)
+        guard let data = try? Data(contentsOf: dir.appendingPathComponent("lines.json")) else { return fallback }
+        let result = CallChapterRules.transcriptTurns(from: data)
         return result.isEmpty ? fallback : result
     }
 }
@@ -569,11 +567,9 @@ final class CallStudioNoteDraft: ObservableObject {
 
 struct DocView: View {
     @EnvironmentObject var m: WindowModel
-    /// Which transcript shows when the server's careful pass came back (careful.json): that one, or the first reading.
-    @AppStorage("carefulOn") var carefulOn = true
     let doc: CallDoc
     init(d: CallDoc) { doc = d }
-    var d: CallDoc { carefulOn ? doc.withCareful() : doc }
+    var d: CallDoc { doc }
     @State private var group: [MergeSource] = []
     @State private var editing = false
     @State private var person: PersonEdit?
@@ -596,7 +592,7 @@ struct DocView: View {
     }
     private var currentTurn: Int? { CallTimelineRules.nearestTurnID(at: second, turns: d.turns.map { ($0.id, $0.start) }) }
     private var studioSource: CallStudioSource {
-        CallStudioSource(id: d.id, turns: d.turns, careful: carefulOn && !doc.careful.isEmpty, duration: totalSecs, live: d.live)
+        CallStudioSource(id: d.id, turns: d.turns, duration: totalSecs, live: d.live)
     }
 
     var body: some View {
@@ -741,10 +737,9 @@ struct DocView: View {
 
     private var transcriptControls: some View {
         ViewThatFits(in: .horizontal) {
-            HStack(spacing: 12) { speakerPick; Spacer(minLength: 0); followToggle; if !doc.careful.isEmpty { transcriptPick } }
+            HStack(spacing: 12) { speakerPick; Spacer(minLength: 0); followToggle }
             VStack(alignment: .leading, spacing: 8) {
                 HStack { speakerPick; Spacer(minLength: 0); followToggle }
-                if !doc.careful.isEmpty { transcriptPick }
             }
         }
     }
@@ -861,7 +856,6 @@ struct DocView: View {
                 }.disabled(d.turns.isEmpty)
                 Button("Save subtitles (.srt)…") { m.saveSubtitles(d) }.disabled(!d.timed)
                 if !d.note.isEmpty { Button("Open the note file") { NSWorkspace.shared.open(URL(fileURLWithPath: d.note)) } }
-                if d.hasAudio, !d.live, doc.careful.isEmpty { Button("Read carefully on the team server") { m.readCarefully(doc) } }
                 Button("Show in Finder") { NSWorkspace.shared.activateFileViewerSelecting([d.dir]) }
             } label: { Label { Text("More") } icon: { Glyph("more", size: 14) } }
             .menuStyle(.borderlessButton).fixedSize()
@@ -948,15 +942,6 @@ struct DocView: View {
                 }
             }
         }
-    }
-
-    /// First reading or careful pass; the model's name on hover.
-    var transcriptPick: some View {
-        SwiftUI.Picker("Transcript", selection: $carefulOn) {
-            Text("First").tag(false)
-            Text("Careful").tag(true)
-        }.pickerStyle(.segmented).labelsHidden().fixedSize().controlSize(.small)
-            .help("Careful: read again on the team server with Whisper \(doc.carefulModel)")
     }
 
     func section<C: View>(_ title: String, side: AnyView? = nil, @ViewBuilder _ content: () -> C) -> some View {

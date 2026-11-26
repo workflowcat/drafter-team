@@ -139,10 +139,10 @@ class Contacts(unittest.TestCase):
         self.assertEqual(other['handles'], {'email':['other@example.test']})
         self.assertTrue(other['cards_only'])
         for handle in [{'email':['HANNA@example.test']}, {'phone':['+380445550100']}, {}]:
-            aleph = {'name':'Hanna Demo', 'kind':'person', 'aliases':[], 'handles':handle, 'id':'aleph:h'}
-            merged = contacts.merge([aleph], rows)
+            known = {'name':'Hanna Demo', 'kind':'person', 'aliases':[], 'handles':handle, 'id':'pack:h'}
+            merged = contacts.merge([known], rows)
             self.assertEqual(len(merged),4)
-            self.assertEqual(merged[0]['id'],'aleph:h')
+            self.assertEqual(merged[0]['id'],'pack:h')
             self.assertIn('hanna@example.test',merged[0]['handles']['email'])
             self.assertNotIn('source',merged[0])
         # A single shared first name is never enough to merge contacts.
@@ -154,7 +154,7 @@ class Contacts(unittest.TestCase):
     def test_build_optional_contacts_uses_only_injected_fixtures(self):
         fixture = test_know.PackBuild(); fixture.setUp()
         try:
-            pack = fixture.build(contacts=contacts.parse(CSV))
+            pack = fixture.build(contacts=fixture.contacts + contacts.parse(CSV))
             es = pack['entries']
             h = next(e for e in es if e.get('id') == 'h')
             self.assertIn('Hanna Demo', h['aliases'])

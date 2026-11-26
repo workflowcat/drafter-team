@@ -1,29 +1,28 @@
 """Drafter engine: one warm model on localhost, used only by the Drafter menu-bar app.
 
-    .venv/bin/python engine/server.py            # port 8797 is Aleph, so Drafter uses 8798
+    .venv/bin/python engine/server.py            # 127.0.0.1:8798
 Env: DRAFTER_MODEL (hf repo), DRAFTER_CAP_GB (default 3.2), DRAFTER_PORT (8798).
 
 POST /complete {before, app, title, context?, max_tokens?} -> {text, ms, more, src?, action?, ahead?} (ahead: worked out while the last one showed)
 POST /accept   {text, before, app}       -> remembers what was taken (data/accepted.jsonl, local only)
 POST /words    {text, lang?, kind?}       -> adds a word to data/words.json and re-warms the head
 POST /outline  {text, call?}              -> {title, points, todos}: live outline of a long note or call
-POST /note     {text, audio?}             -> long note: title, Aleph links, follow-ups; saved in Aleph + data/notes
+POST /note     {text, audio?}             -> long note: title, people and projects named, follow-ups; saved in data/notes
 POST /rewrite  {text, instruction}         -> {text}: the selection rewritten (speak over a selection)
 POST /voice/claude {text, level, mode, note, app, context, kb, names} -> {text}: Claude's cleanup of a voice take, or "" (voiceClaude)
 POST /free     {from, to, minutes, title?, earliest?, latest?, count?} -> {slots: [{start, end, chip}]} from his calendars
 POST /lookup   {kind,query}               -> read-only documents, links, meetings and free times
 POST /command  {text}                     -> up to 3 runnable options for a typed direction (⌃⌥Space)
 POST /snippet  {key, text}                -> save a snippet (data/snippets.json)
-POST /ask      {text}                     -> answer from his notes, takes and Aleph (Claude Haiku), for the strip
-POST /followups {items}                   -> each into Aleph as a follow-up for the next working morning (on his Tab)
-POST /prep     {text}                     -> {lines, people}: call prep from Aleph for names in a call window's title
+POST /ask      {text}                     -> answer from his notes and takes (Claude Haiku), for the strip
+POST /prep     {text}                     -> {lines, people, vault_notes}: call prep from the vault cache for a call window's title
 POST /instant  {app, context}             -> {options}: three local one-line replies (yes, no, later) to their last message
 POST /fields   {app, context}             -> {name, first name, company, last link to them}: smart snippet fields, local
 POST /chip     {before}                   -> {action?} for the line being typed (the app asks after a pause)
 POST /prefill  {before, app, title, context}  -> reads it into the cache (on focus), no suggestion
 POST /typed    {text, app, context?}      -> a line he sent; kept in data/typed.jsonl (with the chat above) for the phrase memory and benches; in Beeper it joins that chat's lines (people.py)
 POST /act      {id, fields}               -> runs an action; app-side ones (EventKit) go to the app via /pending
-GET  /settings, POST /settings {paused?, skip?, actions_off?, model?, callNotes?, ...}   -> for Aleph's controls
+GET  /settings, POST /settings {paused?, skip?, actions_off?, model?, callNotes?, ...}   -> for local tools
 POST /words/remove {text}
 GET  /edits, POST /edits {heard, fixed, accept}   -> words he changed after dictating; accepted ones join the dictionary
 POST /sleep {secs}, POST /wake  -> text model off / on while a long call is read again (memory budget)
@@ -35,7 +34,7 @@ GET  /models -> {models: [catalog entry + downloaded, download {state, pct}, spe
 POST /model {id}            -> {ok, current, error?, seconds}: unload the current model, load this one (live on a failure)
 POST /models/download {id}  -> {state, pct}: the weights he asked for, in their own process; /models/cancel {id} stops it
 
-Only local programs (the app, Aleph's hub) may call it, never a web page: a request with Origin or Sec-Fetch-*
+Only local programs (the app, local scripts) may call it, never a web page: a request with Origin or Sec-Fetch-*
 headers, a Host other than 127.0.0.1/localhost, or a POST that is not application/json gets 403.
 """
 import json, math, os, queue, re, shutil, subprocess, sys, threading, time, urllib.request
@@ -530,7 +529,7 @@ def rewrite(req):
 
 def voice_claude(req):
     """Claude cleans a voice take that already went in (Clean or Polished; Raw never asks). '' keeps Parakeet's text:
-    off, offline, over the back office cap, slower than vclaude.DEADLINE or a bad answer. engine/voice_claude.py."""
+    off, offline, over the daily Claude cap, slower than vclaude.DEADLINE or a bad answer. engine/voice_claude.py."""
     st = settings_load()
     if not claude_on("voice_claude", st): return {"text": "", "why": "off"}
     text = str(req.get("text") or "").strip()
@@ -976,7 +975,7 @@ def _complete(req, low=False, seq=None, pack=None, on_part=None, keep=None):
     b = builder_for(req.get("fmt") or FMT)
     bars = tuple(req["bars"]) if req.get("bars") else None
     # chips: the Drafter app asks for them separately (/chip, after a pause) so typing never waits for a chip read;
-    # other callers (Aleph's panel) still get them here
+    # other local callers still get them here
     chips = req.get("chips", True)
     # a quick insert: ";m" -> his email, "my email is" -> the same (engine/snippets.py), before anything else
     snip = snippets.offer(before)
@@ -1318,7 +1317,7 @@ def rework(req):
 
 def pause_rewrite(req):
     """A typing pause (app/PauseRewrite.swift, setting `pauseRewrite`, off): the paragraph before the caret goes
-    through the ⌥Tab rework path (command "polish", Haiku) with the same context, under the back office's daily cap.
+    through the ⌥Tab rework path (command "polish", Haiku) with the same context, under the daily Claude cap.
     Offline, off or capped: nothing is sent and the app shows nothing (engine/pause_rewrite.py)."""
     st = settings_load()
     if not claude_on("pause_rewrite", st): return {"skip": "off"}
@@ -1381,7 +1380,7 @@ class H(BaseHTTPRequestHandler):
         """A web page open in any browser reaches 127.0.0.1 too, so the address alone proves nothing. Browsers mark
         their requests (Origin, Sec-Fetch-*), a page under another name that points here (DNS rebinding) shows its own
         Host, and a page can only POST application/json after a preflight this server never answers. The app
-        (URLSession) and Aleph's hub (urllib) send none of those marks and always send application/json."""
+        (URLSession) and local scripts (urllib) send none of those marks and always send application/json."""
         h = self.headers
         if self.client_address[0] not in ("127.0.0.1", "::1"): return True
         if h.get("Origin") or h.get("Sec-Fetch-Site") or h.get("Sec-Fetch-Mode"): return True
@@ -1431,21 +1430,7 @@ class H(BaseHTTPRequestHandler):
             try: wait = min(max(float(parse_qs(urlsplit(self.path).query).get("wait", ["0"])[0]), 0.0), 30.0)
             except ValueError: wait = 0.0
             return self.send({"jobs": actions.take_pending(wait)})
-        if self.path.split("?", 1)[0] in ("/journal/ask", "/journal/tags"):
-            # ask your day over the index the server built (engine/journal_index.py): the question is embedded here,
-            # nothing leaves the Mac. ?q=&day=YYYY-MM-DD&tag=&k=
-            from urllib.parse import urlsplit, parse_qs
-            import journal_index
-            if self.path.startswith("/journal/tags"): return self.send({"tags": journal_index.INDEX.tag_list()})
-            qs = {k: v[0] for k, v in parse_qs(urlsplit(self.path).query).items()}
-            try: k = min(max(int(qs.get("k", "8")), 1), 50)
-            except ValueError: k = 8
-            with guard.allow(guard._cap[0] + 0.3):   # the encoder, ~90 MB while loaded (dropped after 2 min idle)
-                return self.send(journal_index.INDEX.ask(qs.get("q", ""), qs.get("day"), k, qs.get("tag")))
         if self.path == "/models": return self.send(models_view())
-        if self.path == "/backoffice":         # the Claude back office: running, the last batch's report, today's spend
-            import backoffice
-            return self.send(backoffice.status(DATA))
         if self.path == "/health":
             act, peak = model.memory_gb()
             return self.send({"ok": True, "model": model.repo, "catalog": (CURRENT["entry"] or {}).get("id"), "adapter": model.adapter, "lora_merged": len(getattr(model, "fused", []) or []), "strength": round(getattr(model, "strength", 1.0) * 100), "fmt": FMT, "pid": os.getpid(), "head_tokens": len(builder.head_ids), "head_file": getattr(model, "head_file", None), "mark_hits": getattr(model, "mark_hits", 0), "rss_gb": round(guard.rss_gb(), 2),
@@ -1501,13 +1486,6 @@ class H(BaseHTTPRequestHandler):
         if self.path == "/marks": return self.send(edit_marks(req))
         if self.path == "/mystyle": return self.send(my_style(req))
         if self.path == "/rework": return self.send(rework(req))
-        if self.path == "/backoffice/run":     # on demand: {jobs: [...], dry: bool}; the batch asks backOffice and online itself
-            import backoffice
-            jobs = [j for j in (req.get("jobs") or []) if j in backoffice.JOBS] or None
-            if req.get("dry"): return self.send(backoffice.run(jobs, data=DATA, dry=True))
-            if backoffice.state["running"]: return self.send({"skipped": "already running"})
-            threading.Thread(target=lambda: backoffice.run(jobs, data=DATA, force=bool(req.get("force"))), daemon=True).start()
-            return self.send({"started": True})
         if self.path == "/synonyms":
             import synonyms
             return self.send(synonyms.handle(req))
@@ -1528,23 +1506,6 @@ class H(BaseHTTPRequestHandler):
         if self.path == "/ask":
             import ask as notes_ask
             return self.send(notes_ask.answer(str(req.get("text") or "")))
-        if self.path == "/followups":
-            # on his Tab: each follow-up into Aleph as a reminder for the next working morning at 10:00
-            import datetime as dt
-            d = dt.datetime.now() + dt.timedelta(days=1)
-            while d.weekday() >= 5: d += dt.timedelta(days=1)
-            due = d.replace(hour=10, minute=0).strftime("%Y-%m-%dT%H:%M")
-            added = 0
-            for what in (req.get("items") or [])[:8]:
-                try:
-                    if not integrations.available("aleph"): raise OSError("Aleph is off on this Mac")
-                    r = json.loads(urllib.request.urlopen(urllib.request.Request(local.setting("aleph", "url") + "/api/do",
-                        data=json.dumps({"moves": [{"type": "remind", "what": str(what)[:200], "due": due}]}).encode(),
-                        headers={"Content-Type": "application/json"}), timeout=10).read())
-                    added += 1 if r["results"][0].get("ok") else 0
-                except Exception as e:
-                    print("followups:", e, flush=True)
-            return self.send({"added": added, "due": due})
         if self.path == "/prep":
             try: return self.send(prep.about(req.get("text") or ""))
             except Exception as e: return self.send({"lines": [], "error": str(e)[:200]})
@@ -1649,10 +1610,10 @@ class H(BaseHTTPRequestHandler):
             refresh_cli()
             return self.send({"ok": bool(ok), "connected": provider.connected()})
         if self.path == "/settings":
-            # Aleph (or anything local) changes Drafter here; the app picks the file up within a second
+            # a local tool changes Drafter here; the app picks the file up within a second
             st = settings_load() or {cloud.MARK: "off"}   # a file made here is a new install's: never migrated
             for k in ("paused", "skip", "actions_off", "model", "voice", "voiceFast", "voiceCareful", "learn", "adapter", "fmt", "minGhost", "predictKeys",
-                      "readerCheck", "editMarks", "rework", "callNotes", "backOffice", "backOfficeCap", "voiceClaude",
+                      "readerCheck", "editMarks", "rework", "callNotes", "backOfficeCap", "voiceClaude",
                       "streamGhost", "longGhostsAI", "longGhostsChats", "autocorrectMode"):
                 if k in req: st[k] = req[k]
             tmp = DATA / "settings.tmp"; tmp.write_text(json.dumps(st, ensure_ascii=False, indent=2)); tmp.replace(DATA / "settings.json")
@@ -1676,7 +1637,7 @@ class H(BaseHTTPRequestHandler):
             actions.finish(req.get("job", ""), req.get("result") or {})
             return self.send({"ok": True})
         if self.path == "/free":
-            # free slots from his own calendars, read by the Drafter app (EventKit); Aleph's bar uses it (2026-10-21)
+            # free slots from his own calendars, read by the Drafter app (EventKit) (2026-10-21)
             job = {"kind": "eventkit.free", **{k: req[k] for k in ("from", "to", "minutes", "title", "earliest", "latest", "count") if k in req}}
             return self.send(actions.queue_app(job))
         if self.path == "/act":

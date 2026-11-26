@@ -46,18 +46,14 @@ class Rules(unittest.TestCase):
             self.assertAlmostEqual(vc.spent(d, now), 0.45)
             self.assertTrue(vc.room(d, 0.5, 0.04, now))
             self.assertFalse(vc.room(d, 0.5, 0.06, now))
-            # the batch's own days stay in the same file
+            # old days in the shared ledger
             led = Path(d) / "backoffice" / "spend.json"
             data = json.loads(led.read_text()); data["2000-01-01"] = 1.0; led.write_text(json.dumps(data))
             vc.charge(d, 0.01, now)
-            self.assertNotIn("2000-01-01", json.loads(led.read_text()))       # older than 60 days: dropped, like the batch
+            self.assertNotIn("2000-01-01", json.loads(led.read_text()))       # older than 60 days: dropped
 
     def test_estimate_is_small(self):
         self.assertLess(vc.estimate(vc.build(TAKE), TAKE), 0.001)
-
-    def test_same_cap_default_as_the_batch(self):
-        src = (ENGINE / "backoffice.py").read_text()
-        self.assertIn(f"DEFAULT_CAP = {vc.DEFAULT_CAP:.2f}", src)
 
     def test_gate(self):
         self.assertEqual(cloud.OWNERS["voice_claude"], ("voiceClaude",))

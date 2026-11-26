@@ -5,7 +5,6 @@ import Foundation
 // with the 3 removed ones) still loads, fixed keys keep their default whatever the file says, and SettingsPlan places
 // every key once, at most 11 on the main page, every cloud switch visible. Made-up values only.
 
-enum LocalConfig { static let skipApps: [String] = [] }
 enum QuickRules { static let defaultKey = ""; static let defaultSecrets: [String] = [] }
 enum ShotRules { static let defaultKey = "⌘⇧5" }
 enum KeyRules { static func keysRoundTwo(_ j: [String: Any]) -> [String: Any] { j }; static func keysRoundThree(_ j: [String: Any]) -> [String: Any] { j }; static func needsKeysRound(_ j: [String: Any]) -> Bool { false } }
@@ -179,11 +178,10 @@ struct SettingsLoadChecks {
         check(Settings.decode(Data(#"{"callScreenVideo":"yes"}"#.utf8))?.callScreenVideo == false, "invalid video opt-in stays off")
         var videoSettings = Settings(); videoSettings.callScreenVideo = true
         check(Settings.decode(try! JSONEncoder().encode(videoSettings))?.callScreenVideo == true, "video opt-in survives a save")
-        check(!s.mcp, "old settings keep mcp off")
-        check(Settings.decode(Data(#"{"mcp":true}"#.utf8))?.mcp == true, "mcp opt-in decodes")
-        check(Settings.decode(Data(#"{"mcp":"yes"}"#.utf8))?.mcp == false, "invalid mcp opt-in stays off")
+        let gone = Settings.decode(Data(#"{"mcp":true,"backOffice":true,"retrainRemote":true,"rework":true}"#.utf8))
+        check(gone?.rework == true, "an old file with removed switches still loads")
         check(s.voice && !s.shots && s.longGhostsAI == false && s.longGhostsChats && !s.idleGhost, "voice, calls, advanced decoded")
-        check(s.callNotes && s.entityClassify && s.retrainRemote && s.rework, "cloud switches decoded")
+        check(s.callNotes && s.entityClassify && s.rework, "cloud switches decoded")
         check(s.model == "made-up/model" && s.voiceFast == "made-up/fast" && s.adapter == "made-up-adapter" && s.fmt == "bare", "hidden keys decoded")
         check(s.writingNote.hasPrefix("Short lines") && s.appNotes.count == 1, "writing notes decoded")
         check(!s.screenContext, "screenContext decoded")
@@ -192,8 +190,8 @@ struct SettingsLoadChecks {
               && s.midLine && s.fallbackAnchor, "fixed keys keep their default")
         // removed keys are gone when the app saves again; the rest are all still written
         let out = (try? JSONSerialization.jsonObject(with: JSONEncoder().encode(s))) as? [String: Any] ?? [:]
-        for k in SettingsPlan.removed + SettingsPlan.removedBackOffice { check(out[k] == nil, "removed key \(k) is not written") }
-        let lost = Set(raw.keys).subtracting(out.keys).subtracting(["voiceCareful", "lookVariant", "voiceLive", "screen"] + SettingsPlan.removedBackOffice)
+        for k in SettingsPlan.removed + SettingsPlan.removedTyping { check(out[k] == nil, "removed key \(k) is not written") }
+        let lost = Set(raw.keys).subtracting(out.keys).subtracting(["voiceCareful"] + SettingsPlan.removed + SettingsPlan.removedTyping)
         check(lost.isEmpty, "every other key is written back (keys added later may be written too): \(lost.sorted())")
         // screen, the old name: read when screenContext is missing
         let legacy = Settings.decode(Data(#"{"screen": false}"#.utf8))
@@ -201,7 +199,7 @@ struct SettingsLoadChecks {
         check((Settings.decode(Data("{}".utf8)))?.screenContext == true, "an empty file keeps the defaults")
         // the plan: each key in one place, the main page at most 11, every cloud switch on the page
         let places = [SettingsPlan.main.map(\.key), SettingsPlan.cloud, SettingsPlan.advanced, SettingsPlan.fixed,
-                      SettingsPlan.removed, SettingsPlan.removedBackOffice, SettingsPlan.panel, SettingsPlan.hidden]
+                      SettingsPlan.removed, SettingsPlan.removedTyping, SettingsPlan.panel, SettingsPlan.hidden]
         let all = places.flatMap { $0 }
         check(all.count == Set(all).count, "no key in two places")
         let now = Set(((try? JSONSerialization.jsonObject(with: JSONEncoder().encode(Settings()))) as? [String: Any] ?? [:]).keys)

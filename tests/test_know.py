@@ -1,7 +1,6 @@
 """Knowledge pack fixtures only. No personal files, server, app or models."""
 import json
 from pathlib import Path
-import sqlite3
 import sys
 import tempfile
 import unittest
@@ -15,52 +14,34 @@ class PackBuild(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory(); self.addCleanup(self.tmp.cleanup)
         self.root = Path(self.tmp.name)
-        self.db = self.root / 'aleph.sqlite'
-        con = sqlite3.connect(self.db)
-        con.executescript('''CREATE TABLE things(id TEXT PRIMARY KEY,kind TEXT,name TEXT,short TEXT,scope TEXT);
-          CREATE TABLE names(name TEXT,thing TEXT);
-          CREATE TABLE facts(subj TEXT,rel TEXT,obj TEXT,value TEXT,since INT,until INT,scope TEXT);''')
-        con.executemany('INSERT INTO things VALUES (?,?,?,?,?)', [
-            ('h','person','Ганна Онищенко','Hanna','work'),
-            ('m','person','Максим Ковальський',None,'work'),
-            ('b','project','Base',None,'work'), ('t','tool','DataKit',None,'work'),
-            ('o','org','Sample Office',None,'work'), ('r','repo','codex-kit',None,'work'),
-            ('p','person','Private Sentinel','SecretAlias','private'),
-            ('g','group','Excluded Group',None,'work'), ('w','worker','Excluded Worker',None,'work')])
-        con.executemany('INSERT INTO names VALUES (?,?)', [('Hanna Onyshchenko','h'), ('SecretAlias','p')])
-        con.executemany('INSERT INTO facts VALUES (?,?,?,?,?,?,?)', [
-            ('h','handle',None,'hanna@example.test',0,None,'work'),
-            ('h','handle',None,'+380 44 555 0100',0,None,'work'),
-            ('h','handle',None,'tg:hanna_demo',0,None,'work'),
-            ('h','handle',None,'440000123',0,None,'work'),
-            ('h','handle',None,'hidden@example.test',0,None,'private'),
-            ('p','handle',None,'private@example.test',0,None,'work'),
-            ('h','works_at','p','hidden org',0,None,'work'),
-            ('h','works_at','o',None,0,None,'work'),
-            ('h','role',None,'Demo\nwriter',0,None,'work'),
-            ('h','last_contact',None,None,100000,None,'work'),
-            ('h','handle',None,'expired@example.test',0,10,'work')])
-        con.commit(); con.close()
+        # contacts as engine/contacts.py parses them (the pack's people), made up
+        self.contacts = [
+            {'id': 'h', 'name': 'Ганна Онищенко', 'kind': 'person', 'aliases': ['Hanna Onyshchenko', 'Hanna'],
+             'handles': {'email': ['hanna@example.test'], 'phone': ['+380 44 555 0100']}, 'role': 'Demo writer',
+             'org': 'Sample Office', 'source': 'contacts', 'cards_only': False},
+            {'id': 'm', 'name': 'Максим Ковальський', 'kind': 'person', 'aliases': [], 'handles': {}, 'role': '', 'org': '',
+             'source': 'contacts', 'cards_only': False}]
         self.dictionary = self.root / 'words.json'
         self.dictionary.write_text(json.dumps({'words': [
-            {'text':'CustomTerm','kind':'term'}, {'text':'Private Sentinel','source':'aleph'},
+            {'text':'CustomTerm','kind':'term'}, {'text':'Base'}, {'text':'DataKit'},
+            {'text':'Old Seed Sentinel','source':'people'},
             {'text':'Scoped Secret','scope':'private'}, {'text':'FreshRepo','kind':'project'}]}))
         self.snips = self.root / 'snippets.json'; self.snips.write_text(json.dumps({';thanks':'Thanks again', ';link':'https://example.test', ';field':'Hi {name}'}))
         self.out = self.root / 'know.json'
 
     def build(self, **kw):
-        return know.build(self.out, db=self.db, dictionary=self.dictionary, snippets=self.snips, now=100000, **kw)
+        kw.setdefault('contacts', self.contacts)
+        return know.build(self.out, dictionary=self.dictionary, snippets=self.snips, now=100000, **kw)
 
-    def test_private_thing_alias_fact_and_object_never_exported(self):
+    def test_private_words_and_old_seeds_never_exported(self):
         pack = self.build()
         output = self.out.read_text() + self.out.with_name('known-words.txt').read_text()
-        for secret in ('Private', 'Secret', 'hidden', 'private@example', 'Excluded', 'expired@example'):
+        for secret in ('Sentinel', 'Secret', 'https://example.test', '{name}'):
             self.assertNotIn(secret, output)
         h = next(e for e in pack['entries'] if e['name'].startswith('Ганна'))
-        self.assertEqual(h['handles'], {'email':['hanna@example.test'], 'phone':['+380 44 555 0100'], 'tg':['hanna_demo']})
+        self.assertEqual(h['handles'], {'email':['hanna@example.test'], 'phone':['+380 44 555 0100']})
         self.assertEqual((h['role'], h['org']), ('Demo writer', 'Sample Office'))
-        self.assertNotIn('440000123', output)
-        self.assertEqual({e['kind'] for e in pack['entries']}, {'person','project','tool','org','repo','term','phrase'})
+        self.assertEqual({e['kind'] for e in pack['entries']}, {'person','term','phrase'})
 
     def test_tokens_surnames_forms_and_common_guard(self):
         p = self.build(common={'datakit'})
@@ -77,9 +58,9 @@ class PackBuild(unittest.TestCase):
     def test_heat_sent_usage_and_frequent_lowercase(self):
         p = self.build(lines=['ask Hanna about DataKit'] * 6 + ['base base base'] * 5)
         h = p['entries'][0]
-        self.assertEqual(h['heat'], 17)
+        self.assertEqual(h['heat'], 1.75)   # a contact counts a quarter: 0.25 x (1 + 6 lines)
         base = next(e for e in p['entries'] if e['name']=='Base')
-        self.assertLess(base['heat'], 2)  # ordinary lowercase mentions never heat a project
+        self.assertLess(base['heat'], 2)  # ordinary lowercase mentions never heat a term
         pix = next(e for e in p['entries'] if e['name']=='DataKit')
         self.assertGreater(pix['heat'], base['heat'])
         p = self.build(lines=['use customterm'] * 5)
@@ -95,11 +76,9 @@ class PackBuild(unittest.TestCase):
         self.build(); self.assertEqual(len(reader.people('han')), 1)
         self.out.unlink(); self.assertEqual(reader.people('han'), [])
 
-    def test_missing_database_does_not_overwrite_pack(self):
-        self.build(); old = self.out.read_bytes()
-        with self.assertRaises(sqlite3.OperationalError):
-            know.build(self.out, db=self.root / 'absent', dictionary=self.dictionary, snippets=self.snips)
-        self.assertEqual(self.out.read_bytes(), old)
+    def test_no_contacts_builds_from_the_rest(self):
+        pack = self.build(contacts=None)
+        self.assertEqual({e['kind'] for e in pack['entries']}, {'term', 'phrase'})
 
 
 class Language(unittest.TestCase):

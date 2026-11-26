@@ -119,7 +119,7 @@ def refresh(*, cache=None, workspace=None, gam=None, runner=None, now=None):
 
 
 def merge(entries, contacts):
-    """Aleph identity wins; combine handles. Other contacts contribute email cards only."""
+    """An entry already in the pack wins; combine handles. Other contacts contribute email cards only."""
     def keys(e):
         h = e.get('handles', {})
         keys = {('email', v.casefold()) for v in h.get('email', [])}

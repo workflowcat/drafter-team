@@ -2,7 +2,7 @@
 // docs/research/2026-11-15-screenshot-tool.md). data/shots/<id>/ holds shot.png (as handed off), original.png (only
 // when marked), shot.json (ShotPack, app/ShotPackRules.swift) and shot.md (the agent text). Every write runs on one
 // serial queue, off the main thread; shot.json is merged with what is on disk so a send or an answer is never lost.
-// The targets after ⇥ in the strip (app/CaptureNote.swift) live here: clipboard, file, an app (Claude, Codex, Aleph),
+// The targets after ⇥ in the strip (app/CaptureNote.swift) live here: clipboard, file, an app (Claude, Codex),
 // Claude Code, Ask Claude here (`claude -p`, Read only), a person (a Beeper draft, never sent). Never Return anywhere.
 // The log keeps "shot: sent to <target>" and counts, never the note, the read text or a chat's title.
 import AppKit
@@ -94,11 +94,6 @@ enum ShotSend {
     static var folder: URL {
         let s = Drafter.shared.settings.shotFolder.trimmingCharacters(in: .whitespaces)
         return URL(fileURLWithPath: s.isEmpty ? NSHomeDirectory() + "/Desktop" : (s as NSString).expandingTildeInPath)
-    }
-    /// Aleph's app: the config's `aleph.bundle_id`, else the one Drafter's owner runs.
-    static var alephBundle: String {
-        let b = LocalConfig.integration("aleph")["bundle_id"] as? String ?? ""
-        return b.isEmpty ? "com.kit.aleph.app" : b
     }
 
     /// One clipboard item: the picture and the text.

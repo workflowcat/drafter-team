@@ -424,7 +424,7 @@ enum QuickRules {
     /// opens it). ⌃⌥V may still be set in Settings (`suggestedKey`).
     static let defaultKey = ""
     static let suggestedKey = "⌃⌥V"
-    /// ⌃⌥Space and ⌘Space belong to Aleph: never taken.
+    /// ⌃⌥Space and ⌘Space (Spotlight and other launchers): never taken.
     static let reserved = ["⌃⌥Space", "⌘Space"]
     static let codes: [String: Int] = [
         "A": 0, "S": 1, "D": 2, "F": 3, "H": 4, "G": 5, "Z": 6, "X": 7, "C": 8, "V": 9, "B": 11, "Q": 12, "W": 13, "E": 14,

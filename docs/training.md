@@ -26,7 +26,6 @@ trained on your writing and added to 16 layers of the model.
 | `take` | Your voice takes, the cleaned text |
 | `cc`, `codex` | Your own prompts in coding-agent sessions |
 | `beeper` | Messages you sent, through the optional Beeper integration |
-| `vnotes` | Takes from the optional Voice Notes app |
 | `vault` | Notes you wrote yourself in an optional notes folder |
 | `fb` | Posts from an optional social media export (`social.facebook_archive` in the local config) |
 

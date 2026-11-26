@@ -15,7 +15,7 @@ from mlx_lm.sample_utils import make_sampler
 
 CAP_GB = float(os.environ.get("DRAFTER_CAP_GB", "3.6"))   # guard cap for the whole engine
 mx.set_memory_limit(int(CAP_GB * 0.92 * 2**30))          # MLX tries to stay under this (below 2.6 GB it stalls the 4B model)
-mx.set_cache_limit(64 * 2**20)                             # never keep a big free-buffer pool (VoiceNotes lesson)
+mx.set_cache_limit(64 * 2**20)                             # never keep a big free-buffer pool (lesson from an older dictation app)
 
 
 def set_limit(cap_gb):

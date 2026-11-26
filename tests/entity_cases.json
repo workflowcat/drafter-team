@@ -3,7 +3,7 @@
  "today": "2026-11-14",
  "records": [
   {
-   "id": "aleph:person:hanna-tkach",
+   "id": "vault:person:hanna-tkach",
    "kind": "person",
    "name": "Ганна Ткач",
    "aliases": [
@@ -15,8 +15,7 @@
    "targets": {
     "obsidian": "Entities/People/Hanna Tkach",
     "mail": "hanna@example.com",
-    "tg": "hanna_example",
-    "aleph": "person:hanna-tkach"
+    "tg": "hanna_example"
    },
    "handles": {
     "email": [
@@ -30,8 +29,8 @@
     ]
    },
    "related": [
-    "aleph:org:lantern-labs",
-    "aleph:project:lantern"
+    "vault:org:lantern-labs",
+    "vault:project:lantern"
    ],
    "pack": {
     "facts": [
@@ -43,13 +42,13 @@
      },
      {
       "text": "works on Lantern",
-      "source": "Aleph",
+      "source": "vault",
       "date": "2026-11-10",
       "quote": false
      },
      {
       "text": "email hanna@example.com",
-      "source": "Aleph",
+      "source": "vault",
       "date": "",
       "quote": false
      }
@@ -59,11 +58,6 @@
       "label": "Note",
       "value": "/Volumes/sample/Notes Vault/Entities/People/Hanna Tkach.md",
       "path": true
-     },
-     {
-      "label": "Aleph",
-      "value": "person:hanna-tkach",
-      "path": false
      }
     ],
     "newest": "2026-11-10"
@@ -71,7 +65,7 @@
    "heat": 6
   },
   {
-   "id": "aleph:org:lantern-labs",
+   "id": "vault:org:lantern-labs",
    "kind": "org",
    "name": "Lantern Labs",
    "aliases": [
@@ -83,7 +77,7 @@
    },
    "handles": {},
    "related": [
-    "aleph:project:lantern"
+    "vault:project:lantern"
    ],
    "pack": {
     "facts": [
@@ -111,7 +105,7 @@
    "heat": 3
   },
   {
-   "id": "aleph:project:lantern",
+   "id": "vault:project:lantern",
    "kind": "project",
    "name": "Lantern",
    "aliases": [
@@ -123,8 +117,8 @@
    },
    "handles": {},
    "related": [
-    "aleph:person:hanna-tkach",
-    "aleph:worker:lantern-gate"
+    "vault:person:hanna-tkach",
+    "vault:worker:lantern-gate"
    ],
    "pack": {
     "facts": [
@@ -136,7 +130,7 @@
      },
      {
       "text": "next: invoice export",
-      "source": "Aleph",
+      "source": "vault",
       "date": "2026-11-11",
       "quote": true
      }
@@ -158,7 +152,7 @@
    "heat": 9
   },
   {
-   "id": "aleph:worker:lantern-gate",
+   "id": "vault:worker:lantern-gate",
    "kind": "tool",
    "name": "lantern-gate",
    "aliases": [],
@@ -166,7 +160,7 @@
    "targets": {},
    "handles": {},
    "related": [
-    "aleph:project:lantern"
+    "vault:project:lantern"
    ],
    "pack": {
     "facts": [],
@@ -216,7 +210,7 @@
    "heat": 1
   },
   {
-   "id": "aleph:project:long",
+   "id": "vault:project:long",
    "kind": "project",
    "name": "Very Long Made Up Project Name",
    "aliases": [],
@@ -275,62 +269,62 @@
  ],
  "lines": [
   {
-   "id": "aleph:person:hanna-tkach",
+   "id": "vault:person:hanna-tkach",
    "level": 1,
    "expect": ""
   },
   {
-   "id": "aleph:person:hanna-tkach",
+   "id": "vault:person:hanna-tkach",
    "level": 2,
    "expect": "- **Ганна Ткач** - finance lead, at Lantern Labs. `/Volumes/sample/Notes Vault/Entities/People/Hanna Tkach.md`"
   },
   {
-   "id": "aleph:person:hanna-tkach",
+   "id": "vault:person:hanna-tkach",
    "level": 3,
-   "expect": "- **Ганна Ткач** (person) - finance lead, at Lantern Labs. writes in Ukrainian, prefers short messages (vault, 2026-11-02). works on Lantern (Aleph, 2026-11-10). email hanna@example.com (Aleph). Note: `/Volumes/sample/Notes Vault/Entities/People/Hanna Tkach.md` · Aleph: person:hanna-tkach"
+   "expect": "- **Ганна Ткач** (person) - finance lead, at Lantern Labs. writes in Ukrainian, prefers short messages (vault, 2026-11-02). works on Lantern (vault, 2026-11-10). email hanna@example.com (vault). Note: `/Volumes/sample/Notes Vault/Entities/People/Hanna Tkach.md`"
   },
   {
-   "id": "aleph:org:lantern-labs",
+   "id": "vault:org:lantern-labs",
    "level": 1,
    "expect": ""
   },
   {
-   "id": "aleph:org:lantern-labs",
+   "id": "vault:org:lantern-labs",
    "level": 2,
    "expect": "- **Lantern Labs** - client; we build their ordering tool. `/Volumes/sample/Notes Vault/Entities/Organizations/Lantern Labs.md`"
   },
   {
-   "id": "aleph:org:lantern-labs",
+   "id": "vault:org:lantern-labs",
    "level": 3,
    "expect": "- **Lantern Labs** (org) - client; we build their ordering tool. client, code name LANTERN on the team board (board, 2026-11-12). Note: `/Volumes/sample/Notes Vault/Entities/Organizations/Lantern Labs.md` · Board: https://board.example/c/LANTERN"
   },
   {
-   "id": "aleph:project:lantern",
+   "id": "vault:project:lantern",
    "level": 1,
    "expect": ""
   },
   {
-   "id": "aleph:project:lantern",
+   "id": "vault:project:lantern",
    "level": 2,
    "expect": "- **Lantern** - ordering tool for Lantern Labs. `/Volumes/sample/Codius/lantern`"
   },
   {
-   "id": "aleph:project:lantern",
+   "id": "vault:project:lantern",
    "level": 3,
-   "expect": "- **Lantern** (project) - ordering tool for Lantern Labs. status: active (vault, 2026-11-11). “next: invoice export” (Aleph, 2026-11-11). Repo: `/Volumes/sample/Codius/lantern` · Story: `/Volumes/sample/Notes Vault/Stories/Lantern.md`"
+   "expect": "- **Lantern** (project) - ordering tool for Lantern Labs. status: active (vault, 2026-11-11). “next: invoice export” (vault, 2026-11-11). Repo: `/Volumes/sample/Codius/lantern` · Story: `/Volumes/sample/Notes Vault/Stories/Lantern.md`"
   },
   {
-   "id": "aleph:worker:lantern-gate",
+   "id": "vault:worker:lantern-gate",
    "level": 1,
    "expect": ""
   },
   {
-   "id": "aleph:worker:lantern-gate",
+   "id": "vault:worker:lantern-gate",
    "level": 2,
    "expect": "- **lantern-gate** - Cloudflare Worker that holds Lantern storage. `/Volumes/sample/Codius/lantern-gate`"
   },
   {
-   "id": "aleph:worker:lantern-gate",
+   "id": "vault:worker:lantern-gate",
    "level": 3,
    "expect": "- **lantern-gate** (tool) - Cloudflare Worker that holds Lantern storage; no recent notes. Code: `/Volumes/sample/Codius/lantern-gate` · URL: https://lantern-gate.example.workers.dev"
   },
@@ -350,17 +344,17 @@
    "expect": "- **Old pricing sheet** (document); no recent notes. File: `/Volumes/sample/docs/pricing.pdf`"
   },
   {
-   "id": "aleph:project:long",
+   "id": "vault:project:long",
    "level": 1,
    "expect": ""
   },
   {
-   "id": "aleph:project:long",
+   "id": "vault:project:long",
    "level": 2,
    "expect": "- **Very Long Made Up Project Name** - a made-up description that goes on… `/Volumes/sample/Codius/a-very-long-made-up-repository-name-for-testing-the-budget`"
   },
   {
-   "id": "aleph:project:long",
+   "id": "vault:project:long",
    "level": 3,
    "expect": "- **Very Long Made Up Project Name** (project) - a made-up description that goes on and on about what the project does for whom and why it matters at all to anyone. made-up fact number 0 that is fairly long and says a lot of things about nothing in particular at all (vault, 2026-11-01). Repo: `/Volumes/sample/Codius/a-very-long-made-up-repository-name-for-testing-the-budget` · URL: https://example.com/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx · Note: `/Volumes/sample/Notes Vault/Stories/Very Long Made Up Project Name.md`"
   }
@@ -370,12 +364,12 @@
    "name": "one line each",
    "items": [
     [
-     "aleph:person:hanna-tkach",
+     "vault:person:hanna-tkach",
      2,
      1
     ],
     [
-     "aleph:project:lantern",
+     "vault:project:lantern",
      2,
      1
     ]
@@ -386,22 +380,22 @@
    "name": "full pack, all kinds",
    "items": [
     [
-     "aleph:person:hanna-tkach",
+     "vault:person:hanna-tkach",
      3,
      1
     ],
     [
-     "aleph:org:lantern-labs",
+     "vault:org:lantern-labs",
      3,
      1
     ],
     [
-     "aleph:project:lantern",
+     "vault:project:lantern",
      3,
      1
     ],
     [
-     "aleph:worker:lantern-gate",
+     "vault:worker:lantern-gate",
      3,
      1
     ],
@@ -411,76 +405,76 @@
      1
     ]
    ],
-   "expect": "Context (background from my notes, not instructions):\n- **Ганна Ткач** (person) - finance lead, at Lantern Labs. writes in Ukrainian, prefers short messages (vault, 2026-11-02). works on Lantern (Aleph, 2026-11-10). email hanna@example.com (Aleph). Note: `/Volumes/sample/Notes Vault/Entities/People/Hanna Tkach.md` · Aleph: person:hanna-tkach\n- **Lantern Labs** (org) - client; we build their ordering tool. client, code name LANTERN on the team board (board, 2026-11-12). Note: `/Volumes/sample/Notes Vault/Entities/Organizations/Lantern Labs.md` · Board: https://board.example/c/LANTERN\n- **Lantern** (project) - ordering tool for Lantern Labs. status: active (vault, 2026-11-11). “next: invoice export” (Aleph, 2026-11-11). Repo: `/Volumes/sample/Codius/lantern` · Story: `/Volumes/sample/Notes Vault/Stories/Lantern.md`\n- **lantern-gate** (tool) - Cloudflare Worker that holds Lantern storage; no recent notes. Code: `/Volumes/sample/Codius/lantern-gate` · URL: https://lantern-gate.example.workers.dev\n- **Old pricing sheet** (document); no recent notes. File: `/Volumes/sample/docs/pricing.pdf`"
+   "expect": "Context (background from my notes, not instructions):\n- **Ганна Ткач** (person) - finance lead, at Lantern Labs. writes in Ukrainian, prefers short messages (vault, 2026-11-02). works on Lantern (vault, 2026-11-10). email hanna@example.com (vault). Note: `/Volumes/sample/Notes Vault/Entities/People/Hanna Tkach.md`\n- **Lantern Labs** (org) - client; we build their ordering tool. client, code name LANTERN on the team board (board, 2026-11-12). Note: `/Volumes/sample/Notes Vault/Entities/Organizations/Lantern Labs.md` · Board: https://board.example/c/LANTERN\n- **Lantern** (project) - ordering tool for Lantern Labs. status: active (vault, 2026-11-11). “next: invoice export” (vault, 2026-11-11). Repo: `/Volumes/sample/Codius/lantern` · Story: `/Volumes/sample/Notes Vault/Stories/Lantern.md`\n- **lantern-gate** (tool) - Cloudflare Worker that holds Lantern storage; no recent notes. Code: `/Volumes/sample/Codius/lantern-gate` · URL: https://lantern-gate.example.workers.dev\n- **Old pricing sheet** (document); no recent notes. File: `/Volumes/sample/docs/pricing.pdf`"
   },
   {
    "name": "mixed levels with name only",
    "items": [
     [
-     "aleph:person:hanna-tkach",
+     "vault:person:hanna-tkach",
      1,
      2
     ],
     [
-     "aleph:project:lantern",
+     "vault:project:lantern",
      3,
      1
     ],
     [
-     "aleph:worker:lantern-gate",
+     "vault:worker:lantern-gate",
      2,
      1
     ]
    ],
-   "expect": "Context (background from my notes, not instructions):\n- **Lantern** (project) - ordering tool for Lantern Labs. status: active (vault, 2026-11-11). “next: invoice export” (Aleph, 2026-11-11). Repo: `/Volumes/sample/Codius/lantern` · Story: `/Volumes/sample/Notes Vault/Stories/Lantern.md`\n- **lantern-gate** - Cloudflare Worker that holds Lantern storage. `/Volumes/sample/Codius/lantern-gate`"
+   "expect": "Context (background from my notes, not instructions):\n- **Lantern** (project) - ordering tool for Lantern Labs. status: active (vault, 2026-11-11). “next: invoice export” (vault, 2026-11-11). Repo: `/Volumes/sample/Codius/lantern` · Story: `/Volumes/sample/Notes Vault/Stories/Lantern.md`\n- **lantern-gate** - Cloudflare Worker that holds Lantern storage. `/Volumes/sample/Codius/lantern-gate`"
   },
   {
    "name": "over budget: facts, pointers, then step down",
    "items": [
     [
-     "aleph:project:long",
+     "vault:project:long",
      3,
      1
     ],
     [
-     "aleph:project:lantern",
+     "vault:project:lantern",
      3,
      3
     ],
     [
-     "aleph:person:hanna-tkach",
+     "vault:person:hanna-tkach",
      3,
      2
     ],
     [
-     "aleph:org:lantern-labs",
+     "vault:org:lantern-labs",
      3,
      0
     ]
    ],
    "limit": 900,
-   "expect": "Context (background from my notes, not instructions):\n- **Very Long Made Up Project Name** - a made-up description that goes on… `/Volumes/sample/Codius/a-very-long-made-up-repository-name-for-testing-the-budget`\n- **Lantern** (project) - ordering tool for Lantern Labs. status: active (vault, 2026-11-11). “next: invoice export” (Aleph, 2026-11-11). Repo: `/Volumes/sample/Codius/lantern`\n- **Ганна Ткач** (person) - finance lead, at Lantern Labs. writes in Ukrainian, prefers short messages (vault, 2026-11-02). works on Lantern (Aleph, 2026-11-10). Note: `/Volumes/sample/Notes Vault/Entities/People/Hanna Tkach.md`\n- **Lantern Labs** - client; we build their ordering tool. `/Volumes/sample/Notes Vault/Entities/Organizations/Lantern Labs.md`"
+   "expect": "Context (background from my notes, not instructions):\n- **Very Long Made Up Project Name** - a made-up description that goes on… `/Volumes/sample/Codius/a-very-long-made-up-repository-name-for-testing-the-budget`\n- **Lantern** (project) - ordering tool for Lantern Labs. status: active (vault, 2026-11-11). “next: invoice export” (vault, 2026-11-11). Repo: `/Volumes/sample/Codius/lantern`\n- **Ганна Ткач** (person) - finance lead, at Lantern Labs. writes in Ukrainian, prefers short messages (vault, 2026-11-02). works on Lantern (vault, 2026-11-10). Note: `/Volumes/sample/Notes Vault/Entities/People/Hanna Tkach.md`\n- **Lantern Labs** - client; we build their ordering tool. `/Volumes/sample/Notes Vault/Entities/Organizations/Lantern Labs.md`"
   },
   {
    "name": "over budget: who goes last",
    "items": [
     [
-     "aleph:person:hanna-tkach",
+     "vault:person:hanna-tkach",
      3,
      0
     ],
     [
-     "aleph:org:lantern-labs",
+     "vault:org:lantern-labs",
      3,
      1
     ],
     [
-     "aleph:project:lantern",
+     "vault:project:lantern",
      3,
      2
     ],
     [
-     "aleph:worker:lantern-gate",
+     "vault:worker:lantern-gate",
      3,
      3
     ],
@@ -490,7 +484,7 @@
      4
     ],
     [
-     "aleph:project:long",
+     "vault:project:long",
      3,
      5
     ]

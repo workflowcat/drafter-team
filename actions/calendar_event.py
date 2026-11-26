@@ -29,7 +29,7 @@ def extract(line, ask):
 
 
 def to_run(fields):
-    """The app-side step for callers that only kept the fields (Aleph's panel)."""
+    """The app-side step for callers that only kept the fields."""
     from datetime import datetime
     start = datetime.fromisoformat(fields["start"])
     return {"kind": "eventkit.event", "title": fields["title"], "start": start.strftime("%Y-%m-%dT%H:%M"),

@@ -23,7 +23,7 @@ struct TodayPromise: Identifiable, Equatable {
 struct TodayDigest: Equatable {
     let headline: String
     let calls: Int
-    let voiceNotes: Int
+    let voiceTakes: Int
     let drafts: Int
     let clips: Int
     let topics: [TodayTopic]
@@ -55,7 +55,7 @@ enum TodayThreadRules {
         let headline = [(active.count, "topic"), (calls, "call"), (ordered.count, "open promise")]
             .filter { $0.0 > 0 }.map { "\($0.0) \($0.1)\($0.0 == 1 ? "" : "s")" }.joined(separator: " · ")
         return TodayDigest(headline: headline.isEmpty ? "Today's thread" : headline,
-                           calls: calls, voiceNotes: voice, drafts: drafts, clips: clips,
+                           calls: calls, voiceTakes: voice, drafts: drafts, clips: clips,
                            topics: Array(active.prefix(3)), overdueCount: ordered.filter(\.overdue).count, promises: ordered)
     }
     private static func validDue(_ value: Double?) -> Double? {

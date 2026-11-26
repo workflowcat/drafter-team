@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parent.parent
 
 # docs written for strangers: the only docs that are published
 PUBLIC_DOCS = {"docs/architecture.md", "docs/typing.md", "docs/training.md", "docs/voice-and-calls.md", "docs/privacy.md",
-               "docs/look.md", "docs/building-with-agents.md", "docs/contributing.md", "docs/mcp.md",
+               "docs/look.md", "docs/building-with-agents.md", "docs/contributing.md",
                "docs/onboarding.md", "docs/customize.md", "docs/your-data.md"}
 RENAME = {"AGENTS.public.md": "AGENTS.md"}
 DROP = {"AGENTS.md"}

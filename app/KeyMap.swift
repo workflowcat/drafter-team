@@ -171,7 +171,7 @@ enum KeyMap {
     }
 
     /// Keys Drafter gave back (keys round three) and must never take by default: tab switching, characters, digits,
-    /// Aleph's keys.
+    /// launcher keys.
     static let givenBack = ["⌃⇥", "⌃⇧⇥", "⌥1", "⌥2", "⌥3", "⌃⌥Space", "⌘Space"] + (0...9).map(String.init)
     /// Keys that were Drafter's defaults once and Help must not name.
     static let retired = ["⌃⌥R", "⌃⌥V", "⌃⌥S", "⌃⇥", "⌃⇧⇥", "⌃Tab", "⌃⇧Tab", "⌥1", "⌥2", "⌥3"]

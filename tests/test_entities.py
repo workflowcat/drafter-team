@@ -1,11 +1,11 @@
-"""The entity store and context packs (engine/entities.py) on a made-up cast only: a fake Aleph SQLite, a fake vault
-folder and fake contacts in a temporary folder. No personal file, server, app or model.
+"""The entity store and context packs (engine/entities.py) on a made-up cast only: a fake vault folder and fake
+contacts in a temporary folder. No personal file, server, app or model.
 
     .venv/bin/python -B tests/test_entities.py
 """
 import json
+import os
 from pathlib import Path
-import sqlite3
 import sys
 import tempfile
 import unittest
@@ -18,77 +18,34 @@ from server_src import lift
 CASES = Path(__file__).resolve().parent / 'entity_cases.json'
 NOW = 1794000000          # 2026-11-07
 TODAY = '2026-11-14'
-
-
-def day_ts(d):
-    import time
-    return time.mktime(time.strptime(d, '%Y-%m-%d')) + 43200
+HANNA = 'vault:Entities/People/Ганна Ткач.md'
 
 
 class Cast(unittest.TestCase):
-    """Made-up people, a client, a project, a Worker; private sentinels everywhere the filters must hold."""
+    """Made-up people, a client, two projects; private sentinels everywhere the filters must hold."""
 
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory(); self.addCleanup(self.tmp.cleanup)
         root = Path(self.tmp.name)
         self.data = root / 'data'; self.data.mkdir()
-        self.codius = root / 'Codius'; (self.codius / 'lantern').mkdir(parents=True); (self.codius / 'lantern-gate').mkdir()
-        self.db = root / 'aleph.db'
-        con = sqlite3.connect(self.db)
-        con.executescript('''
-          CREATE TABLE things (id text primary key, kind text not null, name text not null, summary text default '', note text default '',
-            scope text default 'work', updated integer, face text default '', short text default '');
-          CREATE TABLE names (name text not null, thing text not null, primary key (name, thing));
-          CREATE TABLE facts (id integer primary key, subj text not null, rel text not null, obj text default '', value text default '',
-            since integer, until integer, source text default '', ref text default '', status text default 'seen',
-            scope text default 'work', by text default 'auto', batch text default '', at integer, due integer, done integer);
-          CREATE TABLE merged (id text primary key, target text not null, by text default 'auto', at integer);
-          CREATE TABLE notsame (a text, b text, primary key (a, b));''')
-        things = [
-            ('person:me', 'person', 'Owner Sample', '', 'work', ''),
-            ('person:hanna-tkach', 'person', 'Ганна Ткач', '', 'work', ''),
-            ('person:ivan-sample', 'person', 'Іван Семпл', '', 'work', ''),
-            ('person:ivan-other', 'person', 'Іван Інший', '', 'work', ''),
-            ('org:lantern-labs', 'org', 'Lantern Labs', 'client; we build their ordering tool', 'work', ''),
-            ('project:lantern', 'project', 'Lantern', 'ordering tool for Lantern Labs', 'work', ''),
-            ('worker:lantern-gate', 'worker', 'lantern-gate', 'Cloudflare Worker that holds Lantern storage', 'work', ''),
-            ('repo:base', 'repo', 'Base', '', 'work', ''),
-            ('person:secret-sentinel', 'person', 'Zorya Sentinelska', 'PRIVATE-THING', 'private', ''),
-            ('project:hidden-matter', 'project', 'Hidden Matter', 'PRIVATE-PROJECT', 'private', ''),
-            ('group:chat-room', 'group', 'Some Chat Group', '', 'work', ''),
-        ]
-        con.executemany('INSERT INTO things (id, kind, name, summary, scope, short) VALUES (?,?,?,?,?,?)', things)
-        con.executemany('INSERT INTO names VALUES (?,?)', [('Hanna Tkach', 'person:hanna-tkach'), ('Ганна', 'person:hanna-tkach'),
-                                                            ('SecretAlias', 'person:secret-sentinel')])
-        f = lambda *a: con.execute('INSERT INTO facts (subj, rel, obj, value, since, scope, by, status, until) VALUES (?,?,?,?,?,?,?,?,?)', a)
-        f('person:hanna-tkach', 'role', '', 'finance lead', day_ts('2026-11-02'), 'work', 'me', 'stated', None)
-        f('person:hanna-tkach', 'works_at', 'org:lantern-labs', '', day_ts('2026-11-02'), 'work', 'auto', 'seen', None)
-        f('person:hanna-tkach', 'works_on', 'project:lantern', '', day_ts('2026-11-10'), 'work', 'auto', 'seen', None)
-        f('person:hanna-tkach', 'handle', '', 'hanna@example.test', None, 'work', 'auto', 'seen', None)
-        f('person:hanna-tkach', 'handle', '', '+380 44 555 0100', None, 'work', 'auto', 'seen', None)
-        f('person:hanna-tkach', 'note', '', 'PRIVATE-FACT about her health', day_ts('2026-11-03'), 'private', 'auto', 'seen', None)
-        f('person:hanna-tkach', 'works_at', 'person:secret-sentinel', '', day_ts('2026-11-03'), 'work', 'auto', 'seen', None)
-        f('person:hanna-tkach', 'role', '', 'DISPROVEN-ROLE', day_ts('2026-11-04'), 'work', 'auto', 'disproven', None)
-        f('person:hanna-tkach', 'note', '', 'ENDED-FACT', day_ts('2026-01-04'), 'work', 'auto', 'seen', 100)
-        f('project:lantern', 'status', '', 'active', day_ts('2026-11-11'), 'work', 'me', 'stated', None)
-        f('project:lantern', 'next', '', 'invoice export', day_ts('2026-11-11'), 'work', 'auto', 'seen', None)
-        f('project:lantern', 'deployed_as', 'worker:lantern-gate', '', day_ts('2026-11-09'), 'work', 'auto', 'seen', None)
-        f('project:lantern', 'note', '', 'call me on +380 67 000 1122 tonight', day_ts('2026-11-09'), 'work', 'me', 'seen', None)
-        f('worker:lantern-gate', 'link', '', 'https://lantern-gate.example.workers.dev', None, 'work', 'auto', 'seen', None)
-        f('org:lantern-labs', 'relates', 'project:lantern', 'client of', day_ts('2026-11-12'), 'work', 'auto', 'seen', None)
-        f('person:secret-sentinel', 'role', '', 'PRIVATE-ROLE', day_ts('2026-11-12'), 'work', 'me', 'seen', None)
-        con.execute("INSERT INTO notsame VALUES ('person:ivan-sample', 'person:ivan-other')")
-        con.commit(); con.close()
+        (self.data / 'drafter.local.json').write_text(json.dumps({'user': {'name': 'Owner Sample'}}))
+        self.codius = root / 'Codius'; (self.codius / 'lantern').mkdir(parents=True)
         self.vault = root / 'vault'
         def note(rel, fm, body='Body text.'):
             p = self.vault / rel; p.parent.mkdir(parents=True, exist_ok=True)
             p.write_text('---\n' + fm.strip() + '\n---\n' + body + '\n')
-        note('Entities/People/Hanna Tkach.md', 'type: person\nkind: person\nsummary: finance contact\naliases: [HT]\ncreated: 2026-10-01\nupdated: 2026-11-02')
-        note('Entities/Organizations/Lantern Labs.md', 'type: org\nkind: organization\nsummary: client, ordering tool\nupdated: 2026-11-12')
-        note('Stories/Lantern.md', 'type: story\nstatus: active\nnext: invoice export\nsummary: ordering tool for Lantern Labs\nupdated: 2026-11-11\norigin: kit')
+        note('Entities/People/Ганна Ткач.md', 'type: person\nrole: finance lead\norg: "[[Lantern Labs]]"\naliases: [Hanna Tkach, Ганна, HT]\n'
+             'created: 2026-10-01\nupdated: 2026-11-02')
+        note('Entities/People/Owner Sample.md', 'type: person\nsummary: his own note')
+        note('Entities/People/Іван Семпл.md', 'type: person\nupdated: 2026-11-01')
+        note('Entities/People/Іван Інший.md', 'type: person\nupdated: 2026-11-01')
+        note('Entities/Organizations/Lantern Labs.md', 'type: org\nkind: organization\nsummary: client, ordering tool\nrelated: ["[[Lantern]]"]\nupdated: 2026-11-12')
+        note('Stories/Lantern.md', 'type: story\nstatus: active\nnext: invoice export\nsummary: ordering tool for Lantern Labs\nupdated: 2026-11-11\n'
+             'origin: agent\nurl: https://lantern-gate.example.workers.dev')
+        note('Stories/Base.md', 'type: story\nupdated: 2026-11-01')
         note('Stories/Notes View.md', 'type: view\nsummary: a view')
         note('Entities/People/Quiet Person.md', 'type: person\nprivate: true\nsummary: PRIVATE-MARKED-NOTE')
-        note('Entities/Private/Secret Person.md', 'type: person\nsummary: PRIVATE-FOLDER-NOTE')
+        note('Entities/Private/Secret Person.md', 'type: person\nrole: PRIVATE-ROLE\nsummary: PRIVATE-FOLDER-NOTE')
         note('Stories/Private/Hidden Matter.md', 'type: story\nsummary: PRIVATE-STORY-NOTE')
         note('Entities/People/.obsidian/Junk.md', 'type: person\nsummary: OBSIDIAN-JUNK')
         note('System/old/Old Person.md', 'type: person\nsummary: SYSTEM-OLD')
@@ -98,9 +55,14 @@ class Cast(unittest.TestCase):
             {'id': 'google:otherContacts/c3', 'name': 'noreply@example.test', 'aliases': [], 'handles': {'email': ['noreply@example.test']}, 'cards_only': True},
             {'id': 'google:people/c4', 'name': 'Іван Семпл', 'aliases': [], 'handles': {}, 'cards_only': False},
         ]
+        # his own yes: the contact card "Hanna T." is the vault's Ганна Ткач
+        self.same({'same': [[HANNA, 'contacts:google:people/c1']]})
+
+    def same(self, d):
+        (self.data / 'entity-same.json').write_text(json.dumps(d, ensure_ascii=False))
 
     def build(self, **kw):
-        args = dict(db=self.db, vault=self.vault, contacts=self.contacts, now=NOW, data=self.data, ordinary={'labs', 'base', 'other'}, codius=self.codius)
+        args = dict(vault=self.vault, contacts=self.contacts, now=NOW, data=self.data, ordinary={'labs', 'base', 'other'}, codius=self.codius)
         args.update(kw)
         return entities.build(**args)
 
@@ -113,10 +75,10 @@ class Cast(unittest.TestCase):
         store = self.build()
         written = (self.data / 'entities.json').read_text() + (self.data / 'entity-sources.json').read_text()
         packs = '\n'.join(entities.render(r, 3, today=TODAY) for r in store['records'])
-        for secret in ('PRIVATE', 'Sentinel', 'SecretAlias', 'Zorya', 'Hidden Matter', 'Quiet Person', 'Secret Person',
-                       'OBSIDIAN-JUNK', 'SYSTEM-OLD', 'DISPROVEN', 'ENDED-FACT', 'Owner Sample', 'Some Chat Group'):
+        for secret in ('PRIVATE', 'Hidden Matter', 'Quiet Person', 'Secret Person', 'OBSIDIAN-JUNK', 'SYSTEM-OLD', 'Notes View'):
             self.assertNotIn(secret, written, secret)
             self.assertNotIn(secret, packs, secret)
+        self.assertNotIn('Owner Sample', [r['name'] for r in store['records']])   # his own name is never a record
         self.assertFalse(any(r['private'] for r in store['records']))
 
     def test_phone_numbers_never_in_a_pack(self):
@@ -129,15 +91,16 @@ class Cast(unittest.TestCase):
         self.assertIn('+380 44 555 0100', self.rec(store, 'Ганна Ткач')['handles']['phone'])   # his own card keeps it
 
     def test_allowed_private_records_only_one_by_one_and_marked(self):
-        (self.data / 'context-allow.json').write_text(json.dumps({'aleph': ['person:secret-sentinel'], 'vault': ['Entities/Private/Secret Person.md']}))
+        # an old file may still name a source that is gone: ignored
+        (self.data / 'context-allow.json').write_text(json.dumps({'gone': ['x:1'], 'vault': ['Entities/Private/Secret Person.md']}))
+        (self.data / 'entity-sources.json').write_text(json.dumps({'gone': {'records': [{'system': 'gone', 'id': 'x:1', 'name': 'Old Thing'}]}}))
         store = self.build()
-        z = self.rec(store, 'Zorya Sentinelska')
-        self.assertTrue(z['private'])
-        self.assertIn('PRIVATE-ROLE', entities.render(z, 3, today=TODAY))
         s = self.rec(store, 'Secret Person')
         self.assertTrue(s['private'])
+        self.assertIn('PRIVATE-ROLE', entities.render(s, 3, today=TODAY))
+        self.assertNotIn('Old Thing', [r['name'] for r in store['records']])
         written = (self.data / 'entities.json').read_text()
-        for still in ('PRIVATE-MARKED-NOTE', 'PRIVATE-STORY-NOTE', 'PRIVATE-PROJECT', 'PRIVATE-FACT'):
+        for still in ('PRIVATE-MARKED-NOTE', 'PRIVATE-STORY-NOTE'):
             self.assertNotIn(still, written, still)
 
     def test_vault_off_reads_no_vault(self):
@@ -149,53 +112,52 @@ class Cast(unittest.TestCase):
     def test_one_record_per_thing(self):
         store = self.build()
         h = self.rec(store, 'Ганна Ткач')
-        self.assertEqual({s['system'] for s in h['sources']}, {'aleph', 'vault', 'contacts'})   # stem + same email
-        self.assertEqual(h['id'], 'aleph:person:hanna-tkach')
-        self.assertEqual(h['targets']['obsidian'], 'Entities/People/Hanna Tkach')
-        self.assertEqual(h['targets']['mail'], 'hanna@example.test')
+        self.assertEqual({s['system'] for s in h['sources']}, {'vault', 'contacts'})   # his own "same"
+        self.assertEqual(h['id'], HANNA)
+        self.assertEqual(h['targets']['obsidian'], 'Entities/People/Ганна Ткач')
+        self.assertEqual(h['targets']['mail'], 'Hanna@Example.test')
         lantern = self.rec(store, 'Lantern')
         self.assertEqual(lantern['kind'], 'project')
-        self.assertEqual({s['system'] for s in lantern['sources']}, {'aleph', 'vault'})
-        self.assertEqual(self.rec(store, 'lantern-gate')['kind'], 'tool')
+        self.assertEqual({s['system'] for s in lantern['sources']}, {'vault'})
         self.assertIn(self.rec(store, 'Lantern Labs')['id'], h['related'])
         # same full name in Contacts, no handle to confirm: kept apart and counted for a "Same?" row
         ivans = [r for r in store['records'] if r['name'] == 'Іван Семпл']
         self.assertEqual(len(ivans), 2)
         self.assertEqual(store['same_pending'], 1)
-        self.assertNotIn('Notes View', [r['name'] for r in store['records']])
 
-    def test_notsame_and_his_own_answers(self):
-        (self.data / 'entity-same.json').write_text(json.dumps({'same': [['aleph:person:ivan-sample', 'contacts:google:people/c4'],
-                                                                         ['aleph:person:ivan-sample', 'aleph:person:ivan-other']]}))
+    def test_his_own_same_and_not_same(self):
+        ivan, other = 'vault:Entities/People/Іван Семпл.md', 'vault:Entities/People/Іван Інший.md'
+        self.same({'same': [[ivan, 'contacts:google:people/c4'], [ivan, other]], 'not': [[ivan, other]]})
         store = self.build()
         self.assertEqual(len([r for r in store['records'] if r['name'] == 'Іван Семпл']), 1)
-        self.assertEqual(len([r for r in store['records'] if r['name'] == 'Іван Інший']), 1)   # Aleph's notsame wins
+        self.assertEqual(len([r for r in store['records'] if r['name'] == 'Іван Інший']), 1)   # his "not the same" wins
 
     def test_one_key_kind_fix_wins_on_rebuild(self):
         store = self.build()
         base = self.rec(store, 'Base')
-        self.assertEqual(base['kind'], 'tool')
-        self.assertTrue(entities.correct(base['id'], '3', data=self.data))
-        self.assertEqual(self.rec(self.build(), 'Base')['kind'], 'project')
+        self.assertEqual(base['kind'], 'project')
+        self.assertTrue(entities.correct(base['id'], '4', data=self.data))
+        self.assertEqual(self.rec(self.build(), 'Base')['kind'], 'tool')
         self.assertEqual(self.rec(self.build(), 'Base')['kind_by'], 'me')
         entities.correct(base['id'], '0', data=self.data)
         self.assertNotIn('Base', [r['name'] for r in self.build()['records']])
         self.assertFalse(entities.correct(base['id'], '9', data=self.data))
 
     def test_ids_follow_a_merge(self):
-        self.build(db=False)
+        self.build(vault=False)
         first = json.loads((self.data / 'entities.json').read_text())
-        self.assertIn('vault:Entities/People/Hanna Tkach.md', [r['id'] for r in first['records']])
+        self.assertIn('contacts:google:people/c1', [r['id'] for r in first['records']])
         self.build()
         ids = json.loads((self.data / 'entity-ids.json').read_text())
-        self.assertEqual(ids['vault:Entities/People/Hanna Tkach.md'], 'aleph:person:hanna-tkach')
+        self.assertEqual(ids['contacts:google:people/c1'], HANNA)
 
     def test_a_failed_source_keeps_its_last_slice(self):
         self.build()
-        broken = Path(self.tmp.name) / 'broken.db'; broken.write_text('not a database')
-        store = self.build(db=broken)
-        self.assertEqual(store['failed'], ['aleph'])
-        self.assertIn('lantern-gate', [r['name'] for r in store['records']])
+        people = self.vault / 'Entities/People'
+        os.chmod(people, 0); self.addCleanup(os.chmod, people, 0o755)
+        store = self.build()
+        self.assertEqual(store['failed'], ['vault'])
+        self.assertIn('Ганна Ткач', [r['name'] for r in store['records']])
 
     # surfaces -----------------------------------------------------------------------------------------------------
 
@@ -204,7 +166,7 @@ class Cast(unittest.TestCase):
         s, recs = store['surfaces'], store['records']
         def who(k): return {recs[i]['name'] for i, _ in s.get(k, [])}
         self.assertIn('Ганна Ткач', who('ганні'))          # dative of the first name
-        self.assertIn('Ганна Ткач', who('hanna tkach'))    # the other script, from Aleph's names
+        self.assertIn('Ганна Ткач', who('hanna tkach'))    # the other script, from the note's aliases
         self.assertIn('Ганна Ткач', who('ht'))
         self.assertIn('Lantern Labs', who('lantern labs'))
         self.assertNotIn('labs', s)                         # an ordinary word alone never marks
@@ -222,11 +184,11 @@ class Cast(unittest.TestCase):
         h, lantern = self.rec(store, 'Ганна Ткач'), self.rec(store, 'Lantern')
         line = entities.render(h, 2, today=TODAY)
         self.assertTrue(line.startswith('- **Ганна Ткач** - finance lead, at Lantern Labs.'), line)
-        self.assertIn('Hanna Tkach.md`', line)
+        self.assertIn('Ганна Ткач.md`', line)
         full = entities.render(lantern, 3, today=TODAY)
         self.assertIn('(project)', full)
-        self.assertIn('status: active (Aleph, 2026-11-11).', full)
-        self.assertIn('“next: invoice export” (Aleph, 2026-11-11).', full)   # someone else's words go in quotes
+        self.assertIn('status: active (vault, 2026-11-11).', full)
+        self.assertIn('“next: invoice export” (vault, 2026-11-11).', full)   # someone else's words go in quotes
         self.assertIn('Repo: `', full)
         self.assertEqual(entities.render(h, 1, today=TODAY), '')
         for r in store['records']:
@@ -288,7 +250,7 @@ class Cast(unittest.TestCase):
         self.assertEqual(get('/context?q=lant&level=x')[0]['level'], 2)
         self.assertIn('**Lantern**', get('/context/brief?q=Lantern')[0]['text'])
         self.assertEqual(get('/entity?q=Lantern%20Labs')[0]['entities'][0]['kind'], 'org')
-        self.assertNotIn('PRIVATE', json.dumps(get('/entity?q=Sentinel')[0]))
+        self.assertNotIn('PRIVATE', json.dumps(get('/entity?q=Secret%20Person')[0]))
         on['contextPacks'] = False
         self.assertEqual(get('/context?q=Lantern')[1], 403)
         on['contextPacks'] = True

@@ -4,6 +4,16 @@ Drafter shows grey ghost text at the caret in any app, from a small model on you
 Option to dictate. It can record a call or a long spoken note and write notes from it. Nothing leaves your Mac unless
 you connect a cloud model or turn on an integration yourself.
 
+## Get the code
+
+```bash
+git clone https://github.com/workflowcat/drafter-team.git
+```
+
+```bash
+cd drafter-team
+```
+
 ## The fast way: ask Claude
 
 If you use Claude Code, open it in the folder you cloned and say:
@@ -79,7 +89,8 @@ which permissions to grant. It asks before each download and never sends your te
 - Hold Right Option and speak; let go and the text goes in at the caret. Tap it twice to put the last take in again.
 - Shift-Right Option records a long note, or a call when a call app is using the microphone.
 - Open the window from the menu bar pen to see what you typed, said and copied. Search it from the field at the top.
-- Settings (⌘, in the window) turns each part on or off. Help lists every key.
+- Settings (⌘, in the window) turns each part on or off. Help lists every key; [features](features.md) lists
+  every feature with its default.
 
 ## After a week
 
@@ -105,4 +116,4 @@ Quit Drafter before training. It takes 15 to 40 minutes on power.
 - Everything else: [customise](customize.md) explains every setting, and Claude Code with the `drafter-setup` skill
   can read the logs with you.
 
-Next: [make it yours](customize.md) · [your data and training](your-data.md) · [privacy](privacy.md)
+Next: [every feature](features.md) · [make it yours](customize.md) · [your data and training](your-data.md) · [privacy](privacy.md)

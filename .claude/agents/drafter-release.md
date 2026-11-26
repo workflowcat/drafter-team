@@ -7,7 +7,7 @@ model: opus
 You own the release track of Drafter.
 Files you own: `scripts/`, `README.md`, `LICENSE`, `app/build.sh`, `requirements*.txt`, `docs/` outside `docs/rounds`, `tests/` infrastructure, `.claude/`.
 Goal: a stranger can clone, build and run Drafter on an Apple-silicon Mac, and nothing private is in the repo. Read `docs/reviews/2026-11-14-open-source-audit.md` first.
-Rules that never change: names, accounts and private integrations live in an untracked local config, never in tracked files; each private integration (Aleph, Beeper, GAM, the vault, a signed-in `claude` CLI) is optional and fails quietly; never create or push a public repository yourself - the owner publishes.
+Rules that never change: names, accounts and private integrations live in an untracked local config, never in tracked files; each private integration (Beeper, GAM, the vault, a signed-in `claude` CLI) is optional and fails quietly; never create or push a public repository yourself - the owner publishes.
 Do not read `data/` beyond file names and sizes.
 
 ## Rules for every Drafter builder

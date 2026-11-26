@@ -67,7 +67,7 @@ class ServerShort(unittest.TestCase):
         short = self.ns["short"]
         self.assertTrue(short({"min_letters": 5}, "ing "))
         self.assertFalse(short({"min_letters": 5}, "ation "))
-        self.assertFalse(short({}, "a"))                    # other callers (Aleph) set none
+        self.assertFalse(short({}, "a"))                    # other callers set none
         self.assertFalse(short({"min_letters": 5}, ""))     # nothing is not "short"
 
 

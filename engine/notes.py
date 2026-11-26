@@ -1,13 +1,12 @@
-"""Long notes (idea 4): a long voice take becomes a note with a title, links to people and projects in Aleph, and the
-follow-ups said in it. Saved in Aleph (a day note, and a note fact on each linked thing) and as data/notes/*.md."""
-import json, re, sys, time, urllib.parse, urllib.request
+"""Long notes (idea 4): a long voice take becomes a note with a title, the people and projects from the dictionary it
+talks about, and the follow-ups said in it. Saved as data/notes/*.md."""
+import json, re, sys, time
 from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "actions"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import local
 NOTES = ROOT / "data/notes"
-ALEPH = local.setting("aleph", "url") or "http://127.0.0.1:8797"   # optional integration (engine/integrations.py)
 FOLLOW = re.compile(r"(?i)\b(треба|потрібно|нагадай|фоловап|follow[- ]?up|не забути|написати|подзвонити|need to|have to|remind|call|send)\b")
 
 
@@ -15,7 +14,7 @@ def names():
     """(name, is a person) from the shared dictionary."""
     try: d = json.loads((ROOT / "data/words.json").read_text())
     except Exception: return []
-    import dictionary   # tiny words are never names ("The" came from Aleph as someone's short name)
+    import dictionary   # tiny words are never names ("The" as someone's short name)
     return [(w["text"], w.get("kind") == "name") for w in d.get("words", [])
             if w.get("kind") in ("name", "project") and len(w["text"]) >= 3 and w["text"].lower() not in dictionary.STOP]
 
@@ -51,13 +50,6 @@ def seen(name, text):
     return re.search(r"(?<![\w])" + re.escape(stem) + r"\w{0,3}(?![\w])", low) is not None
 
 
-def aleph(path, body=None):
-    if not integrations.available("aleph"): raise OSError("Aleph is off on this Mac (engine/integrations.py)")
-    req = urllib.request.Request(ALEPH + path, data=json.dumps(body).encode() if body is not None else None,
-                                 headers={"Content-Type": "application/json"})
-    return json.loads(urllib.request.urlopen(req, timeout=5).read())
-
-
 OWN = tuple(local.user("own_stems") or ()) or ("\0",)   # the user's own name stems (local config): in his notes that is him, never a namesake (2026-10-30)
 
 
@@ -87,20 +79,17 @@ def clear(found, text):
 
 
 def links(text):
-    """Things in Aleph the note talks about: dictionary names found in it, confirmed by Aleph's find."""
-    out, ids, stems = [], set(), set()
-    found = clear([(n, s) for n, person in names() if (s := where(n, text, person))], text)
+    """People and projects the note talks about: dictionary names found in it, at most 6."""
+    out, stems = [], set()
+    known = names()
+    person = dict(known)
+    found = clear([(n, s) for n, p in known if (s := where(n, text, p))], text)
     # whole names first (Sava before Sava Example by stem), and each first name links once
     found = sorted([f for f in found if f[1]], key=lambda f: f[1] != f[0].lower())
     for n, st in found:
         key = n.lower().split()[0]
         if key in stems: continue
-        try: hit = (aleph("/api/find?q=" + urllib.parse.quote(n) + "&limit=1") or [None])[0]
-        except Exception: hit = None
-        # the hit must really be that name, not whatever Aleph's search found nearest
-        if not hit or n.lower() not in (hit.get("name", "") + " " + hit.get("short", "")).lower(): continue
-        if hit["id"] not in ids and hit.get("scope") != "private":
-            stems.add(key); ids.add(hit["id"]); out.append({"id": hit["id"], "name": hit.get("short") or hit["name"], "kind": hit["kind"]})
+        stems.add(key); out.append({"name": n, "kind": "person" if person.get(n) else "project"})
         if len(out) >= 6: break
     return out
 
@@ -168,15 +157,6 @@ def make(text, ask, audio="", call=False, dry=False, event=None, cloud=False):
     if todos: fu = todos
     saved = []
     if dry: return {"title": title, "links": ln, "followups": fu, "points": points, "saved": []}   # tests: nothing kept
-    try:
-        # a call goes to Aleph as its summary; the whole transcript stays in the file
-        main = ("\n".join("- " + p for p in points) if call else text)
-        body = f"{'Дзвінок: ' if call else ''}{title}\n{main}" + ("\n\nФоловапи:\n" + "\n".join("- " + f for f in fu) if fu else "")
-        aleph("/api/note", {"text": body, "about": ln[0]["id"] if ln else ""}); saved.append("Aleph")
-        for l in ln[1:]:
-            aleph("/api/fact", {"subj": l["id"], "rel": "note", "value": f"{title}: {main[:500]}", "status": "stated"})
-    except Exception as e:
-        print("notes: aleph", e, flush=True)
     NOTES.mkdir(parents=True, exist_ok=True)
     slug = re.sub(r"[^\w-]+", "-", title.lower()).strip("-")[:50] or "note"
     f = NOTES / f"{time.strftime('%Y-%m-%d-%H%M')}-{slug}.md"

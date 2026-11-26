@@ -4,7 +4,7 @@
     .venv/bin/python engine/memory.py build      # writes data/phrases.jsonl (local only, never in git)
     .venv/bin/python engine/memory.py try "можемо поговорити кор"
 
-Sources, all read-only and local: messages he sent in Beeper, his Voice Notes takes, what he typed to Claude in Claude
+Sources, all read-only and local: messages he sent in Beeper, what he typed to Claude in Claude
 Code / the Claude app (his prompts, not pasted text or messages from other sessions), and what he sent while Drafter was
 on (data/typed.jsonl). Nothing from skipped apps or password fields ever gets there.
 """
@@ -35,13 +35,6 @@ def beeper(after="2025-09-01T00:00:00Z", limit=4000):
     except Exception as e:
         print("beeper:", e); return []
     return [clean(m["text"]) for m in rows if m.get("type") == "TEXT" and m.get("text") and not clean(m["text"]).lower().startswith("клод:")]
-
-
-def voice_notes():
-    import integrations   # optional integration: the owner's older dictation app
-    if not integrations.available("voice_notes"): return []
-    try: return [n["text"] for n in json.loads(Path(integrations.local.setting("voice_notes", "path")).joinpath("data/notes.json").read_text()) if n.get("text")]
-    except Exception: return []
 
 
 SKIP_PROMPT = re.compile(r"^(<|\[|Background \(from|Reply with|Caveat:|This session|Another Claude|Do what the system prompt)|```|<cross-session")
@@ -78,7 +71,7 @@ def build(output=None):
     output = Path(output) if output is not None else OUT
     t = time.time()
     seen, rows = set(), []
-    for src, items in (("beeper", beeper()), ("voice", voice_notes()), ("claude", claude_prompts()), ("typed", typed())):
+    for src, items in (("beeper", beeper()), ("claude", claude_prompts()), ("typed", typed())):
         n = 0
         for x in items:
             x = x.strip()
@@ -147,7 +140,7 @@ class Memory:
 
     # Round three (2026-11-13): from data/corpus.jsonl (bench/corpus.py) when it is there. Voice takes stay out: on held-out
     # typed lines in AI apps they made it speak more and be right less (docs/rounds/2026-11-13-typing.md).
-    SOURCES = ("typed", "cc", "codex", "vnotes", "beeper", "fb", "vault", "import")
+    SOURCES = ("typed", "cc", "codex", "beeper", "fb", "vault", "import")
 
     def load(self):
         texts = from_corpus(self.SOURCES)

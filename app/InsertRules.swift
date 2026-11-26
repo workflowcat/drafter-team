@@ -53,8 +53,7 @@ enum InsertRules {
 
     // MARK: 4. what a Tab taken in a test field may leave behind
 
-    /// The engine's /accept row (data/accepted.jsonl: the weekly kept-letters page, the dictionary's terms and the
-    /// back office's ghost grades read it) is written only when the field holds no test marker: a test's Tab is never
+    /// The engine's /accept row (data/accepted.jsonl: the weekly kept-letters page, the dictionary's terms read it) is written only when the field holds no test marker: a test's Tab is never
     /// learned (AGENTS.md "Privacy for agents").
     static func logAccept(field: String) -> Bool { !field.contains(marker) }
 

@@ -86,7 +86,7 @@ struct TodayThreadView: View {
                                 }
                             }
                         }
-                        let activity = [(digest.voiceNotes, "voice notes"), (digest.drafts, "drafts"), (digest.clips, "clips")]
+                        let activity = [(digest.voiceTakes, "voice notes"), (digest.drafts, "drafts"), (digest.clips, "clips")]
                             .filter { $0.0 > 0 }.map { "\($0.0) \($0.1)" }.joined(separator: " · ")
                         if !activity.isEmpty { Text(activity).font(NativeFont.text(11.5)).foregroundStyle(UIInk.muted) }
                         if !digest.promises.isEmpty {

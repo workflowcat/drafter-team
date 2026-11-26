@@ -187,14 +187,11 @@ struct SettingsView: View {
     private var cloudHasMatch: Bool {
         anyMatch([
             "Connect a model cloud Claude Anthropic OpenAI",
-            "Claude sorts my day at night: tags, call notes, people, weekly review cloud",
             "Claude tidies a voice take after it goes in: names, the chat on screen cloud",
             "⌥Tab reworks the selected text cloud Claude",
             "Claude offers a rewrite when I pause cloud",
             "Claude writes the call outline and summary cloud",
-            "Claude names the kind of a new name (the name only) cloud",
-            "Train my style on the team server cloud",
-            "Allow local MCP clients to read saved data (read-only) cloud mcp"
+            "Claude names the kind of a new name (the name only) cloud"
         ])
     }
 
@@ -421,20 +418,15 @@ struct SettingsView: View {
             if !SettingsSearchRules.isSearching(search) || SettingsSearchRules.matches(query: search, title: "Connect a model", extra: "cloud Claude Anthropic OpenAI API key") {
                 ConnectSection(m: m).padding(.leading, G.gutter + G.gap).padding(.bottom, 8)   // on the grid, under the heading
             }
-            // one switch for slow work over his day, never while he types (engine/backoffice.py, 17 November 2026)
-            row("Claude sorts my day at night: tags, call notes, people, weekly review", s.backOffice, sends: true,
-                value: s.backOffice ? String(format: "up to $%.2f a day", s.backOfficeCap) : nil) { $0.backOffice = $1 }
             // after a Clean or Polished take went in (engine/voice_claude.py); its spend counts under the same cap
             row("Claude tidies a voice take after it goes in: names, the chat on screen", s.voiceClaude, sends: true,
-                value: s.voiceClaude ? String(format: "up to $%.2f a day, with the night batch", s.backOfficeCap) : nil) { $0.voiceClaude = $1 }
+                value: s.voiceClaude ? String(format: "up to $%.2f a day", s.backOfficeCap) : nil) { $0.voiceClaude = $1 }
             row("⌥Tab reworks the selected text", s.rework, sends: true, stat: LogStats.rework, typing: true) { $0.rework = $1 }
             // a typing pause: Claude offers a rewrite of the paragraph as a chip (app/PauseRewrite.swift); same daily cap
             row("Claude offers a rewrite when I pause", s.pauseRewrite, sends: true, typing: true,
                 value: s.pauseRewrite ? String(format: "up to $%.2f a day", s.backOfficeCap) : nil) { $0.pauseRewrite = $1 }
             row("Claude writes the call outline and summary", s.callNotes, sends: true) { $0.callNotes = $1 }
             row("Claude names the kind of a new name (the name only)", s.entityClassify, sends: true) { $0.entityClassify = $1 }
-            row("Train my style on the team server", s.retrainRemote, sends: true, to: "the team server") { $0.retrainRemote = $1 }
-            row("Allow local MCP clients to read saved data (read-only)", s.mcp, sends: true, to: "your MCP client") { $0.mcp = $1 }
         }
     }
 

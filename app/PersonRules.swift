@@ -1,4 +1,4 @@
-// Pure local contact matching. The pack contains only public-scope Aleph rows.
+// Pure local contact matching over the knowledge pack (engine/know.py: contacts, dictionary, snippets).
 import Foundation
 
 struct KnownPerson: Decodable {

@@ -25,25 +25,14 @@ def c(i, how='first', score=1.0, heat=1, related=False, named=False, kind=False)
 
 class Weights(unittest.TestCase):
     def test_type_beats_listed_in_a_note(self):
-        works = E.piece('works_at', 0.8, '2026-11-01', NOW)
+        works = E.piece('v_org', 0.9, '2026-11-01', NOW)
         listed = E.piece('v_entities', 0.9, '2026-11-01', NOW, n=6)
-        loose = E.piece('relates', 0.8, '2026-11-01', NOW)
-        self.assertGreater(works, loose)
+        thread = E.piece('v_thread', 0.9, '2026-11-01', NOW)
+        self.assertGreater(works, thread)
         self.assertGreater(works, listed)
 
-    def test_alephs_topic_guess_is_weak_unless_strong(self):
-        weak = E.piece('similar', 0.8, '2026-11-10', NOW, sim=0.1)
-        strong = E.piece('similar', 0.8, '2026-11-10', NOW, sim=0.45)
-        self.assertLess(weak, E.FLOOR)
-        self.assertGreater(strong, E.FLOOR)
-        self.assertLess(strong, E.piece('works_at', 0.8, '2026-11-10', NOW))
-        rec = {'links': [], 'facts': [], 'handles': {}, 'same': []}
-        E.add_aleph_fact(rec, {'rel': 'relates', 'value': '0.31 · ordering, invoices', 'oname': 'X', 'oid': 'project:x', 'okind': 'project',
-                               'since': None, 'at': None, 'fscope': 'work', 'by': 'auto', 'status': 'seen'})
-        self.assertEqual((rec['links'][0]['rel'], rec['links'][0]['sim'], rec['links'][0]['value']), ('similar', 0.31, 'ordering, invoices'))
-
     def test_recent_evidence_counts_more(self):
-        self.assertGreater(E.piece('works_on', 0.8, '2026-11-10', NOW), E.piece('works_on', 0.8, '2024-01-10', NOW))
+        self.assertGreater(E.piece('v_story', 0.9, '2026-11-10', NOW), E.piece('v_story', 0.9, '2024-01-10', NOW))
         self.assertAlmostEqual(E.recency('', NOW), 0.6)
         self.assertGreaterEqual(E.recency('2001-01-01', NOW), 0.5)
 
@@ -197,7 +186,7 @@ class Build(unittest.TestCase):
                       + [{'t': t, 'app': 'Beeper', 'text': 'Vera said yes'}, {'t': t, 'app': 'Claude', 'text': 'Ask Vera about Quill Works'}])
 
     def build(self, **kw):
-        args = dict(db=False, vault=self.vault, contacts=None, now=NOW, data=self.data, ordinary={'anvil'}, codius=self.data, lines=self.lines)
+        args = dict(vault=self.vault, contacts=None, now=NOW, data=self.data, ordinary={'anvil'}, codius=self.data, lines=self.lines)
         args.update(kw)
         return E.build(**args)
 
@@ -266,29 +255,29 @@ def rec(rid, kind, name, aliases=(), handles=None, evidence=(), sources=1, facts
             'pack': {'facts': [{}] * facts, 'pointers': list(ptrs)}}
 
 
-def src(system, rid, name, kind='person', aliases=(), handles=None, links=(), vlinks=()):
+def src(system, rid, name, kind='person', aliases=(), handles=None, vlinks=()):
     return {'system': system, 'id': rid, 'name': name, 'kind': kind, 'aliases': list(aliases), 'handles': handles or {},
-            'links': list(links), 'vlinks': list(vlinks)}
+            'vlinks': list(vlinks)}
 
 
 class Review(unittest.TestCase):
-    """The lead's review of 14 November: twins, topic words, duplicates, his own name, apps as people, ordinary first
+    """The lead's review of 14 November: twins, ranking ties, duplicates, his own name, apps as people, ordinary first
     words, chat placeholders."""
 
     # 1 -------------------------------------------------------------------------------------------------------------
     def test_twins_fold_into_one_thing(self):
         records = [rec('p:anvil', 'project', 'Anvil', sources=2, ptrs=[{'label': 'Story', 'value': '/v/Anvil.md', 'path': True}]),
                    rec('t:anvil-repo', 'tool', 'anvil', ptrs=[{'label': 'URL', 'value': 'https://anvil.example', 'path': False},
-                                                             {'label': 'Aleph', 'value': 'repo:anvil', 'path': False}]),
+                                                             {'label': 'Story', 'value': '/v/Anvil.md', 'path': True}]),
                    rec('t:anvil-worker', 'tool', 'Anvil'), rec('h:vera', 'person', 'Vera Stone'), rec('o:quill', 'org', 'Anvil')]
         main_of = E.fold_twins(records)
         self.assertEqual(main_of, {'t:anvil-repo': 'p:anvil', 't:anvil-worker': 'p:anvil'})   # an org of that name is not a twin
-        self.assertEqual([p['label'] for p in records[0]['pack']['pointers']], ['Story', 'URL'])   # the twin's URL, never its Aleph id
+        self.assertEqual([p['label'] for p in records[0]['pack']['pointers']], ['Story', 'URL'])   # the twin's URL; the same note once
         G = E.Edges()
-        G.add('p:anvil', 't:anvil-repo', 0.8, 'repo', 'repo of', 'aleph')
-        G.add('p:anvil', 't:anvil-worker', 0.8, 'runs as', 'runs', 'aleph')
-        G.add('h:vera', 'p:anvil', 0.6, 'works on', 'people on it', 'aleph')
-        G.add('h:vera', 't:anvil-repo', 0.7, 'built', 'built by', 'aleph')
+        G.add('p:anvil', 't:anvil-repo', 0.8, 'repo', 'repo of', 'vault')
+        G.add('p:anvil', 't:anvil-worker', 0.8, 'runs as', 'runs', 'vault')
+        G.add('h:vera', 'p:anvil', 0.6, 'works on', 'people on it', 'vault')
+        G.add('h:vera', 't:anvil-repo', 0.7, 'built', 'built by', 'vault')
         E.finish_edges(records, G, main_of=main_of)
         by = {r['id']: r for r in records}
         self.assertEqual(by['p:anvil']['related'], ['h:vera'])                    # no "repo" or "runs as" line to itself
@@ -297,35 +286,25 @@ class Review(unittest.TestCase):
         self.assertEqual(by['t:anvil-repo']['related'], ['h:vera'])               # a twin shows the thing's relations
 
     # 2 -------------------------------------------------------------------------------------------------------------
-    def test_topic_words_only_informative(self):
-        df = {'pending': 0.01, 'kiln': 0.01, 'glaze': 0.02, 'course': 0.3, 'clay': 0.01}
-        self.assertEqual(E.informative('pending, frozen, course, kiln, glaze, potteryKilnNotes, 2026', df), ['kiln', 'glaze'])
-        self.assertEqual(E.similar_reason('kiln, glaze, frozen', 0.1, df), ('similar topics: kiln, glaze', True))
-        self.assertEqual(E.similar_reason('kiln, pending', 0.3, df), ('similar topics', True))      # one word: no list
-        self.assertEqual(E.similar_reason('pending, course', 0.1, df), ('', False))                # nothing left, weak: no edge
-        self.assertEqual(E.similar_reason('pending, course', 0.3, df), ('similar topics', True))   # nothing left, strong: kept
-        self.assertEqual(E.similar_reason('kiln, clay, glaze', 0.3, df, common={'clay'}), ('similar topics: kiln, glaze', True))
-
-    def test_similarity_only_ranks_under_declared_and_ties_are_stable(self):
-        edges = [{'id': 'a', 'w': 0.9, 'tier': 1}, {'id': 'b', 'w': 0.3, 'tier': 0}, {'id': 'c', 'w': 0.5, 'tier': 1, 'heat': 3},
-                 {'id': 'd', 'w': 0.5, 'tier': 1, 'heat': 3, 'date': '2026-11-01'}, {'id': 'e', 'w': 0.5, 'tier': 1, 'heat': 9}]
-        self.assertEqual([e['id'] for e in E.rank_edges(edges, 'project')[0]], ['b', 'a', 'e', 'd', 'c'])
+    def test_ties_are_stable(self):
+        edges = [{'id': 'a', 'w': 0.9}, {'id': 'b', 'w': 0.3}, {'id': 'c', 'w': 0.5, 'heat': 3},
+                 {'id': 'd', 'w': 0.5, 'heat': 3, 'date': '2026-11-01'}, {'id': 'e', 'w': 0.5, 'heat': 9}]
+        self.assertEqual([e['id'] for e in E.rank_edges(edges, 'project')[0]], ['a', 'e', 'd', 'c', 'b'])
 
     # 3, 4 ----------------------------------------------------------------------------------------------------------
     def test_one_person_several_records(self):
-        org = src('aleph', 'org:quill', 'Quill Works', kind='org')
+        org = src('vault', 'Entities/Organizations/Quill Works.md', 'Quill Works', kind='org')
         groups = [[org],
-                  [src('aleph', 'person:oleh', 'Олег Бровко', links=[{'to': 'aleph:org:quill', 'rel': 'works_at'}])],
+                  [src('vault', 'People/Олег Бровко.md', 'Олег Бровко', vlinks=[{'path': 'Entities/Organizations/Quill Works', 'key': 'org'}])],
                   [src('vault', 'People/Oleh Brovko.md', 'Oleh Brovko', vlinks=[{'path': 'Quill Works', 'key': 'org'}])],   # other script + same org
                   [src('contacts', 'c1', 'Dana B.', handles={'email': ['dana@example.test']})],
-                  [src('aleph', 'person:dana', 'Dana Brook', handles={'email': ['Dana@Example.test']})],                  # handle + names fit
-                  [src('aleph', 'person:kit', 'Kit Fox')], [src('contacts', 'c2', 'Kit Fox')],                           # same name, nothing else
+                  [src('board', 'person:dana', 'Dana Brook', handles={'email': ['Dana@Example.test']})],                  # handle + names fit
+                  [src('vault', 'People/Kit Fox.md', 'Kit Fox')], [src('contacts', 'c2', 'Kit Fox')],                      # same name, nothing else
                   [src('contacts', 'c3', 'KF')],                                                                           # initials
-                  [src('aleph', 'person:mira', 'Mira Volk')], [src('aleph', 'person:mira2', 'Mira Volk')],                # told apart
-                  [src('contacts', 'c4', 'VERA stone')], [src('aleph', 'person:rex', 'Rex Lake', handles={'tg': ['rex_lake']})],
+                  [src('vault', 'People/Mira Volk.md', 'Mira Volk')], [src('board', 'person:mira2', 'Mira Volk')],         # told apart
+                  [src('contacts', 'c4', 'VERA stone')], [src('board', 'person:rex', 'Rex Lake', handles={'tg': ['rex_lake']})],
                   [src('contacts', 'c5', 'Rex Lake', handles={'tg': ['other_rex']})]]                                   # usernames differ
-        groups[0].append(src('vault', 'Entities/Organizations/Quill Works.md', 'Quill Works', kind='org'))   # merged earlier
-        out, queue, n = E.dedupe_people(groups, apart={('aleph:person:mira', 'aleph:person:mira2')}, own=['vera stone'])
+        out, queue, n = E.dedupe_people(groups, apart={('vault:People/Mira Volk.md', 'board:person:mira2')}, own=['vera stone'])
         names = sorted(sorted(r['name'] for r in g) for g in out)
         self.assertIn(['Oleh Brovko', 'Олег Бровко'], names)
         self.assertEqual(len(out), len(groups) - 3)   # two merges, one own name
@@ -334,10 +313,10 @@ class Review(unittest.TestCase):
         self.assertEqual(n['own_dropped'], 1)                                   # his own name in another case is no entity
         self.assertNotIn(['VERA stone'], names)
         q = {tuple(sorted((x['a'], x['b']))): x for x in queue}
-        self.assertEqual(q[('aleph:person:kit', 'contacts:c2')]['why'], ['same full name'])
-        self.assertIn(('aleph:person:kit', 'contacts:c3'), q)                     # initials: asked, not merged
-        self.assertNotIn(('aleph:person:mira', 'aleph:person:mira2'), q)          # his "not the same" holds
-        self.assertIn('different usernames', q[('aleph:person:rex', 'contacts:c5')]['why'])
+        self.assertEqual(q[('contacts:c2', 'vault:People/Kit Fox.md')]['why'], ['same full name'])
+        self.assertIn(('contacts:c3', 'vault:People/Kit Fox.md'), q)                     # initials: asked, not merged
+        self.assertNotIn(('board:person:mira2', 'vault:People/Mira Volk.md'), q)          # his "not the same" holds
+        self.assertIn('different usernames', q[('board:person:rex', 'contacts:c5')]['why'])
         self.assertEqual(queue[0]['score'], max(x['score'] for x in queue))       # best first
 
     def test_name_match_rules(self):
@@ -356,11 +335,10 @@ class Review(unittest.TestCase):
                    rec('a:3', 'person', 'Vera Stone', handles={'email': ['v@example.test']}),
                    rec('a:4', 'person', 'Quillbot'),
                    rec('a:5', 'person', 'Codex')]
-        records[0]['evidence'] = [{'to': 'a:2', 'rel': 'built_by'}, {'to': 'a:3', 'rel': 'built_by'}]
-        records[1]['evidence'] = [{'to': 'a:2', 'rel': 'built_by'}, {'to': 'a:3', 'rel': 'built_by'}]
         records[7]['kind_by'] = 'me'                                             # his own kind wins
-        self.assertEqual(sorted(E.apps_as_people(records)), ['a:1', 'a:2', 'a:4'])
+        self.assertEqual(sorted(E.apps_as_people(records)), ['a:1', 'a:4'])
         self.assertEqual(records[3]['kind'], 'tool')
+        self.assertEqual(records[4]['kind'], 'person')                          # a name that is no app stays a person
         self.assertEqual(records[5]['kind'], 'person')                          # a handle: a real person
         self.assertEqual(records[7]['kind'], 'person')
 

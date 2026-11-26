@@ -5,7 +5,8 @@ the chat's person card, the text on screen around the field, his writing note fo
 app swaps it in place only if he has not typed since. Raw never comes here (the app does not ask). Offline, off, over
 the cap, slow (DEADLINE) or a bad answer: '' and the app keeps Parakeet's text quietly.
 
-Cost goes under the back office cap (`backOfficeCap`, USD a day): one shared ledger, data/backoffice/spend.json.
+Cost goes under the daily Claude cap (`backOfficeCap`, USD a day): one ledger shared with the pause rewrite,
+data/backoffice/spend.json.
 Pure functions here; server.voice_claude() asks claude_on("voice_claude") before anything is built.
 """
 import json, re, threading, time
@@ -16,8 +17,8 @@ DEADLINE = 2.4            # seconds for the Claude answer; the app gives up at 2
 MAX_TEXT = 1500           # a take longer than this stays as Parakeet wrote it (a long dictation is not a quick fix)
 MAX_SCREEN = 800          # characters of the field's text before the caret
 OUT_RATIO = (0.6, 1.6)    # the answer's length against the take's: outside, Claude rewrote more than it fixed
-DEFAULT_CAP = 0.50        # engine/backoffice.py DEFAULT_CAP: the same cap, the same default
-PRICE = (0.10, 0.50)      # Haiku, USD per million tokens (in, out); engine/backoffice.py PRICE["haiku"]
+DEFAULT_CAP = 0.50        # the app's backOfficeCap default
+PRICE = (0.10, 0.50)      # Haiku, USD per million tokens (in, out)
 _lock = threading.Lock()
 
 
@@ -71,7 +72,7 @@ def spent(data, now=None):
 
 
 def room(data, cap, usd, now=None):
-    """True while today's spend plus this call stays under the back office cap."""
+    """True while today's spend plus this call stays under the daily Claude cap."""
     return spent(data, now) + usd <= float(cap)
 
 

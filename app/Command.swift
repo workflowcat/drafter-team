@@ -1,8 +1,8 @@
-// The command panel (Dock click or the menu, 2026-10-21; ⌃⌥Space and ⌘Space belong to Aleph): one line typed anywhere - "забукай 30 хв з Савою завтра після обіду", "find a
-// free hour on Thursday", "задача: скинути акт Мілі до пʼятниці", ";sig" - becomes up to three options (engine
+// The command panel (Dock click or the menu, 2026-10-21): one line typed anywhere - "забукай 30 хв з Савою завтра після обіду", "find a
+// free hour on Thursday", "нагадай скинути акт Мілі в пʼятницю", ";sig" - becomes up to three options (engine
 // /command: Claude Haiku online, the local triggers and model offline). Nothing runs before he picks: ↑↓ choose,
 // Enter or Tab runs the chosen one, Esc closes. Calendar and reminders are made here with EventKit and can be undone
-// with ⌘Z while the receipt shows; Aleph keeps its own undo. Free slots come from his real calendars only; with no
+// with ⌘Z while the receipt shows. Free slots come from his real calendars only; with no
 // calendar access it says so and never makes slots up. Fixed size (Codex review 2026-10-21: switching options changes
 // words, never the shape), the shared card surface.
 import AppKit

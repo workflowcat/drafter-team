@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "engine"))
 import guard
 sys.path.insert(0, str(ROOT / "bench"))
-from lora_recipe import RECIPE      # the same numbers as the remote trainer (bench/remote/train_lora.py)
+from lora_recipe import RECIPE
 R = RECIPE
 guard.start(float(os.environ.get("DRAFTER_TRAIN_CAP_GB", "6.0")))
 iters = sys.argv[1] if len(sys.argv) > 1 else "20"

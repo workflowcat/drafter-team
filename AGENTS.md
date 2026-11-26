@@ -4,6 +4,13 @@ An offline writing helper for macOS. Grey ghost text at the caret in any app fro
 voice on Right Option, call and long-note recording. Swift menu-bar app in `app/`, Python engine in `engine/`.
 For people: README.md and docs/. This file is for coding agents working in this repository.
 
+## This repository
+The Drafter core: typing, voice, calls and notes, the window and its UI. Work here goes to the core and the UI; tools
+of one person stay in their own config or their own fork. It lives on GitHub only (https://github.com/workflowcat/drafter-team, public):
+branch, open a pull request or push to `origin`; never force. Nothing private may land here: names, hosts, paths and
+text of a real person go in `data/drafter.local.json`, which is never tracked (`tests/test_no_private.py`).
+When a feature is added, removed or its default changes, update `docs/features.md` in the same change.
+
 ## What leaves the Mac
 Ghost text, transcription and training stay local. Text goes to a model outside the Mac only after the user connects
 one (Settings > Connect a model) and turns on that feature's switch. Every such call goes through

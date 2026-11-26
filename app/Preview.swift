@@ -603,12 +603,12 @@ extension UIShots {
         try chip("lookup", ";docs project notes", ["id": "lookup", "chip": "Search Google Drive · project notes"])
         // the next message: a card above an empty box
         let fieldBox = CGRect(x: 300, y: -2580, width: 520, height: 40)
-        let inBox = CGRect(x: 312, y: -2570, width: 1, height: 20)
+        let caretBox = CGRect(x: 312, y: -2570, width: 1, height: 20)
         g.showDraft([["text": "Thanks, Mila! I'll send the act tonight and we can go over the numbers on Thursday at 11 if that works for you.", "label": "thanks + act tonight"],
-                     ["text": "b", "label": "b"], ["text": "c", "label": "c"]], field: fieldBox, caret: inBox)
-        try field(folder + "/card.png", typed: "", caret: inBox, panel: g.panel, size: NSSize(width: 720, height: 190), box: fieldBox, placeholder: "Message")
+                     ["text": "b", "label": "b"], ["text": "c", "label": "c"]], field: fieldBox, caret: caretBox)
+        try field(folder + "/card.png", typed: "", caret: caretBox, panel: g.panel, size: NSSize(width: 720, height: 190), box: fieldBox, placeholder: "Message")
         g.expand(true)
-        try field(folder + "/card-open.png", typed: "", caret: inBox, panel: g.panel, size: NSSize(width: 720, height: 230), box: fieldBox, placeholder: "Message")
+        try field(folder + "/card-open.png", typed: "", caret: caretBox, panel: g.panel, size: NSSize(width: 720, height: 230), box: fieldBox, placeholder: "Message")
         g.hide()
         // a word Drafter fixed: dots under it, his own word in a chip above
         let word = CGRect(x: 560, y: -2600, width: 58, height: 20)

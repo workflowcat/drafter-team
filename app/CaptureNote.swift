@@ -800,8 +800,8 @@ final class CaptureNote {
                             ShotStore.sent(id, t, detail: name)
                         }
                     }
-                case .claude, .codex, .aleph:
-                    guard let b = ShotPack.appBundle(t, aleph: ShotSend.alephBundle), NSWorkspace.shared.urlForApplication(withBundleIdentifier: b) != nil else {
+                case .claude, .codex:
+                    guard let b = ShotPack.appBundle(t), NSWorkspace.shared.urlForApplication(withBundleIdentifier: b) != nil else {
                         ShotSend.clipboard(pngs, urls: urls, text: p.agentText(path: path, screenText: false))
                         Pill.shared.flash("\(t.word) is not on this Mac · picture and text on the clipboard")
                         return

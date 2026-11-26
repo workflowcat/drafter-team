@@ -348,12 +348,12 @@ enum ShotRules {
 }
 
 extension ShotTarget {
-    /// The line glyph in the send-to list when the app's own icon is not on this Mac (Claude, Codex, Aleph, Claude
+    /// The line glyph in the send-to list when the app's own icon is not on this Mac (Claude, Codex, Claude
     /// Code show their app icon when it is).
     var glyph: String {
         switch self {
         case .field: return "corner-down-left"; case .clipboard: return "clipboard"; case .file: return "download"
-        case .claude, .codex, .ask: return "sparkle"; case .claudeCode: return "terminal"; case .aleph: return "chat"
+        case .claude, .codex, .ask: return "sparkle"; case .claudeCode: return "terminal"
         case .person: return "user"
         }
     }

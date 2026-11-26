@@ -16,7 +16,7 @@ class Page(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory(); self.file = Path(self.tmp.name) / "words.json"
         self.file.write_text(json.dumps({"words": [
             {"text": "Brumblex", "lang": "en", "kind": "term", "source": "menu", "heard": ["brum blacks"]},
-            {"text": "Квіточка", "lang": "uk", "kind": "name", "source": "aleph"}],
+            {"text": "Квіточка", "lang": "uk", "kind": "name", "source": "typing"}],
             "loose_heard": {"zorvo": "Zorvox"}}))
         self.d = dictionary.load(self.file)
 

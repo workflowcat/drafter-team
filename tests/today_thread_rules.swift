@@ -23,7 +23,7 @@ import Foundation
                         TodayPromise(id: "soon", what: "Check outline", person: "", app: "", due: start + 10, overdue: false),
                         TodayPromise(id: "none", what: "Plan", person: "", app: "", due: nil, overdue: false)]
         let result = TodayThreadRules.summarize(items: items, topics: topics, promises: promises, now: now, calendar: cal)
-        check(result.calls == 1 && result.voiceNotes == 1 && result.drafts == 1 && result.clips == 1, "only today; deduplicated")
+        check(result.calls == 1 && result.voiceTakes == 1 && result.drafts == 1 && result.clips == 1, "only today; deduplicated")
         check(result.topics.map(\.id) == ["t4", "t3", "t2"], "three active topics by recency")
         check(result.headline == "4 topics · 1 call · 4 open promises", "headline grammar")
         check(result.overdueCount == 1, "past-due count")

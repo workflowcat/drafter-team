@@ -99,7 +99,7 @@ enum ShotPill {
     }
 }
 
-/// The apps' own icons for the send-to list: Claude, Codex, Aleph and the front terminal (Claude Code), when that app
+/// The apps' own icons for the send-to list: Claude, Codex and the front terminal (Claude Code), when that app
 /// is on this Mac; nil else (the list draws the target's line glyph).
 enum ShotIcons {
     private static var cache: [String: NSImage] = [:]
@@ -114,7 +114,7 @@ enum ShotIcons {
     }
     static func icon(_ t: ShotTarget) -> NSImage? {
         switch t {
-        case .claude, .codex, .aleph: return ShotPack.appBundle(t, aleph: ShotSend.alephBundle).flatMap(app)
+        case .claude, .codex: return ShotPack.appBundle(t).flatMap(app)
         case .claudeCode:
             let front = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
             let running = [front].compactMap { $0 } + NSWorkspace.shared.runningApplications.compactMap(\.bundleIdentifier)

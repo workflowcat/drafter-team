@@ -140,7 +140,7 @@ final class Drafter {
         var st = stat(); return lstat(path, &st) == 0 ? UInt64(st.st_ino) : 0
     }
 
-    /// Settings changed from outside (Aleph through the engine's /settings): take them over.
+    /// Settings changed from outside (a local tool through the engine's /settings): take them over.
     func reloadIfChanged() {
         let m = (try? FileManager.default.attributesOfItem(atPath: Home.settings.path))?[.modificationDate] as? Date
         guard m != settingsStamp else { return }

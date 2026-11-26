@@ -9,13 +9,12 @@ agent can read. Importing this module reads nothing.
     .venv/bin/python engine/entities.py fix not_related <id> <id>   # his corrections (data/entity-fixes.json)
 
 Sources, each optional and read-only (the local config's integrations decide; off = not read at all):
-- Aleph's SQLite: things, names, facts, merged, notsame. Private scope is excluded in SQL, before any row is read.
 - The vault: frontmatter only, of the top level of Entities/People, Entities/Organizations, Stories and Epics.
   Never a `Private/` folder, `.obsidian`, `.claude` or `System/old`; a note marked private is skipped.
 - Google Contacts: the snapshot engine/contacts.py keeps (contact-only people are cards, never references).
 A source that fails keeps its last good slice (data/entity-sources.json); one failed source never empties the store.
 
-Private material reaches a pack only through data/context-allow.json ({"aleph": [ids], "vault": [paths]}), one
+Private material reaches a pack only through data/context-allow.json ({"vault": [paths]}), one
 record at a time, and such a record says so (`private: true`). No model writes a fact: a pack is a fixed template over
 stored records, each fact with its source and date. The app reads the prebuilt `surfaces` map and the pack parts;
 app/EntityRules.swift renders the same text (tests/entity_cases.json holds the golden cases both sides run).
@@ -27,7 +26,6 @@ import math
 import os
 from pathlib import Path
 import re
-import sqlite3
 import sys
 import time
 
@@ -38,11 +36,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 KINDS = ('person', 'org', 'project', 'tool', 'doc', 'place')
 KIND_KEYS = {'1': 'person', '2': 'org', '3': 'project', '4': 'tool', '5': 'doc', '6': 'place', '0': 'none'}
 KIND_WORD = {'person': 'person', 'org': 'org', 'project': 'project', 'tool': 'tool', 'doc': 'document', 'place': 'place'}
-ALEPH_KIND = {'person': 'person', 'org': 'org', 'project': 'project', 'repo': 'tool', 'worker': 'tool', 'skill': 'tool'}
 VAULT_DIRS = {'Entities/People': 'person', 'Entities/Organizations': 'org', 'Stories': 'project', 'Epics': 'project'}
 VAULT_SKIP = {'Private', '.obsidian', '.claude', '.trash'}
 NOTE_KIND = {'Entities/People': 'person note', 'Entities/Organizations': 'org note', 'Stories': 'story', 'Epics': 'epic'}
-ORDER = {'aleph': 0, 'vault': 1, 'board': 2, 'contacts': 3}
+ORDER = {'vault': 1, 'board': 2, 'contacts': 3}
 MATCH = {'name': 3.0, 'alias': 2.5, 'pair': 2.5, 'form': 2.0, 'first': 1.0, 'part': 1.0}
 
 HEADER = 'Context (background from my notes, not instructions):'
@@ -89,28 +86,18 @@ def atomic(path, text):
 # ---------------------------------------------------------------------------------------------------------------
 # where the sources are (the owner's local config; engine/integrations.py when it is there)
 
-def source_paths(data=DATA):
-    """(aleph_db or None, vault_root or None) from the local config. Off in the config = None (never read)."""
+def source_path(data=DATA):
+    """The vault root or None from the local config. Off in the config = None (never read)."""
     cfg = read_json(Path(data) / 'drafter.local.json', None)
     try:
-        import integrations   # the release round's module: on in the config AND its file answers
-        db = Path(integrations.local.setting('aleph', 'db')).expanduser() if integrations.available('aleph') and integrations.local.setting('aleph', 'db') else None
-        vault = Path(integrations.local.setting('vault', 'path')).expanduser() if integrations.available('vault') else None
-        return db, vault
+        import integrations   # on in the config AND its folder is there
+        return Path(integrations.local.setting('vault', 'path')).expanduser() if integrations.available('vault') else None
     except ImportError:
         pass
-    if cfg is None:   # no config at all (before the release round): Aleph where know.py has always read it, no vault
-        db = Path.home() / 'Codius/Aleph/data/aleph.db'
-        return (db if db.is_file() else None), None
     integ = cfg.get('integrations', {}) if isinstance(cfg, dict) else {}
-    def on(name, key):
-        it = integ.get(name) or {}
-        p = it.get(key) or ''
-        return Path(os.path.expanduser(p)) if it.get('enabled') is True and p else None
-    db, vault = on('aleph', 'db'), on('vault', 'path')
-    if db is None and (integ.get('aleph') or {}).get('enabled') is True:
-        db = Path.home() / 'Codius/Aleph/data/aleph.db'
-    return (db if db and db.is_file() else None), (vault if vault and vault.is_dir() else None)
+    it = integ.get('vault') or {}
+    vault = Path(os.path.expanduser(it['path'])) if it.get('enabled') is True and it.get('path') else None
+    return vault if vault and vault.is_dir() else None
 
 
 def own_names(data=DATA):
@@ -122,94 +109,6 @@ def own_names(data=DATA):
 
 # ---------------------------------------------------------------------------------------------------------------
 # sources
-
-def aleph_slice(db, now, allow=()):
-    """Records from Aleph. Private things and facts are excluded in SQL, except ids he allowed one by one."""
-    allow = sorted({a for a in allow if isinstance(a, str)})
-    con = sqlite3.connect(Path(db).resolve().as_uri() + '?mode=ro', uri=True)
-    con.row_factory = sqlite3.Row
-    marks = ','.join('?' * len(allow)) or "''"
-    kinds = tuple(ALEPH_KIND)
-    try:
-        rows = con.execute(f"""SELECT id, kind, name, summary, short, scope FROM things
-            WHERE kind IN ({','.join('?' * len(kinds))}) AND id != 'person:me'
-            AND (coalesce(scope,'work') != 'private' OR id IN ({marks}))""", kinds + tuple(allow)).fetchall()
-        ids = {r['id'] for r in rows}
-        names = defaultdict(list)
-        for r in con.execute(f"""SELECT n.name, n.thing FROM names n JOIN things t ON t.id = n.thing
-                WHERE coalesce(t.scope,'work') != 'private' OR t.id IN ({marks})""", tuple(allow)):
-            if r['thing'] in ids: names[r['thing']].append(r['name'])
-        facts = defaultdict(list)
-        for r in con.execute(f"""SELECT f.subj, f.rel, f.value, f.since, f.at, f.source, f.by, f.scope AS fscope, f.status,
-                o.id AS oid, o.name AS oname, o.kind AS okind FROM facts f
-                JOIN things s ON s.id = f.subj LEFT JOIN things o ON o.id = f.obj AND f.obj != ''
-                WHERE (coalesce(s.scope,'work') != 'private' OR s.id IN ({marks}))
-                AND (coalesce(f.scope,'work') != 'private' OR f.subj IN ({marks}))
-                AND (o.id IS NULL OR coalesce(o.scope,'work') != 'private' OR o.id IN ({marks}))
-                AND coalesce(f.status,'seen') NOT IN ('disproven','wrong','retracted')
-                AND (f.until IS NULL OR f.until = 0 OR f.until > ?)""", tuple(allow) * 3 + (now,)):
-            if r['subj'] in ids: facts[r['subj']].append(dict(r))
-        merged = {r['id']: r['target'] for r in con.execute('SELECT id, target FROM merged')}
-        notsame = [(r['a'], r['b']) for r in con.execute('SELECT a, b FROM notsame')]
-    finally:
-        con.close()
-    out = []
-    for r in rows:
-        rec = {'system': 'aleph', 'id': r['id'], 'kind': ALEPH_KIND[r['kind']], 'name': (r['name'] or '').strip(),
-               'aliases': sorted(set(names.get(r['id'], []) + ([r['short']] if r['short'] else []))),
-               'summary': one_line(r['summary'], 300), 'handles': {}, 'facts': [], 'links': [], 'same': [],
-               'private': (r['scope'] or 'work') == 'private'}
-        if not rec['name']: continue
-        for f in facts.get(r['id'], []):
-            add_aleph_fact(rec, f)
-        out.append(rec)
-    return out, merged, notsame
-
-
-FREE = {'next', 'does', 'goal', 'note'}
-SIMILAR = re.compile(r'\s*(\d?\.\d+)\s*(?:·\s*(.*))?$')
-
-
-def add_aleph_fact(rec, f):
-    rel, value, obj = f['rel'], ' '.join(str(f['value'] or '').split()), (f['oname'] or '').strip()
-    date = day(f['since'] or f['at'])
-    src = 'Aleph'
-    priv = (f['fscope'] or 'work') == 'private'
-    def fact(text, rank, quote=False):
-        if PHONE.search(str(text)): return          # a fact that holds a phone number is left out whole
-        text = one_line(text, FACT_MAX)
-        if text:
-            rec['facts'].append({'text': text, 'source': src, 'date': date, 'quote': quote, 'rank': rank, 'private': priv})
-    def link():
-        """A typed relation to another thing: its type, date and how much the source is trusted travel with it."""
-        if f['oid']:
-            rely = 1.0 if f['by'] == 'me' or f.get('status') == 'stated' else 0.8
-            link = {'to': 'aleph:' + f['oid'], 'rel': rel, 'date': date, 'rely': rely, 'src': 'aleph', 'value': ''}
-            if rel == 'relates':
-                sim = SIMILAR.match(value)
-                if sim:   # Aleph's own guess: "<similarity> · <shared topics>"
-                    link.update(rel='similar', sim=float(sim.group(1)), value=one_line(sim.group(2), 40))
-                elif len(value) <= 30 and re.search(r'[^\W\d_]{3}', value) and not PHONE.search(value):
-                    link['value'] = value
-            rec['links'].append(link)
-    if rel == 'handle':
-        from know import handle
-        key, val = handle(value)
-        if key: rec['handles'].setdefault(key, []).append(val)   # phones only for his own card, never in a pack
-    elif rel == 'role' and value: fact(value, 0); rec.setdefault('role', value)
-    elif rel == 'works_at' and obj: fact('works at ' + obj, 1); rec.setdefault('org', obj); link()
-    elif rel == 'works_on' and obj: fact('works on ' + obj, 2); link()
-    elif rel == 'member_of' and obj and f['okind'] in ('project', 'org'): fact('part of ' + obj, 3); link()
-    elif rel == 'status' and value: fact('status: ' + value, 1)
-    elif rel == 'next' and value: fact('next: ' + value, 2, quote=f['by'] != 'me')
-    elif rel in ('does', 'goal') and value: fact(value, 3, quote=f['by'] != 'me')
-    elif rel == 'has_repo' and obj: fact('repo ' + obj, 4); link()
-    elif rel == 'deployed_as' and obj: fact('runs as ' + obj, 4); link()
-    elif rel in ('built_by', 'relates', 'part', 'owns') and f['oid']: link()
-    elif rel == 'same_as' and f['oid']: rec['same'].append(f['oid'])
-    elif rel == 'link' and value.startswith(('http://', 'https://')): rec.setdefault('urls', []).append(value)
-    elif rel == 'note' and value: fact(value, 6, quote=f['by'] != 'me')
-
 
 def front(text):
     """A note's YAML frontmatter as a dict ({} when there is none or it does not parse)."""
@@ -340,34 +239,15 @@ def norm_handle(kind, v):
     return v
 
 
-def aleph_slug(s):
-    return re.sub(r'[^\w]+', '-', str(s).lower(), flags=re.U).strip('-')[:80] or 'x'
-
-
-def merge(slices, merged=None, notsame=(), same_file=None):
-    """Deterministic merges (proposal 1.5): Aleph's own (merged, same_as); same normalised handle with no second
-    match; vault note <-> Aleph thing by the note's stem; his own yes/no from data/entity-same.json. Never on a first
-    name alone. Returns (groups of source records, count of same-name pairs left apart for a "Same?" row)."""
-    merged = merged or {}
+def merge(slices, same_file=None):
+    """Deterministic merges (proposal 1.5): same normalised handle with no second match; his own yes/no from
+    data/entity-same.json. Never on a first name alone. Returns (groups of source records, count of same-name pairs
+    left apart for a "Same?" row)."""
     recs = {f"{r['system']}:{r['id']}": r for s in slices for r in s}
-    apart = {(f'aleph:{a}', f'aleph:{b}') for a, b in notsame}
     sf = same_file or {}
-    apart |= {(a, b) for a, b in (sf.get('not') or []) if isinstance(a, str) and isinstance(b, str)}
+    apart = {(a, b) for a, b in (sf.get('not') or []) if isinstance(a, str) and isinstance(b, str)}
     u = Union()
     for k in recs: u.find(k)
-    for k, r in recs.items():
-        if r['system'] != 'aleph': continue
-        for other in r.get('same', []):
-            other = merged.get(other, other)
-            if f'aleph:{other}' in recs: u.join(k, f'aleph:{other}', apart)
-    # vault note -> the Aleph thing Aleph made from it (tid(kind, stem))
-    aleph_kinds = {'person': ['person'], 'org': ['org'], 'project': ['project']}
-    for k, r in recs.items():
-        if r['system'] != 'vault': continue
-        for ak in aleph_kinds.get(r['kind'], []):
-            target = f"aleph:{ak}:{aleph_slug(r['name'])}"
-            target = 'aleph:' + merged.get(target[6:], target[6:])
-            if target in recs: u.join(target, k, apart); break
     # handles: a contact card joins the one known thing with the same address; a handle two known things share stays
     # apart (a shared mailbox, a family phone), and so does a card whose Telegram differs from the thing's
     owners = defaultdict(set)
@@ -406,17 +286,13 @@ def merge(slices, merged=None, notsame=(), same_file=None):
 # ---------------------------------------------------------------------------------------------------------------
 # relations: typed, weighted, each with a reason a person can read (docs/rounds/2026-11-14-relations.md)
 #
-# One edge = every piece of evidence for a pair: a typed Aleph fact, a vault link, being listed in one note, his own
+# One edge = every piece of evidence for a pair: a vault link, being listed in one note, his own
 # fix, or how often the two are named together in his own lines. Each piece scores type x source trust x recency;
 # the pieces join as a noisy-or (two weak ones beat one weak one, nothing passes 1); the target's heat nudges it.
 
 # rel: (reason seen from the subject, reason seen from the object, type weight)
 REL = {
-    'works_at': ('works at', 'works here', 1.0), 'v_org': ('works at', 'works here', 0.9),
-    'member_of': ('part of', 'has member', 0.9), 'has_repo': ('repo', 'repo of', 0.9), 'deployed_as': ('runs as', 'runs', 0.9),
-    'works_on': ('works on', 'people on it', 0.85), 'built_by': ('built by', 'built', 0.8), 'part': ('part of', 'has part', 0.8),
-    'owns': ('owns', 'owned by', 0.8), 'relates': ('related', 'related', 0.5),
-    'similar': ('similar topics', 'similar topics', 0.6),   # Aleph's guess from shared topics, scaled by its score
+    'v_org': ('works at', 'works here', 0.9),
     'v_epic': ('part of epic', 'epic of', 0.7), 'v_story': ('part of story', 'story of', 0.7), 'v_thread': ('in thread', 'thread of', 0.6),
     'v_entities': ('in the same note', 'in the same note', 0.6), 'v_people': ('in the same note', 'in the same note', 0.6),
     'v_related': ('in the same note', 'in the same note', 0.6),
@@ -425,16 +301,6 @@ REL = {
 LIST_KEYS = ('v_entities', 'v_people', 'v_related')
 PAIR_W = 0.3                 # two things listed in one note, before the list-length damping
 CO_W, CO_MIN = 0.7, 3        # co-mention: weight at full NPMI, and the fewest lines that name both
-SIM_FULL = 0.4               # an Aleph similarity at or over this counts fully; the usual 0.1 counts a quarter
-SIM_WEAK = 0.2               # a topic guess under this with no informative word left is dropped
-TOPIC_DF_MAX = 0.04          # a topic word in more than this share of all guesses says nothing about one pair
-TOPIC_STOP = set('''pending frozen active done draft archived archive paused blocked todo wip live stale open closed new old
-    current ongoing planned idea ideas misc other general note notes stuff things thing tbd none unknown status project
-    projects tool tools repo repos work works task tasks item items list page pages file files doc docs test tests demo
-    main inbox later someday backlog review january february march april may june july august september october
-    november december січень лютий березень квітень травень червень липень серпень вересень жовтень листопад грудень
-    today yesterday tomorrow week month year'''.split())
-COMMON_LINE_SHARE = 0.005    # a word in more than this share of his own lines is a function word for topic lists
 FLOOR = 0.15                 # an edge under this is dropped
 TOP = {'person': 6, 'org': 8, 'project': 8, 'tool': 5, 'doc': 6, 'place': 4}
 SHOW_MAX = 8
@@ -459,11 +325,9 @@ def damp_pair(n):
     return min(1.0, 1.0 / max(1, n - 1))
 
 
-def piece(rel, rely, date, now, n=1, pair=False, sim=None):
-    """One piece of evidence: type weight x source trust x recency (x list damping for notes that list things; x the
-    similarity score for Aleph's topic guesses)."""
+def piece(rel, rely, date, now, n=1, pair=False):
+    """One piece of evidence: type weight x source trust x recency (x list damping for notes that list things)."""
     w = PAIR_W * damp_pair(n) if pair else REL[rel][2] * (damp_star(n) if rel in LIST_KEYS else 1.0)
-    if sim is not None: w *= min(1.0, max(0.0, sim) / SIM_FULL)
     return w * rely * recency(date, now)
 
 
@@ -494,18 +358,18 @@ def edge_weight(scores, target_heat):
 
 
 def rank_edges(edges, kind, floor=FLOOR, top=None):
-    """edges: [{id, w, tier?, heat?, date?}] of one record -> the kept ones, at most TOP[kind] and never more than
-    SHOW_MAX; under the floor dropped. Order: declared before similarity-only (tier 0 before 1), then weight, then
-    the other record's heat, then the newest evidence, then id. Returns (kept, dropped under the floor)."""
+    """edges: [{id, w, heat?, date?}] of one record -> the kept ones, at most TOP[kind] and never more than
+    SHOW_MAX; under the floor dropped. Order: weight, then the other record's heat, then the newest evidence, then id.
+    Returns (kept, dropped under the floor)."""
     top = min(SHOW_MAX, top if top is not None else TOP.get(kind, 6))
     ok = sorted((e for e in edges if e['w'] >= floor),
-                key=lambda e: (e.get('tier', 0), -e['w'], -e.get('heat', 1), -int((e.get('date') or '0').replace('-', '') or 0), e['id']))
+                key=lambda e: (-e['w'], -e.get('heat', 1), -int((e.get('date') or '0').replace('-', '') or 0), e['id']))
     return ok[:top], sum(1 for e in edges if e['w'] < floor)
 
 
 class Edges:
     """Evidence per unordered pair, with the reason from each side. A piece: (score, why from a, why from b, source,
-    sort, date); sort is 'sim' for Aleph's topic guesses, 'co' for names said together, 'decl' for the rest."""
+    sort, date); sort is 'co' for names said together, 'decl' for the rest."""
     def __init__(self): self.ev = defaultdict(list)
     def copy(self):
         e = Edges(); e.ev = defaultdict(list, {k: list(v) for k, v in self.ev.items()}); return e
@@ -532,68 +396,19 @@ class Edges:
         return out
 
 
-def topic_words(value):
-    """The words of an Aleph topic guess ("ordering, invoices · sklad"), lower case, in order, no repeats."""
-    out = []
-    for w in WORDS.findall(str(value or '')):
-        f = fold(w)
-        if f not in out: out.append(f)
-    return out
-
-
-def glued(raw):
-    """A token that is several words run together: camelCase inside, letters and digits mixed, or very long."""
-    return bool(re.search(r'[a-zа-яіїєґ][A-ZА-ЯІЇЄҐ]', raw) or re.search(r'\d', raw) or len(raw) >= 16)
-
-
-def topic_df(records):
-    """Document frequency of each topic word over all of Aleph's topic guesses: word -> share of guesses."""
-    n, df = 0, Counter()
-    for r in records:
-        for e in r.get('evidence', []):
-            if e['rel'] == 'similar':
-                n += 1; df.update(set(topic_words(e.get('value'))))
-    return {w: c / n for w, c in df.items()} if n else {}
-
-
-def informative(value, df, df_max=None):
-    """The words of a topic guess worth showing: not a status or boilerplate word, not a number, not glued, and not
-    in more than TOPIC_DF_MAX of all guesses. Rarest first."""
-    df_max = TOPIC_DF_MAX if df_max is None else df_max
-    raws = {fold(w): w for w in WORDS.findall(str(value or ''))}
-    keep = [w for w in topic_words(value) if w not in TOPIC_STOP and len(w) >= 3 and not glued(raws.get(w, w)) and "'" not in w
-            and df.get(w, 0) <= df_max]
-    return sorted(keep, key=lambda w: (df.get(w, 0), w))
-
-
-def similar_reason(value, sim, df, common=()):
-    """(reason, keep?) for one topic guess: 2+ informative words are shown (3 at most); fewer show none; with no
-    informative word and a weak score the guess is dropped."""
-    words = [w for w in informative(value, df) if w not in common]
-    if len(words) >= 2: return 'similar topics: ' + ', '.join(words[:3]), True
-    if not words and (sim or 0) < SIM_WEAK: return '', False
-    return 'similar topics', True
-
-
-def declared_edges(records, now, fixes=None, resolve=lambda x: x, df=None, common=()):
-    """Edges from what the sources declare (typed Aleph facts, vault links, note lists) and his own fixes."""
+def declared_edges(records, now, fixes=None, resolve=lambda x: x):
+    """Edges from what the sources declare (vault links, note lists) and his own fixes."""
     E = Edges()
     ids = {r['id'] for r in records}
-    df = topic_df(records) if df is None else df
     for r in records:
         lists = defaultdict(list)   # one note's list -> its members, for the pair edges
         for e in r.get('evidence', []):
             to, rel = e['to'], e['rel']
             if to not in ids or to == r['id'] or rel not in REL: continue
             fwd, back, _ = REL[rel]
-            if rel == 'relates' and e.get('value'): fwd = e['value']
-            if rel == 'similar':
-                fwd, ok = similar_reason(e.get('value'), e.get('sim'), df, common)
-                if not ok: continue
-                back = fwd
             if rel in LIST_KEYS: fwd = back = 'in the same note: ' + e.get('note', 'note')
-            E.add(r['id'], to, piece(rel, e.get('rely', 0.8), e.get('date', ''), now, e.get('n', 1), sim=e.get('sim')), fwd, back,
-                  e.get('src', ''), 'sim' if rel == 'similar' else 'decl', e.get('date', ''))
+            E.add(r['id'], to, piece(rel, e.get('rely', 0.8), e.get('date', ''), now, e.get('n', 1)), fwd, back,
+                  e.get('src', ''), 'decl', e.get('date', ''))
             if rel in LIST_KEYS: lists[rel].append(e)
         for rel, members in lists.items():
             if len(members) > 12: continue   # a long list: its pairs would all fall under the floor anyway
@@ -639,7 +454,7 @@ def finish_edges(records, E, co=None, floor=FLOOR, not_related=(), main_of=None)
                 if p[1] not in whys: whys.append(p[1])
             o = by_id[other]
             edges.append({'id': other, 'w': edge_weight([p[0] for p in ps], o.get('heat', 1)), 'heat': o.get('heat', 1),
-                          'tier': 1 if all(p[3] == 'sim' for p in ps) else 0, 'date': max((p[4] for p in ps), default=''),
+                          'date': max((p[4] for p in ps), default=''),
                           'why': ' · '.join(whys[:2]), 'src': sorted({p[2] for p in ps if p[2]})})
         keep, drop = rank_edges(edges, r['kind'], floor)
         r['related'] = [e['id'] for e in keep]
@@ -896,11 +711,6 @@ def _person_facts(g, gkey, stems):
                 for v in vs:
                     n = norm_handle(k, v)
                     if len(n) >= 5: handles.add((k, n))
-        for l in r.get('links') or []:
-            t = gkey.get(l['to'])
-            if t is None: continue
-            if l['rel'] == 'works_at': orgs.add(t)
-            elif l['rel'] in ('works_on', 'member_of'): projects.add(t)
         for l in r.get('vlinks') or []:
             pth = l['path'] if l['path'].endswith('.md') else l['path'] + '.md'
             t = gkey.get('vault:' + pth, stems.get(fold(Path(pth).stem)))
@@ -993,23 +803,14 @@ APP_NAMES = set("""claude chatgpt gpt codex gemini bard copilot cursor perplexit
 
 
 def apps_as_people(records):
-    """A "person" that is an assistant or app: its name is a known app or one of the store's own tools, or its only
-    links are "built" to code, and it has no handle. Becomes kind tool (unless he set the kind himself). Returns the
-    ids changed."""
-    by_id = {r['id']: r for r in records}
+    """A "person" that is an assistant or app: its name is a known app or one of the store's own tools, and it has no
+    handle. Becomes kind tool (unless he set the kind himself). Returns the ids changed."""
     tools = {fold(r['name']) for r in records if r['kind'] == 'tool'}
-    rels = defaultdict(list)   # person id -> [(rel, other id)] both ways
-    for r in records:
-        for e in r.get('evidence', []):
-            rels[r['id']].append((e['rel'], e['to'])); rels[e['to']].append((e['rel'], r['id']))
     changed = []
     for r in records:
         if r['kind'] != 'person' or r.get('kind_by') != 'source' or any(r.get('handles', {}).get(k) for k in ('email', 'tg', 'phone')): continue
         name = fold(r['name'])
-        links = rels.get(r['id'], [])
-        code = [o for rel, o in links if rel == 'built_by' and by_id.get(o, {}).get('kind') in ('tool', 'project')]
-        built_only = len(set(code)) >= 2 and len(code) == len(links)
-        if name in APP_NAMES or name in tools or built_only:
+        if name in APP_NAMES or name in tools:
             r['kind'], r['kind_by'] = 'tool', 'check'
             changed.append(r['id'])
     return changed
@@ -1024,7 +825,7 @@ def fold_twins(records):
         if r['kind'] in ('project', 'tool') and not r.get('cards_only'): by[fold(r['name'])].append(r)
     main_of = {}
     rank = {'project': 0, 'tool': 1}
-    order = {'Note': 0, 'Story': 0, 'Repo': 1, 'Code': 1, 'URL': 2, 'Aleph': 3}
+    order = {'Note': 0, 'Story': 0, 'Repo': 1, 'Code': 1, 'URL': 2}
     for rs in by.values():
         if len(rs) < 2: continue
         main = min(rs, key=lambda r: (rank[r['kind']], -len(r['sources']), -len(r['pack']['facts']), r['id']))
@@ -1035,7 +836,7 @@ def fold_twins(records):
             r['twin_of'] = main['id']
             main.setdefault('twins', []).append(r['id'])
             for x in r['pack']['pointers']:
-                if x['label'] != 'Aleph' and all(x['value'] != y['value'] for y in ptrs): ptrs.append(x)
+                if all(x['value'] != y['value'] for y in ptrs): ptrs.append(x)
         main['pack']['pointers'] = sorted(ptrs, key=lambda x: order.get(x['label'], 4))[:3]
     return main_of
 
@@ -1106,18 +907,12 @@ def is_cyrillic(s):
     return bool(re.search(r'[А-Яа-яІіЇїЄєҐґ]', s or ''))
 
 
-def links_of(group, key_of, path_ids, stems):
-    """The typed links of one group's source records, resolved to record ids: [{to, rel, date, rely, src, value, n,
-    note}]. A vault link is a full path first, then a note stem that names one note only. Source records cached
-    before typed links (`related`, `related_paths`) read as plain "relates" / "related" links."""
+def links_of(group, path_ids, stems):
+    """The vault links of one group's source records, resolved to record ids: [{to, rel, date, rely, src, value, n,
+    note}]. A full path first, then a note stem that names one note only. Source records cached before typed links
+    (`related_paths`) read as plain "related" links."""
     out = []
     for r in group:
-        links = r.get('links')
-        if links is None:   # an older cached slice
-            links = [{'to': 'aleph:' + x, 'rel': 'relates', 'date': '', 'rely': 0.8, 'src': 'aleph', 'value': ''} for x in r.get('related', []) if x]
-        for l in links:
-            to = key_of.get(l['to'])
-            if to: out.append({**l, 'to': to})
         vlinks = r.get('vlinks')
         if vlinks is None:
             old = r.get('related_paths', [])
@@ -1132,7 +927,7 @@ def links_of(group, key_of, path_ids, stems):
     return out
 
 
-def make_record(group, aleph_ids, path_ids, codius=None, stems=None):
+def make_record(group, path_ids, codius=None, stems=None):
     head = group[0]
     rid = f"{head['system']}:{head['id']}"
     names, aliases = [], []
@@ -1144,7 +939,7 @@ def make_record(group, aleph_ids, path_ids, codius=None, stems=None):
         a = ' '.join(str(a).split())
         if not a or fold(a) == fold(name) or EMAIL.fullmatch(a) or PHONE.fullmatch(a) or len(a) < 2: continue
         if fold(a) not in {fold(x) for x in al}: al.append(a)
-    kind = next((r['kind'] for r in group if r['system'] == 'aleph'), head['kind'])
+    kind = head['kind']
     handles = defaultdict(list)
     for r in group:
         for k, vs in (r.get('handles') or {}).items():
@@ -1169,21 +964,18 @@ def make_record(group, aleph_ids, path_ids, codius=None, stems=None):
     if vault_id: targets['obsidian'] = vault_id[:-3] if vault_id.endswith('.md') else vault_id
     if handles.get('email'): targets['mail'] = handles['email'][0]
     if handles.get('tg'): targets['tg'] = handles['tg'][0].lstrip('@')
-    aleph_id = next((r['id'] for r in group if r['system'] == 'aleph'), '')
-    if aleph_id: targets['aleph'] = aleph_id
     urls = [u for r in group for u in r.get('urls', [])]
     pointers = []
     if note: pointers.append({'label': 'Note' if kind in ('person', 'org') else 'Story', 'value': note, 'path': True})
     if kind in ('tool', 'project') and codius and fold(name) in codius:
         pointers.append({'label': 'Code' if kind == 'tool' else 'Repo', 'value': codius[fold(name)], 'path': True})
     for u in urls[:1]: pointers.append({'label': 'URL', 'value': u, 'path': False})
-    if aleph_id and len(pointers) < 3: pointers.append({'label': 'Aleph', 'value': aleph_id, 'path': False})
-    evidence = links_of(group, aleph_ids, path_ids, stems or {})
+    evidence = links_of(group, path_ids, stems or {})
     uniq = [f for f in uniq if fold(f['text']) not in fold(who)]   # the one line already says it
     top = uniq[:4]
     if kind == 'person' and handles:
         h = ('email ' + handles['email'][0]) if handles.get('email') else ('Telegram @' + handles['tg'][0].lstrip('@')) if handles.get('tg') else ''
-        if h: top = uniq[:3] + [{'text': h, 'source': 'Aleph' if aleph_id else 'contacts', 'date': '', 'quote': False, 'rank': 5, 'private': False}]
+        if h: top = uniq[:3] + [{'text': h, 'source': 'contacts', 'date': '', 'quote': False, 'rank': 5, 'private': False}]
     private = any(r.get('private') for r in group) or any(f.get('private') for f in uniq)
     rec = {
         'id': rid, 'kind': kind, 'name': name, 'aliases': al[:20],
@@ -1241,16 +1033,13 @@ def surfaces_for(rec, ordinary, stop, first_stop=()):
     return out
 
 
-def build(out=None, *, db=None, vault=None, contacts=None, lines=(), chats=(), now=None, data=None, ordinary=None, codius=None, write=True):
-    """Build data/entities.json. db / vault: a path, False (off) or None (from the local config). lines: his sent rows
+def build(out=None, *, vault=None, contacts=None, lines=(), chats=(), now=None, data=None, ordinary=None, codius=None, write=True):
+    """Build data/entities.json. vault: a path, False (off) or None (from the local config). lines: his sent rows
     (data/typed.jsonl); chats: [[his lines in one chat, oldest first]] (data/people.json), for names said together."""
     data = Path(data) if data is not None else DATA
     out = Path(out) if out is not None else data / 'entities.json'
     now = time.time() if now is None else now
-    if db is None or vault is None:
-        cdb, cvault = source_paths(data)
-        db = cdb if db is None else db
-        vault = cvault if vault is None else vault
+    if vault is None: vault = source_path(data)
     codius = Path(codius) if codius is not None else Path.home() / 'Codius'
     try: codius = {fold(d.name): str(d) for d in codius.iterdir() if d.is_dir() and not d.name.startswith(('.', '_'))}
     except OSError: codius = {}
@@ -1258,16 +1047,8 @@ def build(out=None, *, db=None, vault=None, contacts=None, lines=(), chats=(), n
     allow = allow if isinstance(allow, dict) else {}
     cache = read_json(data / 'entity-sources.json', {})
     cache = cache if isinstance(cache, dict) else {}
-    slices, merged, notsame, failed = {}, {}, [], []
-    if db:
-        try:
-            slices['aleph'], merged, notsame = aleph_slice(db, now, allow.get('aleph') or [])
-            cache['aleph'] = {'records': slices['aleph'], 'merged': merged, 'notsame': notsame}
-        except (sqlite3.Error, OSError) as e:
-            failed.append('aleph')
-            old = cache.get('aleph') or {}
-            slices['aleph'], merged, notsame = old.get('records', []), old.get('merged', {}), [tuple(x) for x in old.get('notsame', [])]
-    else: cache.pop('aleph', None)
+    slices, failed = {}, []
+    cache = {k: v for k, v in cache.items() if k in ('vault', 'contacts')}   # a source no longer read is dropped
     if vault:
         try:
             slices['vault'] = vault_slice(vault, allow.get('vault') or [])
@@ -1288,8 +1069,8 @@ def build(out=None, *, db=None, vault=None, contacts=None, lines=(), chats=(), n
     pairs = lambda k: [[ids_prev.get(a, a), ids_prev.get(b, b)] for a, b, *_ in (x for x in fixes.get(k) or [] if isinstance(x, list) and len(x) >= 2)]
     same_file['same'] = list(same_file.get('same') or []) + pairs('same')
     same_file['not'] = list(same_file.get('not') or []) + pairs('not_same')
-    groups, _ = merge(list(slices.values()), merged, notsame, same_file)
-    apart = {(f'aleph:{a}', f'aleph:{b}') for a, b in notsame} | {(a, b) for a, b, *_ in (same_file.get('not') or []) if isinstance(a, str) and isinstance(b, str)}
+    groups, _ = merge(list(slices.values()), same_file)
+    apart = {(a, b) for a, b, *_ in (same_file.get('not') or []) if isinstance(a, str) and isinstance(b, str)}
     groups, same_queue, dstats = dedupe_people(groups, apart, own_names(data))
     overrides = read_json(data / 'entity-overrides.json', {})
     overrides = overrides if isinstance(overrides, dict) else {}
@@ -1299,8 +1080,6 @@ def build(out=None, *, db=None, vault=None, contacts=None, lines=(), chats=(), n
     for g in groups:
         rid = f"{g[0]['system']}:{g[0]['id']}"
         for r in g: key_of[f"{r['system']}:{r['id']}"] = rid
-    for old, new in merged.items():
-        if f'aleph:{new}' in key_of: key_of[f'aleph:{old}'] = key_of[f'aleph:{new}']
     stems = defaultdict(set)   # a vault note's stem -> the records it can be (a link without a folder)
     for g in groups:
         for r in g:
@@ -1308,7 +1087,7 @@ def build(out=None, *, db=None, vault=None, contacts=None, lines=(), chats=(), n
     stems = {k: next(iter(v)) for k, v in stems.items() if len(v) == 1}
     records = []
     for g in groups:
-        rec = make_record(g, key_of, key_of, codius, stems)
+        rec = make_record(g, key_of, codius, stems)
         ov = overrides.get(rec['id']) or next((overrides[k] for k in (f"{s['system']}:{s['id']}" for s in rec['sources']) if k in overrides), None)
         if isinstance(ov, dict) and ov.get('kind') in KINDS + ('none',):
             if ov['kind'] == 'none': continue
@@ -1346,12 +1125,8 @@ def build(out=None, *, db=None, vault=None, contacts=None, lines=(), chats=(), n
         for text in c:
             if not isinstance(text, str) or '⟦drafter-test⟧' in text: continue
             units.append((text, 'chat', ctx, True, False)); ctx = (ctx + ' ' + text)[-400:]
-    # words in many of his own lines (function words in any language) say nothing in a topic list
-    line_df = Counter()
-    for u in units: line_df.update({fold(w) for w in WORDS.findall(u[0])})
-    common = {w for w, n in line_df.items() if n > COMMON_LINE_SHARE * max(1, len(units))}
     # relations declared by the sources and by him; the matcher's first view of them (declared only, before heat)
-    E = declared_edges(records, now, fixes, resolve, common=common)
+    E = declared_edges(records, now, fixes, resolve)
     not_related = [(resolve(x[0]), resolve(x[1])) for x in fixes.get('not_related') or [] if isinstance(x, list) and len(x) >= 2]
     for r in records:
         r['heat'] = 1 + (0.5 if r['pack']['facts'] else 0) - (0.75 if r.get('cards_only') else 0)

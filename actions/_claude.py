@@ -1,4 +1,4 @@
-"""Actions Aleph cannot do run the logged-in `claude` CLI headless with one skill, after Andrii presses the chip.
+"""Actions run the logged-in `claude` CLI headless with one skill, after Andrii presses the chip.
 
 The run goes to the background (it can take minutes); the result line lands in data/actions.jsonl and in a macOS
 notification. DRAFTER_DRY=1 only writes the command it would run."""

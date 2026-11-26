@@ -6,7 +6,7 @@ Hold Right Option to dictate. It can also record a call or a long spoken note an
 It learns how you write from what you type, and you can train a small layer on your own text.
 Nothing needs a network or an account. A cloud model is something you connect yourself, and only if you want one.
 
-Source: https://github.com/workflowcat/drafter
+Source: https://github.com/workflowcat/drafter-team
 
 ## Start here
 
@@ -14,6 +14,7 @@ Source: https://github.com/workflowcat/drafter
 - **With Claude Code:** open it in this folder and say "set up Drafter for me". The `drafter-setup` skill
   (`.claude/skills/drafter-setup/`) checks the Mac, downloads the models that fit it, builds the app and fills in your
   config with you.
+- **What can it do?** [Features](docs/features.md): every feature, its key and whether it is on by default.
 - **Where am I?** `python3 scripts/doctor.py` prints every setup step and the next command for what is missing.
 - **Make it yours:** [customise](docs/customize.md) (settings, your config, the code) and
   [your data](docs/your-data.md) (bring in your own writing and train on it).
@@ -46,8 +47,8 @@ deletes the key. [Privacy](docs/privacy.md) lists what each switch sends.
 ## Install
 
 ```sh
-git clone https://github.com/workflowcat/drafter.git
-cd drafter
+git clone https://github.com/workflowcat/drafter-team.git
+cd drafter-team
 scripts/setup.sh --models --app          # add --voice for dictation and calls
 ```
 
@@ -108,12 +109,9 @@ Drafter was first built for one person's set of tools. Each one is optional, off
 
 | Name | What it is | What it adds |
 |---|---|---|
-| `aleph` | A local knowledge app (HTTP on 127.0.0.1:8797) | Chat draft, follow-up and thread actions; person links; call prep |
-| `inbox` | A local inbox app (a folder of JSON files) | Thread replies; follow-ups in call prep |
-| `beeper` | The `beeper` CLI for the Beeper chat app | Your older lines per chat; filling a chat draft box (never sends) |
+| `beeper` | The `beeper` CLI for the Beeper chat app | Your older lines per chat; example messages; your chats in the corpus |
 | `gam` | GAM, the Google Workspace admin CLI | `;docs`, `;meetings` and `;free` lookups; contacts |
 | `vault` | A notes folder | A note action; your notes in the training corpus |
-| `voice_notes` | An older dictation app's folder | Its words seed the dictionary; its takes join the corpus |
 | `claude` | A signed-in `claude` CLI | Claude actions (a note, a doc, a page); also on when picked under Connect a model |
 | `voice_guide` | A text file that describes your writing voice | The next-message prompt |
 
@@ -125,12 +123,12 @@ A Swift menu-bar app (`app/`) watches the caret through Accessibility, draws the
 Python engine (`engine/server.py`, HTTP on 127.0.0.1:8798) holds one warm MLX model and decides what to show. A second
 process reads voice with Parakeet and Whisper. [Architecture](docs/architecture.md) has the whole picture.
 
+- [Features](docs/features.md): every feature by area, with keys and defaults
 - [Architecture](docs/architecture.md): the three processes and where state lives
 - [Typing](docs/typing.md): where a suggestion comes from, and the gate that hides weak ones
 - [Training](docs/training.md): the personal layer, the corpus, the weekly retrain
 - [Voice and calls](docs/voice-and-calls.md): takes, the strip, recording a call, call notes
 - [Privacy](docs/privacy.md): Connect a model, what each feature sends, how to delete your data
-- [Local MCP](docs/mcp.md): read saved recordings, notes, sources, promises and entity context from a local agent
 - [Look](docs/look.md): the native look rules and the made-up preview renders (`scripts/look-preview.sh`)
 - [Building with agents](docs/building-with-agents.md): how the work is split and checked
 - [Contributing](docs/contributing.md): tests and the rules a change must meet

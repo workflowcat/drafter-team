@@ -6,9 +6,9 @@ path (engine/rework.py, command "polish") with the same context: the person card
 screen (engine/whom.py), his writing notes and the keyboard language. The app shows the rewrite as a chip with the
 changed words marked; Tab puts it in, Backspace right after takes it back. Nothing is sent and Return is never pressed.
 
-Setting `pauseRewrite` (off, the cloud mark; engine/cloud.py). Under the back office's daily cap (`backOfficeCap`,
-USD): one ledger with the back office batch and the voice cleanup (data/backoffice/spend.json, engine/voice_claude.py
-room/charge), so one cap counts all three. Not one Claude process with the voice cleanup: that one runs the call-notes
+Setting `pauseRewrite` (off, the cloud mark; engine/cloud.py). Under the daily Claude cap (`backOfficeCap`, USD):
+one ledger with the voice cleanup (data/backoffice/spend.json, engine/voice_claude.py room/charge), so one cap counts
+both. Not one Claude process with the voice cleanup: that one runs the call-notes
 worker on its own prompt, this one the rework worker on rework's system prompt.
 
 Model: Haiku. From the research numbers (bench/claude_writer, made-up lines): voice cleanup, the same shape of job
@@ -26,7 +26,7 @@ MODEL = "haiku"
 MIN_WORDS = 6            # shorter than this there is little to rewrite and the chip would only cover the field
 MAX_CHARS = 800          # the app's span (app/Proof.swift span): the paragraph before the caret, at most 800 characters
 SIMILAR = 0.5            # a rewrite that keeps fewer than half his words is a new message, not his after one more read
-PRICE = (0.10, 0.50)     # Haiku, USD per million tokens in / out (engine/backoffice.py PRICE, checked 2026-11-17)
+PRICE = (0.10, 0.50)     # Haiku, USD per million tokens in / out (checked 2026-11-17)
 PROMPT_CHARS = 2600      # the rework system prompt, the task line and the person block, roughly
 FINISHED = re.compile(r"\S[.!?…](?=[\s\"'»”)]|$)")
 

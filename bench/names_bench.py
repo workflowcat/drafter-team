@@ -9,7 +9,7 @@ against the one ordered by use. Numbers only; no line is printed.
 2. Names on held-out lines (bench/held.py: the replay lines, and every line he wrote after the last retrain): at every word that names a known thing, with 2 and 3
    letters typed, what the finisher offers: the whole name (hit), another word (wrong) or nothing. Also wrong offers
    from the second source at capitalised words that are not names.
-3. Voice: in his spoken lines after the last retrain (takes, Voice Notes; names ranked on his lines before it), the share of name mentions whose name is in the first 60 glossary
+3. Voice: in his spoken lines after the last retrain (voice takes; names ranked on his lines before it), the share of name mentions whose name is in the first 60 glossary
    terms Whisper reads, and the mishearing rules.
 """
 import argparse, json, re, sys, time
@@ -103,12 +103,11 @@ if __name__ == '__main__':
         for k, p in packs.items():
             ts.show(f'replay {k}', ts.simulate(items, rows, lambda r, b, s, p=p: (finish_with_source(W, b, knowledge=p)[0], 0)))
     spoken = [json.loads(l) for l in (a.data / 'corpus.jsonl').read_text().splitlines() if l.strip()]
-    spoken = [r for r in spoken if r.get('src') in ('take', 'vnotes') and (r.get('t') or 0) >= cut]   # ranked on lines before the cut
+    spoken = [r for r in spoken if r.get('src') == 'take' and (r.get('t') or 0) >= cut]   # ranked on lines before the cut
     store = {'entries': names.ordered(early)}
     import dictionary
     d = json.loads((a.data / 'words.json').read_text())
-    base = [w['text'] for w in d.get('words', []) if dictionary.spelling(w)]
-    order = {'voicenotes': 0, 'menu': 1, 'typing': 2, 'aleph-live': 3, 'aleph': 4}
+    order = {'menu': 1, 'typing': 2}   # as dictionary.save orders them
     base = [w['text'] for w in sorted(d.get('words', []), key=lambda w: order.get(w.get('source'), 9)) if dictionary.spelling(w)]
     after, heard = names.words_view({'terms': base, 'heard': d.get('heard', {})}, store)
     v = voice(store, spoken, base, after)

@@ -122,7 +122,7 @@ struct ShotRulesTest {
         check(ShotRules.markHit(CGPoint(x: -5, y: 5), mp) == nil, "outside")
         check(Set(MarkTool.allCases.map(\.glyph)).count == 8, "a glyph per tool")
         check(Set(ShotRules.StripButton.allCases.map(\.glyph)).count == ShotRules.StripButton.allCases.count, "a glyph per strip key")
-        check(Set(ShotTarget.allCases.map(\.glyph)).count >= 7, "the send-to list's glyphs")
+        check(Set(ShotTarget.allCases.map(\.glyph)).count >= 6, "the send-to list's glyphs")
         check(mp.bar.width <= 1440 - 16 && mp.items.allSatisfy { $0.height == 42 && $0.width >= 32 }, "the bigger markup pill stays one row on a 1440 pt screen: \(mp.bar.width)")
         check(ShotRules.toolbar(screen: CGSize(width: 1440, height: 900)).bar.width < 600, "the capture pill too")
         // attach (flipped, y down): under the picture; no room: the bottom edge, never above; beside it when it reaches

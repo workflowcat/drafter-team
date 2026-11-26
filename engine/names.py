@@ -9,13 +9,13 @@ the stores that already exist; importing this module reads nothing.
 Inputs (all in data/, all optional; a missing one gives fewer entries, never an error):
 - entities.json (engine/entities.py): the folded records - people deduped, twins folded, relations, case-form surfaces.
 - know.json (engine/know.py): tokens, case forms, ordinary-word guards, and the dictionary's leftover terms.
-- words.json (engine/dictionary.py): his dictionary words and what Voice Notes heard for them.
+- words.json (engine/dictionary.py): his dictionary words and what voice heard for them.
 - people.json (his own lines per Beeper chat), corpus.jsonl and typed.jsonl (his lines): context counts only.
 - names-edits.json: his edits on the Names page (spell, merge, hide), applied on every build.
 
 Derived (each written whole, in place):
 - known-words.txt: every name token and form, for autocorrect (was written by know.py; a superset of it).
-- words.json `terms` order and `heard`: through dictionary.save (Voice Notes reads the same shape as before).
+- words.json `terms` order and `heard`: through dictionary.save (the shape engine/voice.py reads).
 Readers: engine/words.py (finisher and booster through `Pack`), engine/voice.py (Whisper hint), app/Names.swift.
 
 Private: entities marked private never enter. Nothing here leaves the Mac.
@@ -424,7 +424,7 @@ def voice_rank(store):
 
 
 def words_view(d, store):
-    """The dictionary in Voice Notes' shape, with the names reference folded in: terms in order of use, his spelling
+    """The dictionary in the voice engine's shape, with the names reference folded in: terms in order of use, his spelling
     fixes as terms, their old spellings as mishearings; hidden names out. Used by dictionary.save."""
     rank = voice_rank(store) if store else {}
     entries = store.get('entries', []) if store else []

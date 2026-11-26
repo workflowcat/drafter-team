@@ -1,5 +1,5 @@
 """The pause rewrite (engine/pause_rewrite.py, route /pause_rewrite): when it asks, what it keeps, the marks, the cap
-shared with the back office, and that nothing goes out with the setting off. Made-up lines only; no model, no network,
+shared with the voice cleanup, and that nothing goes out with the setting off. Made-up lines only; no model, no network,
 no `claude` process; the data folder is a throwaway copy.
 
     .venv/bin/python -B tests/test_pause_rewrite.py
@@ -102,7 +102,7 @@ class Gate(unittest.TestCase):
         self.assertIn("pauseRewrite", cloud.NEVER_ON)
         live = {"connect": {"provider": "cli"}}
         self.assertFalse(cloud.allowed("pause_rewrite", live))
-        self.assertFalse(cloud.allowed("pause_rewrite", {**live, "rework": True, "backOffice": True}))   # its own switch only
+        self.assertFalse(cloud.allowed("pause_rewrite", {**live, "rework": True, "callNotes": True}))   # its own switch only
         self.assertTrue(cloud.allowed("pause_rewrite", {**live, "pauseRewrite": True}))
 
     def route(self, st, ask):

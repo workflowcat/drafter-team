@@ -279,7 +279,7 @@ final class Talk {
 
     /// Right Option, from the event tap. Returns true when the event was ours.
     /// A long note (Shift + Right Option, as in Voice Notes): runs until pressed again, never pasted; it becomes a note
-    /// with a title, links to people and projects in Aleph and its follow-ups (engine/notes.py).
+    /// with a title, the people and projects it names and its follow-ups (engine/notes.py).
     private(set) var long = false
     private(set) var isCall = false
     var spool: Spool?              // a long note or call, written to disk while it runs
@@ -905,7 +905,7 @@ final class Talk {
     }
 
 
-    /// Dictionary names (Aleph people and projects) that appear in the text on screen around the field.
+    /// Dictionary names (people and projects) that appear in the text on screen around the field.
     private func readNames(_ given: Spot?? = nil) {
         screenNames = []
         guard let s = given ?? Focus.spot(skip: []).0 else { return }
@@ -953,7 +953,7 @@ final class Talk {
 
 }
 
-/// Names from the shared dictionary (Aleph people and projects), for the per-take hints.
+/// Names from the shared dictionary (people and projects), for the per-take hints.
 enum NameBook {
     static var all: [String] = {
         guard let d = try? Data(contentsOf: Home.words),

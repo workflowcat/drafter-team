@@ -252,7 +252,7 @@ struct QuickRuleChecks {
         check(QuickRules.defaultKey == "" && QuickRules.hotkey(QuickRules.defaultKey) == nil, "keys round two: no full-picker key by default")
         check(QuickRules.hotkey(QuickRules.suggestedKey) != nil, "⌃⌥V can still be set")
         check(QuickRules.hotkey("ctrl+opt+v") == QuickRules.hotkey("⌃⌥V"), "written in words")
-        check(QuickRules.hotkey("⌃⌥Space") == nil && QuickRules.hotkey("⌘Space") == nil, "Aleph's keys are never taken")
+        check(QuickRules.hotkey("⌃⌥Space") == nil && QuickRules.hotkey("⌘Space") == nil, "reserved keys are never taken")
         check(QuickRules.hotkey("⌘⇧Space") != nil, "another Space key is fine")
         check(QuickRules.hotkey("") == nil && QuickRules.hotkey("V") == nil && QuickRules.hotkey("⇧V") == nil, "off, or no ⌃ ⌥ ⌘")
         check(QuickRules.hotkey("⌃⌥Ж") == nil, "unknown key")

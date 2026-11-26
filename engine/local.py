@@ -27,20 +27,14 @@ DEFAULTS = {
     },
     "snippets": {},            # defaults for a new data/snippets.json; an existing one is never changed
     "social": {"facebook_archive": ""},   # a Facebook posts export (combined_posts.json) for the training corpus
-    # training corpus sources (bench/corpus.py); Beeper, Voice Notes and the vault follow their integrations
+    # training corpus sources (bench/corpus.py); Beeper and the vault follow their integrations
     "corpus": {"typed": True, "takes": True, "claude_code": False, "codex": False},
     "integrations": {
-        "aleph":       {"enabled": False, "url": "http://127.0.0.1:8797", "db": ""},
-        "inbox":       {"enabled": False, "path": ""},
         "beeper":      {"enabled": False, "bin": ""},
         "gam":         {"enabled": False, "bin": ""},
         "vault":       {"enabled": False, "path": "", "name": "", "skill": "", "origin": ""},
-        "voice_notes": {"enabled": False, "path": "", "bundle_id": ""},
         "claude":      {"enabled": False, "bin": ""},
         "voice_guide": {"enabled": False, "path": ""},
-        # a Linux box you control that runs background jobs over ssh (bench/jobs.py): careful re-transcribe, the journal
-        # index. Call audio and journal text go there for a job and are deleted after it. Off unless you turn it on.
-        "server":      {"enabled": False, "host": ""},
     },
     # build-time ids (app/build.sh): changing them on an installed Mac resets its macOS permissions, so an owner keeps his
     "build": {"bundle_id": "", "launchd_label": "", "nightly_label": ""},

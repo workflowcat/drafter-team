@@ -87,8 +87,7 @@ private final class LinksHubStore: ObservableObject {
                 if let clipTitle = entry?.clipTitle, !clipTitle.isEmpty { title = clipTitle }
                 if let doc = row.doc {
                     title = doc.title
-                    let turns = doc.careful.isEmpty ? doc.turns : doc.careful
-                    text = ([text, doc.details, doc.mine] + doc.points + doc.todos + turns.map(\.text)).joined(separator: "\n")
+                    text = ([text, doc.details, doc.mine] + doc.points + doc.todos + doc.turns.map(\.text)).joined(separator: "\n")
                 }
                 let clip = entry?.clip.rawValue ?? "text"
                 let tags = row.tags.map(\.name)

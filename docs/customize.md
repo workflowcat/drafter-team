@@ -58,11 +58,9 @@ prints what is in effect.
 |---|---|
 | `claude` | Claude actions through a signed-in `claude` CLI |
 | `gam` | `;docs`, `;meetings`, `;free` Google lookups through the GAM CLI |
-| `beeper` | Your older lines per chat from the Beeper app; filling a chat's draft box (never sends) |
+| `beeper` | Your older lines per chat from the Beeper app |
 | `vault` | A notes folder (an Obsidian vault): a note action, and your own notes for training |
 | `voice_guide` | A text file describing your writing voice, for the next-message prompt |
-| `server` | A Linux box you control (an ssh alias with Docker): careful re-transcribe of calls and the journal index run there at night. Call audio and journal text go there for the job and are deleted after it. |
-| `aleph`, `inbox`, `voice_notes` | Tools the first user had; leave them off unless you run the same ones |
 
 ## 3. The code
 

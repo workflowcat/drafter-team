@@ -33,13 +33,19 @@ struct ShotPicture: Codable, Equatable {
 
 /// Where a shot was passed on (the list after ⇥, and the record in shot.json).
 enum ShotTarget: String, Codable, CaseIterable {
-    case field, clipboard, file, claude, codex, claudeCode, aleph, ask, person
+    case field, clipboard, file, claude, codex, claudeCode, ask, person
+    /// A target that is gone (an owner's own app, before 26 November 2026) in an old shot.json reads as Clipboard, so
+    /// the shot still loads.
+    init(from decoder: Decoder) throws {
+        let raw = try decoder.singleValueContainer().decode(String.self)
+        self = ShotTarget(rawValue: raw) ?? .clipboard
+    }
     /// The word in the send-to list.
     var word: String {
         switch self {
         case .field: return "Put in"; case .clipboard: return "Clipboard"; case .file: return "File"
         case .claude: return "Claude"; case .codex: return "Codex"; case .claudeCode: return "Claude Code"
-        case .aleph: return "Aleph"; case .ask: return "Ask Claude here"; case .person: return "Person"
+        case .ask: return "Ask Claude here"; case .person: return "Person"
         }
     }
     /// Leaves the Mac when he picks it (a cloud mark on the entry).
@@ -280,9 +286,9 @@ struct ShotPack: Codable, Equatable {
         return n.isEmpty ? captions.filter { !$0.isEmpty }.joined(separator: " · ") : n
     }
 
-    /// The app a target brings forward (claude, codex, aleph); nil for the others.
-    static func appBundle(_ t: ShotTarget, aleph: String) -> String? {
-        switch t { case .claude: return claudeApp; case .codex: return codexApp; case .aleph: return aleph.isEmpty ? nil : aleph; default: return nil }
+    /// The app a target brings forward (claude, codex); nil for the others.
+    static func appBundle(_ t: ShotTarget) -> String? {
+        switch t { case .claude: return claudeApp; case .codex: return codexApp; default: return nil }
     }
     /// Claude Code: the frontmost terminal when one runs (`running`: running apps, the front one first), else the Claude
     /// app (its Code tab).

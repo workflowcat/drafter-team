@@ -35,8 +35,10 @@ struct ShotPackTest {
         p.note = "see the total"
         check(p.fieldPut(.other, path: "", md: "").text == "see the total", "other: the picture, then the note")
         // apps
-        check(ShotPack.appBundle(.claude, aleph: "x.aleph") == ShotPack.claudeApp && ShotPack.appBundle(.aleph, aleph: "x.aleph") == "x.aleph"
-              && ShotPack.appBundle(.aleph, aleph: "") == nil && ShotPack.appBundle(.file, aleph: "x") == nil, "app bundles")
+        check(ShotPack.appBundle(.claude) == ShotPack.claudeApp && ShotPack.appBundle(.codex) == ShotPack.codexApp
+              && ShotPack.appBundle(.file) == nil, "app bundles")
+        let old = try? JSONDecoder().decode(ShotSent.self, from: Data(#"{"to": "gone", "t": 1, "detail": ""}"#.utf8))
+        check(old?.to == .clipboard, "a removed target in an old shot.json still loads")
         check(ShotPack.claudeCodeApp(running: ["com.apple.Safari", "com.googlecode.iterm2", "com.apple.Terminal"]) == "com.googlecode.iterm2", "the front terminal")
         check(ShotPack.claudeCodeApp(running: ["com.apple.Safari"]) == ShotPack.claudeApp, "no terminal: the Claude app")
         // ask

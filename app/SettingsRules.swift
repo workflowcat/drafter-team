@@ -37,8 +37,7 @@ enum SettingsPlan {
         ("Capture", "captureKey"), ("Capture", "switchKey"),
     ]
     /// Each sends text off the Mac when on, so each stays on the page with its cloud mark (AGENTS.md "What leaves the Mac").
-    /// The back office round (same day) took Claude out of the typing path: one `backOffice` switch for 7 typing ones.
-    static let cloud = ["backOffice", "voiceClaude", "rework", "pauseRewrite", "callNotes", "entityClassify", "retrainRemote", "mcp"]
+    static let cloud = ["voiceClaude", "rework", "pauseRewrite", "callNotes", "entityClassify"]
     /// The collapsed section at the bottom of the page.
     static let advanced = [
         "longGhostsAI", "longGhostsChats", "idleGhost", "comboModels", "typingModel", "personalStrength", "guessBar", "writingNote", "appNotes",
@@ -67,8 +66,9 @@ enum SettingsPlan {
         "voiceFast", "voiceIdleMin", "journalDB",
     ]
     /// No code read them: gone from Settings. `screen` is still read once, as the old name of screenContext.
-    static let removed = ["lookVariant", "voiceLive", "screen"]
-    /// Removed by the back office round: Claude no longer works while he types (docs/rounds/2026-11-17-backoffice.md).
-    static let removedBackOffice = ["claudeTyping", "claudePause", "proofread", "proofreadOff", "sentenceProof", "facts",
+    /// The night batch, server training and the MCP adapter left the core on 26 November 2026: an old file's keys are ignored.
+    static let removed = ["lookVariant", "voiceLive", "screen", "backOffice", "retrainRemote", "mcp"]
+    /// Removed on 17 November 2026: Claude no longer works while he types.
+    static let removedTyping = ["claudeTyping", "claudePause", "proofread", "proofreadOff", "sentenceProof", "facts",
                                     "translate", "nextMessage"]
 }

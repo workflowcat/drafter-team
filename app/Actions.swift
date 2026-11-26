@@ -41,7 +41,7 @@ enum Actions {
         return f.date(from: String(s.prefix(16)))
     }
 
-    /// Jobs other local tools (Aleph's panel) handed to the engine: run them here and report back.
+    /// Jobs other local tools handed to the engine: run them here and report back.
     /// One request at a time, held by the engine up to 25 s until a job comes (2026-11-14: was one every second);
     /// the 1 s timer only starts the next one. Needs the engine of the same build (server.py reads ?wait).
     private static var polling = false

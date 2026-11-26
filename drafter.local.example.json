@@ -17,15 +17,11 @@
  "social": {"facebook_archive": ""},
  "corpus": {"typed": true, "takes": true, "claude_code": false, "codex": false},
  "integrations": {
-  "aleph": {"enabled": false, "url": "http://127.0.0.1:8797", "db": ""},
-  "inbox": {"enabled": false, "path": ""},
   "beeper": {"enabled": false, "bin": ""},
   "gam": {"enabled": false, "bin": ""},
   "vault": {"enabled": false, "path": "", "name": "", "skill": "", "origin": ""},
-  "voice_notes": {"enabled": false, "path": "", "bundle_id": ""},
   "claude": {"enabled": false, "bin": ""},
-  "voice_guide": {"enabled": false, "path": ""},
-  "server": {"enabled": false, "host": ""}
+  "voice_guide": {"enabled": false, "path": ""}
  },
  "build": {"bundle_id": "", "launchd_label": "", "nightly_label": ""}
 }

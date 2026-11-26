@@ -32,17 +32,13 @@ class Off(unittest.TestCase):
 
     def test_actions_that_need_an_integration_are_not_offered(self):
         need = {a.ID for a in actions.ALL if getattr(a, "NEEDS", ())}
-        self.assertTrue({"beeper.draft", "followup", "thread.reply", "vault.note"} <= need)
+        self.assertTrue({"vault.note"} <= need)
         for a in actions.ALL:
             self.assertTrue(hasattr(a, "NEEDS"), a.ID)
             self.assertEqual(actions.usable(a), not a.NEEDS, a.ID)
-        # a line that would trigger the follow-up chip: no chip at all
-        self.assertIsNone(next((f for f in [actions.detect("нагадай написати Марті завтра")] if f and f.mod.ID == "followup"), None))
-        self.assertIn("off on this Mac", actions.run_python("followup", {"what": "x", "due": "2026-01-01T10:00"})["error"])
 
     def test_command_plans_drop_off_integrations(self):
         import command
-        self.assertIsNone(command.option("task", {"what": "write to Marta"}))
         self.assertIsNone(command.option("note", {"title": "t", "text": "x"}))
         self.assertEqual(command.plan(";docs plan")["options"], [])
 
@@ -53,7 +49,7 @@ class Off(unittest.TestCase):
         router._state["at"] = 0
         self.assertFalse(router.online())
 
-    def test_knowledge_pack_builds_without_aleph(self):
+    def test_knowledge_pack_builds_from_nothing(self):
         import know
         out = Path(TMP.name) / "know.json"
         pack = know.build(out, dictionary=Path(TMP.name) / "none.json", snippets=Path(TMP.name) / "none.json", contacts=[])
@@ -67,11 +63,11 @@ class Off(unittest.TestCase):
 class On(unittest.TestCase):
     def test_on_only_when_enabled_and_present(self):
         folder = Path(TMP.name) / "vault"; folder.mkdir(exist_ok=True)
-        use({"integrations": {"vault": {"enabled": True, "path": str(folder)}, "inbox": {"enabled": True, "path": str(folder / "missing")},
-                              "voice_notes": {"enabled": False, "path": str(folder)}}})
+        use({"integrations": {"vault": {"enabled": True, "path": str(folder)}, "voice_guide": {"enabled": True, "path": str(folder / "missing.txt")},
+                              "gam": {"enabled": False, "bin": str(folder)}}})
         self.assertTrue(integrations.available("vault"))
-        self.assertFalse(integrations.available("inbox"))         # turned on, but its folder is not there
-        self.assertFalse(integrations.available("voice_notes"))   # there, but not turned on
+        self.assertFalse(integrations.available("voice_guide"))   # turned on, but its file is not there
+        self.assertFalse(integrations.available("gam"))           # a path, but not turned on
         self.assertFalse(integrations.available("nonsense"))
 
 
