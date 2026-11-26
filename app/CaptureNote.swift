@@ -14,8 +14,7 @@
 // [Next shot ⌘N] … [Send to… ⇥] [Put in ↵]. ↵ ends the take, waits for its words, and puts the deck in, each card as
 // one unit: its picture, then its caption (an agent app: the pictures, then "Screenshots attached: N pictures" with a
 // caption under each). Every picture goes on the clipboard as PNG, TIFF and its file URL and stays there 1.6 s
-// (ShotSend.paste). ⇥ turns the row into the targets (ShotPack.order, digits); Person into a name field and
-// the chats found (beeper, read only; the draft is never sent). Esc only cancels: it stops the caption take, else
+// (ShotSend.paste). ⇥ turns the row into the targets (ShotPack.order, digits). Esc only cancels: it stops the caption take, else
 // drops the shot (Undo for 10 s, then the pack goes to the Trash). It never sends or keeps.
 // Every change (a caption, the marks, the order, a send) is written into its pack off the main thread (ShotStore).
 // Keys come through the event tap (Quick.tap); the strip never becomes key. ⌘ chords the deck does not use
@@ -25,7 +24,7 @@ import QuartzCore
 
 final class CaptureNote {
     static let shared = CaptureNote()
-    enum Mode { case note, list, person }
+    enum Mode { case note, list }
     /// One card of the deck: the picture as it goes (marked), as taken, its marks, its caption, where it was on the screen.
     struct Pic {
         var id = UUID()
@@ -44,7 +43,6 @@ final class CaptureNote {
     private(set) var collecting = false
     private var retakeAt: Int?
     var mode = Mode.note
-    var line = ""                              // the name being searched (person mode)
     var note = ""                              // older sets: the one note for the whole set (kept as it was)
     var noteVia = "typed"
     var pics: [Pic] = []
@@ -53,8 +51,6 @@ final class CaptureNote {
     var hoverCard: Int?                        // the card under the mouse (its buttons show)
     var pack: ShotPack?
     var list: [ShotTarget] = []
-    var chats: [(id: String, title: String)] = []
-    var searching = false
     var sel = 0
     /// The card the voice take is for, and the mic's last levels (DeckRules.level), newest last.
     var listeningFor: UUID?
@@ -116,9 +112,9 @@ final class CaptureNote {
     func open(png: Data, row: [String: Any], origin: NSRunningApplication?, t0: Date, pack: ShotPack? = nil,
               region: NSRect? = nil, full: Bool = false, inPlace: Bool = false, talk: Bool = false) {
         let mark = Speed.begin(.deckOpen, from: t0)
-        self.origin = origin; self.t0 = t0; line = ""; note = ""; noteVia = "typed"; collecting = false; retakeAt = nil
+        self.origin = origin; self.t0 = t0; note = ""; noteVia = "typed"; collecting = false; retakeAt = nil
         openFront = Capture.keyApp()?.bundleIdentifier ?? "?"; openAsks = Focus.asks   // for the put-in's front line
-        self.pack = pack; mode = .note; chats = []; sel = 0; searching = false; picked = nil; hover = nil; hoverCard = nil
+        self.pack = pack; mode = .note; sel = 0; picked = nil; hover = nil; hoverCard = nil
         listeningFor = nil; levels = []; heardLive = ""; placed = false; keysSinceOpen = 0; view.reset()
         pics = [Self.pic(png, region: region, full: full, inPlace: inPlace)]
         readDone = pack == nil; waiting = []
@@ -522,7 +518,7 @@ final class CaptureNote {
     /// ⌘N or +: the screen dims again with the deck still up; the next capture joins it (`append`), esc goes back.
     func addAnother() {
         guard pack != nil, !collecting else { return }
-        if mode != .note { mode = .note; chats = []; resize() }
+        if mode != .note { mode = .note; resize() }
         save()
         collecting = true; retakeAt = nil
         log("shot: next shot, \(pics.count) so far")
@@ -776,9 +772,6 @@ final class CaptureNote {
 
     private func pick(_ t: ShotTarget) {
         guard let p0 = pack else { return }
-        if t == .person {
-            mode = .person; line = ""; chats = []; sel = 0; searching = false; resize(); return
-        }
         close(); save()
         let id = p0.id
         afterTalk {
@@ -832,26 +825,7 @@ final class CaptureNote {
                 case .ask:
                     // shot.md holds the read text once the queue wrote it
                     ShotStore.queue.async { DispatchQueue.main.async { ShotSend.ask(id); ShotStore.sent(id, t) } }
-                case .field, .person: break
-                }
-            }
-        }
-    }
-
-    private func draft(_ chat: (id: String, title: String)) {
-        guard let p = pack else { return }
-        mode = .note
-        close(); save()
-        let id = p.id, more = pics.count > 1
-        afterTalk {
-            let text = self.pack?.deckText ?? ""
-            ShotStore.queue.async {
-                DispatchQueue.main.async {
-                    // `beeper chats draft` takes one --file: a deck goes as a draft with its first picture and every caption
-                    ShotSend.draft(chat: chat.id, id: id, note: text) { ok in
-                        Pill.shared.flash(ok ? "Draft in Beeper → \(chat.title) (not sent)\(more ? " · the first picture only" : "")" : "The Beeper draft did not work")
-                        if ok { ShotStore.sent(id, .person, detail: chat.title) } else { log("shot: beeper draft failed") }
-                    }
+                case .field: break
                 }
             }
         }

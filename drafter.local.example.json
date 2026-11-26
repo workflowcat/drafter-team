@@ -37,22 +37,8 @@
   "_note": "roots: folders whose subfolders are your code projects; a project name then gets a Repo pointer (engine/entities.py). None by default.",
   "roots": []
  },
- "_integrations": "Each is off until enabled is true and its tool answers (`.venv/bin/python engine/integrations.py`). bin: the tool's path when it is not on PATH. vault: path of the notes folder, name shown on the note chip, origin: the frontmatter origin value of notes you wrote yourself (only those go into training).",
+ "_integrations": "Each is off until enabled is true and its tool answers (`.venv/bin/python engine/integrations.py`). bin: the tool's path when it is not on PATH.",
  "integrations": {
-  "beeper": {
-   "enabled": false,
-   "bin": ""
-  },
-  "gam": {
-   "enabled": false,
-   "bin": ""
-  },
-  "vault": {
-   "enabled": false,
-   "path": "",
-   "name": "",
-   "origin": ""
-  },
   "claude": {
    "enabled": false,
    "bin": ""

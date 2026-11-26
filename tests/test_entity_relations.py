@@ -159,34 +159,36 @@ class Fixes(unittest.TestCase):
             self.assertEqual(sorted(p.name for p in Path(d).iterdir()), ['entity-fixes.json'])
 
 
+def note(rid, kind, name, links=(), n=1, note_kind='note', date='2026-11-10', summary=''):
+    """One made-up source record in the shape build() takes; links name other records as "notes:<id>"."""
+    return {'system': 'notes', 'id': rid, 'kind': kind, 'name': name, 'aliases': [], 'summary': summary, 'handles': {}, 'facts': [],
+            'links': [{'to': 'notes:' + to, 'key': key, 'n': n, 'date': date} for to, key in links], 'private': False, 'date': date,
+            'note_kind': note_kind}
+
+
 class Build(unittest.TestCase):
-    """A made-up vault: people, an org, a story with a short list, an epic that lists many, and lines the user typed."""
+    """Made-up records: people, an org, a story with a short list, an epic that lists many, and lines the user typed."""
 
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory(); self.addCleanup(self.tmp.cleanup)
         root = Path(self.tmp.name)
         self.data = root / 'data'; self.data.mkdir()
-        self.vault = root / 'vault'
-        def note(rel, fm):
-            p = self.vault / rel; p.parent.mkdir(parents=True, exist_ok=True)
-            p.write_text('---\n' + fm.strip() + '\n---\nBody.\n')
-        note('Entities/People/Vera Stone.md', 'type: person\norg: "[[Entities/Organizations/Quill Works]]"\nupdated: 2026-11-10')
-        note('Entities/People/Vera Lake.md', 'type: person\nupdated: 2026-11-10')
-        note('Entities/People/Oskar Brand.md', 'type: person\nupdated: 2026-11-10')
-        note('Entities/People/Mira Volk.md', 'type: person\nupdated: 2026-11-10')
-        note('Entities/Organizations/Quill Works.md', 'type: org\nsummary: a made-up client\nupdated: 2026-11-10')
-        many = ', '.join(f'"[[Entities/People/Filler {i}]]"' for i in range(12))
-        for i in range(12): note(f'Entities/People/Filler {i}.md', 'type: person\nupdated: 2026-11-10')
-        note('Stories/Anvil.md', 'type: story\nsummary: a made-up project\nupdated: 2026-11-10\n'
-             'entities: ["[[Entities/People/Vera Stone]]", "[[Oskar Brand]]"]')
-        note('Epics/Everything.md', 'type: epic\nsummary: a broad epic\nupdated: 2026-11-10\nentities: [' + many + ']')
+        fillers = [f'people/filler-{i}' for i in range(12)]
+        self.notes = ([note('people/vera-stone', 'person', 'Vera Stone', [('orgs/quill', 'org')]),
+                       note('people/vera-lake', 'person', 'Vera Lake'), note('people/oskar', 'person', 'Oskar Brand'),
+                       note('people/mira', 'person', 'Mira Volk'), note('orgs/quill', 'org', 'Quill Works', summary='a made-up client')]
+                      + [note(f, 'person', f'Filler {i}') for i, f in enumerate(fillers)]
+                      + [note('stories/anvil', 'project', 'Anvil', [('people/vera-stone', 'entities'), ('people/oskar', 'entities')], 2, 'story',
+                              summary='a made-up project'),
+                         note('epics/everything', 'project', 'Everything', [(f, 'entities') for f in fillers], 12, 'epic',
+                              summary='a broad epic')])
         t = NOW - 86400
         self.lines = ([{'t': t, 'app': 'Claude', 'text': 'Need Mira Volk and Oskar Brand on the call'}] * 4
                       + [{'t': t, 'app': 'Claude', 'text': f'Note {i} about Filler {i % 3} for the epic'} for i in range(30)]
-                      + [{'t': t, 'app': 'Beeper', 'text': 'Vera said yes'}, {'t': t, 'app': 'Claude', 'text': 'Ask Vera about Quill Works'}])
+                      + [{'t': t, 'app': 'Telegram', 'text': 'Vera said yes'}, {'t': t, 'app': 'Claude', 'text': 'Ask Vera about Quill Works'}])
 
     def build(self, **kw):
-        args = dict(vault=self.vault, contacts=None, now=NOW, data=self.data, ordinary={'anvil'}, codius=self.data, lines=self.lines)
+        args = dict(slices={'notes': self.notes}, now=NOW, data=self.data, ordinary={'anvil'}, codius=self.data, lines=self.lines)
         args.update(kw)
         return E.build(**args)
 
@@ -202,7 +204,7 @@ class Build(unittest.TestCase):
         self.assertEqual(vera['related'], [x['id'] for x in vera['relations']])   # old readers keep the ordered id list
         ws = [x['w'] for x in vera['relations']]
         self.assertEqual(ws, sorted(ws, reverse=True))
-        self.assertTrue(self.rel(store, 'Anvil', 'Oskar Brand')['why'].startswith('in the same note: story'))   # link by stem
+        self.assertTrue(self.rel(store, 'Anvil', 'Oskar Brand')['why'].startswith('in the same note: story'))
 
     def test_broad_epic_pairs_fall_under_the_floor(self):
         store = self.build()
@@ -233,10 +235,10 @@ class Build(unittest.TestCase):
         self.assertEqual(store['dedupe_stats']['own_dropped'], 1)
 
     def test_fixes_apply_on_build(self):
-        f = E.add_fix({}, 'not_related', 'vault:Entities/People/Mira Volk.md', 'vault:Entities/People/Oskar Brand.md')
-        f = E.add_fix(f, 'related', 'vault:Entities/People/Vera Lake.md', 'vault:Entities/Organizations/Quill Works.md', 'advisor')
-        f = E.add_fix(f, 'not_this', 'Vera', 'vault:Entities/People/Vera Lake.md')
-        f = E.add_fix(f, 'same', 'vault:Entities/People/Filler 1.md', 'vault:Entities/People/Filler 2.md')
+        f = E.add_fix({}, 'not_related', 'notes:people/mira', 'notes:people/oskar')
+        f = E.add_fix(f, 'related', 'notes:people/vera-lake', 'notes:orgs/quill', 'advisor')
+        f = E.add_fix(f, 'not_this', 'Vera', 'notes:people/vera-lake')
+        f = E.add_fix(f, 'same', 'notes:people/filler-1', 'notes:people/filler-2')
         (self.data / 'entity-fixes.json').write_text(json.dumps(f))
         store = self.build()
         self.assertIsNone(self.rel(store, 'Mira Volk', 'Oskar Brand'))
@@ -255,9 +257,9 @@ def rec(rid, kind, name, aliases=(), handles=None, evidence=(), sources=1, facts
             'pack': {'facts': [{}] * facts, 'pointers': list(ptrs)}}
 
 
-def src(system, rid, name, kind='person', aliases=(), handles=None, vlinks=()):
+def src(system, rid, name, kind='person', aliases=(), handles=None, links=()):
     return {'system': system, 'id': rid, 'name': name, 'kind': kind, 'aliases': list(aliases), 'handles': handles or {},
-            'vlinks': list(vlinks)}
+            'links': list(links)}
 
 
 class Review(unittest.TestCase):
@@ -274,10 +276,10 @@ class Review(unittest.TestCase):
         self.assertEqual(main_of, {'t:anvil-repo': 'p:anvil', 't:anvil-worker': 'p:anvil'})   # an org of that name is not a twin
         self.assertEqual([p['label'] for p in records[0]['pack']['pointers']], ['Story', 'URL'])   # the twin's URL; the same note once
         G = E.Edges()
-        G.add('p:anvil', 't:anvil-repo', 0.8, 'repo', 'repo of', 'vault')
-        G.add('p:anvil', 't:anvil-worker', 0.8, 'runs as', 'runs', 'vault')
-        G.add('h:vera', 'p:anvil', 0.6, 'works on', 'people on it', 'vault')
-        G.add('h:vera', 't:anvil-repo', 0.7, 'built', 'built by', 'vault')
+        G.add('p:anvil', 't:anvil-repo', 0.8, 'repo', 'repo of', 'notes')
+        G.add('p:anvil', 't:anvil-worker', 0.8, 'runs as', 'runs', 'notes')
+        G.add('h:vera', 'p:anvil', 0.6, 'works on', 'people on it', 'notes')
+        G.add('h:vera', 't:anvil-repo', 0.7, 'built', 'built by', 'notes')
         E.finish_edges(records, G, main_of=main_of)
         by = {r['id']: r for r in records}
         self.assertEqual(by['p:anvil']['related'], ['h:vera'])                    # no "repo" or "runs as" line to itself
@@ -293,18 +295,18 @@ class Review(unittest.TestCase):
 
     # 3, 4 ----------------------------------------------------------------------------------------------------------
     def test_one_person_several_records(self):
-        org = src('vault', 'Entities/Organizations/Quill Works.md', 'Quill Works', kind='org')
+        org = src('notes', 'orgs/quill', 'Quill Works', kind='org')
         groups = [[org],
-                  [src('vault', 'People/Олег Бровко.md', 'Олег Бровко', vlinks=[{'path': 'Entities/Organizations/Quill Works', 'key': 'org'}])],
-                  [src('vault', 'People/Oleh Brovko.md', 'Oleh Brovko', vlinks=[{'path': 'Quill Works', 'key': 'org'}])],   # other script + same org
-                  [src('contacts', 'c1', 'Dana B.', handles={'email': ['dana@example.test']})],
+                  [src('notes', 'people/oleh-uk', 'Олег Бровко', links=[{'to': 'notes:orgs/quill', 'key': 'org'}])],
+                  [src('notes', 'people/oleh-en', 'Oleh Brovko', links=[{'to': 'notes:orgs/quill', 'key': 'org'}])],   # other script + same org
+                  [src('cards', 'c1', 'Dana B.', handles={'email': ['dana@example.test']})],
                   [src('board', 'person:dana', 'Dana Brook', handles={'email': ['Dana@Example.test']})],                  # handle + names fit
-                  [src('vault', 'People/Kit Fox.md', 'Kit Fox')], [src('contacts', 'c2', 'Kit Fox')],                      # same name, nothing else
-                  [src('contacts', 'c3', 'KF')],                                                                           # initials
-                  [src('vault', 'People/Mira Volk.md', 'Mira Volk')], [src('board', 'person:mira2', 'Mira Volk')],         # told apart
-                  [src('contacts', 'c4', 'VERA stone')], [src('board', 'person:rex', 'Rex Lake', handles={'tg': ['rex_lake']})],
-                  [src('contacts', 'c5', 'Rex Lake', handles={'tg': ['other_rex']})]]                                   # usernames differ
-        out, queue, n = E.dedupe_people(groups, apart={('vault:People/Mira Volk.md', 'board:person:mira2')}, own=['vera stone'])
+                  [src('notes', 'people/kit-fox', 'Kit Fox')], [src('cards', 'c2', 'Kit Fox')],                          # same name, nothing else
+                  [src('cards', 'c3', 'KF')],                                                                              # initials
+                  [src('notes', 'people/mira', 'Mira Volk')], [src('board', 'person:mira2', 'Mira Volk')],                # told apart
+                  [src('cards', 'c4', 'VERA stone')], [src('board', 'person:rex', 'Rex Lake', handles={'tg': ['rex_lake']})],
+                  [src('cards', 'c5', 'Rex Lake', handles={'tg': ['other_rex']})]]                                      # usernames differ
+        out, queue, n = E.dedupe_people(groups, apart={('notes:people/mira', 'board:person:mira2')}, own=['vera stone'])
         names = sorted(sorted(r['name'] for r in g) for g in out)
         self.assertIn(['Oleh Brovko', 'Олег Бровко'], names)
         self.assertEqual(len(out), len(groups) - 3)   # two merges, one own name
@@ -313,10 +315,10 @@ class Review(unittest.TestCase):
         self.assertEqual(n['own_dropped'], 1)                                   # the user's own name in another case is no entity
         self.assertNotIn(['VERA stone'], names)
         q = {tuple(sorted((x['a'], x['b']))): x for x in queue}
-        self.assertEqual(q[('contacts:c2', 'vault:People/Kit Fox.md')]['why'], ['same full name'])
-        self.assertIn(('contacts:c3', 'vault:People/Kit Fox.md'), q)                     # initials: asked, not merged
-        self.assertNotIn(('board:person:mira2', 'vault:People/Mira Volk.md'), q)          # the user's "not the same" holds
-        self.assertIn('different usernames', q[('board:person:rex', 'contacts:c5')]['why'])
+        self.assertEqual(q[('cards:c2', 'notes:people/kit-fox')]['why'], ['same full name'])
+        self.assertIn(('cards:c3', 'notes:people/kit-fox'), q)                           # initials: asked, not merged
+        self.assertNotIn(('board:person:mira2', 'notes:people/mira'), q)                  # the user's "not the same" holds
+        self.assertIn('different usernames', q[('board:person:rex', 'cards:c5')]['why'])
         self.assertEqual(queue[0]['score'], max(x['score'] for x in queue))       # best first
 
     def test_name_match_rules(self):

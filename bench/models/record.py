@@ -7,7 +7,7 @@ bench/models/shared.py `record`). Every typebench argument passes through; these
     --ctx-tokens N                keep only the last N tokens of the screen text (cut at a word start); default as is
     --before-tokens N             keep only the last N tokens of the text before the caret; default as is
 
-Knobs typebench has already: --know none (no knowledge pack), no --people (no per-chat lines), --ctx-chars 0 (no
+Knobs typebench has already: --know none (no knowledge pack), --ctx-chars 0 (no
 screen text), --boost 0 (no word booster). DRAFTER_MODEL_REVISION pins the cached snapshot of the repo.
 engine/prompt.py is not changed: the knobs replace its functions in this process only."""
 import os, re, runpy, sys

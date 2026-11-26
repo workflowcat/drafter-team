@@ -88,7 +88,7 @@ enum SettingsSearchRules {
                            neededFor: "The other side of a call, screenshots while recording, and reading chats on screen",
                            actionLabel: "Open Screen Recording", settingsURL: pane + "ScreenCapture", needed: screenUsed),
             PermissionItem(id: "calendar", title: "Calendars", ok: calendar,
-                           neededFor: "Meeting titles, ;free slots and the offer to take notes before a call",
+                           neededFor: "Meeting titles, free slots and the offer to take notes before a call",
                            actionLabel: "Open Calendars", settingsURL: pane + "Calendars", needed: false),
         ]
         if captureEnabled {

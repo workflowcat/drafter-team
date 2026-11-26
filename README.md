@@ -122,15 +122,9 @@ clear message when there is too little text. [Training](docs/training.md) explai
 
 ## Optional integrations, off by default
 
-Drafter can use a few tools you may already have. Each one is optional, off by default, and turned on only in
-`data/drafter.local.json`. When it is off or its tool does not answer, its chips and actions are not offered.
-
-| Name | What it is | What it adds |
-|---|---|---|
-| `beeper` | The `beeper` CLI for the Beeper chat app | Your older lines per chat; example messages; your chats in the corpus |
-| `gam` | GAM, the Google Workspace admin CLI | `;docs`, `;meetings` and `;free` lookups; contacts |
-| `vault` | A notes folder | A note action (a Markdown file in the folder); your notes in the training corpus |
-| `claude` | A signed-in `claude` CLI | Actions of your own that run it (`actions/_claude.py`); also on when picked under Settings > Cloud > Connect a model |
+One optional tool, off by default: a signed-in `claude` CLI for actions of your own (`actions/_claude.py`). It is
+turned on in `data/drafter.local.json`, and also when picked under Settings > Cloud > Connect a model. When it is off
+or does not answer, the actions that need it are not offered.
 
 `.venv/bin/python engine/integrations.py` prints each one's state on your Mac.
 

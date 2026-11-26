@@ -611,7 +611,6 @@ extension UIShots {
         try chip("action", "нагадай завтра о 10 надіслати акт Мілі", ["id": "reminder", "chip": "Нагадування · завтра 10:00 · надіслати акт Мілі"])
         try chip("proofread", "I recieve it tommorow", ["id": "proofread", "chip": "⇥ Fix 2 · recieve → receive, tommorow → tomorrow"])
         try chip("person", "Mila's number is ", ["id": "person", "chip": "Mila Synthetic · phone · +380 00 000 0000"])
-        try chip("lookup", ";docs project notes", ["id": "lookup", "chip": "Search Google Drive · project notes"])
         // the next message: a card above an empty box
         let fieldBox = CGRect(x: 300, y: -2580, width: 520, height: 40)
         let caretBox = CGRect(x: 312, y: -2570, width: 1, height: 20)

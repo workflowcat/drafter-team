@@ -36,10 +36,10 @@ class Guarded(unittest.TestCase):
 
 
 class HeldSet(unittest.TestCase):
-    def test_default_set_without_chat_lines_is_refused(self):
+    def test_default_set_without_ai_app_lines_is_refused(self):
         import json
         p = Path(TMP) / "replay-fresh.json"
-        p.write_text(json.dumps([{"text": "made up", "src": "claude", "app": "Claude"}] * 60))
+        p.write_text(json.dumps([{"text": "made up", "src": "beeper", "app": "Slack"}] * 60))
         with self.assertRaises(SystemExit): C.held_set()
         p.write_text(json.dumps([{"text": "made up", "src": "claude"}, {"text": "made up", "src": "beeper"}]))
         self.assertEqual(C.held_set(), p)

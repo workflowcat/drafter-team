@@ -102,14 +102,11 @@ Paths below are written as `data/`.
 3. Moves recording audio and video older than 14 days to the Trash, when a transcript is there
    (`scripts/prune_audio.py`; [Privacy](privacy.md) has the conditions).
 4. Builds your writing into one dated corpus (`bench/corpus.py`).
-5. Reads your working sources into local stores (`engine/sources.py run`): mail and Drive through GAM, and the
-   Beeper history. Each runs only when its integration (`gam`, `beeper`) is on and answers; otherwise it is
-   skipped. Read-only, never training input.
-6. Rebuilds the knowledge pack (`engine/know.py`) and the names reference (`engine/names.py`).
-7. Rebuilds the typo fix tables (`engine/typos.py`).
-8. Writes a review of yesterday's suggestions and takes (`bench/review.py`).
-9. Runs the weekly retrain when it is due (`bench/retrain.py`). It needs the Mac on power and idle for 10 minutes.
-10. On Fridays, writes the weekly page (`bench/week.py`).
+5. Rebuilds the knowledge pack (`engine/know.py`) and the names reference (`engine/names.py`).
+6. Rebuilds the typo fix tables (`engine/typos.py`).
+7. Writes a review of yesterday's suggestions and takes (`bench/review.py`).
+8. Runs the weekly retrain when it is due (`bench/retrain.py`). It needs the Mac on power and idle for 10 minutes.
+9. On Fridays, writes the weekly page (`bench/week.py`).
 
 [Training](training.md) explains the retrain.
 

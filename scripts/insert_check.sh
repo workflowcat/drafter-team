@@ -6,7 +6,7 @@
 #   zsh scripts/insert_check.sh                     # TextEdit, Chrome and Safari, every kind
 #   zsh scripts/insert_check.sh textedit            # one target: textedit | chrome | safari
 #   INSERT_CHECK_SNIPPET=';xy' zsh scripts/insert_check.sh   # also the ; picker: a trigger whose FIRST row is a snippet
-#                                                            # (never a lookup: a lookup row would go to Google)
+#                                                            # (never a lookup row)
 # Where it acts: a TextEdit document and local HTML pages it writes into a fresh folder in $TMPDIR, each holding
 # ⟦drafter-test⟧. Never Notes, never a messaging app. Each step is a second Drafter process (--insert-check) that
 # acts only when that app is in front and the focused field holds the marker; it stops at once otherwise. It never

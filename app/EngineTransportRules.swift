@@ -31,7 +31,7 @@ enum EngineTransportRules {
 
     /// Safe read-only / idempotent POST endpoints where retrying once on -1005 cannot cause duplicate side effects.
     static let retryablePostPaths: Set<String> = [
-        "/complete", "/prefill", "/chip", "/futures", "/lookup"
+        "/complete", "/prefill", "/chip", "/futures"
     ]
 
     /// True if `method` + `path` is safe to retry once on -1005 (all GETs, plus read-only/idempotent POSTs).

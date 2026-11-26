@@ -43,14 +43,8 @@ struct ShotPackTest {
         check(ShotPack.claudeCodeApp(running: ["com.apple.Safari"]) == ShotPack.claudeApp, "no terminal: the Claude app")
         // ask
         check(ShotPack.askInput("md").hasSuffix("\n\n" + ShotPack.askTail) && ShotPack.askArgs.contains("Read") && !ShotPack.askArgs.contains("Bash"), "ask: Read only")
-        // person
-        check(ShotPack.beeperSearch("Ola") == ["chats", "search", "Ola", "--json", "-q", "--read-only", "--limit", "6"], "search read only")
-        check(ShotPack.beeperDraft(chat: "c1", file: "/s/shot.png", note: " hi ") == ["chats", "draft", "--chat", "c1", "--file", "/s/shot.png", "--text", "hi"], "draft with the note")
-        check(!ShotPack.beeperDraft(chat: "c1", file: "/f", note: "").contains("--text") && !ShotPack.beeperDraft(chat: "c1", file: "/f", note: "").contains("send"), "draft only, no empty text")
-        let j = #"{"data":[{"id":"g1","title":"Team","type":"group"},{"id":"s1","title":"Ola K.","type":"single"},{"title":"no id"}]}"#
-        let c = ShotPack.chats(Data(j.utf8))
-        check(c.map(\.id) == ["s1", "g1"], "direct chats first, rows without an id dropped")
-        check(ShotPack.chats(Data("not json".utf8)).isEmpty, "bad output: none")
+        let person = try? JSONDecoder().decode(ShotSent.self, from: Data(#"{"to": "person", "t": 1, "detail": ""}"#.utf8))
+        check(person?.to == .clipboard, "the old Person target in a shot.json loads as Clipboard")
         // found things
         let f = ShotPack.foundValues([(kind: "link", value: "https://example.com", sensitive: false), (kind: "oneTimeCode", value: "123456", sensitive: true),
                                       (kind: "version", value: "1.2", sensitive: false), (kind: "link", value: "https://example.com", sensitive: false),

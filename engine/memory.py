@@ -4,11 +4,11 @@
     .venv/bin/python engine/memory.py build      # writes data/phrases.jsonl (local only, never in git)
     .venv/bin/python engine/memory.py try "можемо поговорити кор"
 
-Sources, all read-only and local: messages the user sent in Beeper, what the user typed to Claude in Claude
+Sources, all read-only and local: what the user typed to Claude in Claude
 Code / the Claude app (their prompts, not pasted text or messages from other sessions), and what the user sent while Drafter was
 on (data/typed.jsonl). Nothing from skipped apps or password fields ever gets there.
 """
-import glob, json, os, re, subprocess, sys, threading, time
+import glob, json, os, re, sys, threading, time
 from collections import Counter
 from pathlib import Path
 
@@ -19,24 +19,6 @@ DATA = data_dir()
 OUT = DATA / "phrases.jsonl"
 END = re.compile(r"[.!?…\n)]")
 WORD = re.compile(r"[\w'’-]+", re.U)
-
-
-def clean(t):
-    t = re.sub(r"<br\s*/?>", "\n", t or ""); t = re.sub(r"<[^>]+>", "", t)
-    return "\n".join(l.strip() for l in t.splitlines() if l.strip())
-
-
-def beeper(after="2025-09-01T00:00:00Z", limit=4000):
-    import integrations   # optional integration (engine/integrations.py)
-    if not integrations.available("beeper"): return []
-    try:
-        out = subprocess.run([__import__("people").beeper_bin(), "messages", "search", "--sender", "me", "--after", after, "--limit", str(limit), "--json",
-                              "-q", "--read-only", "--full"], capture_output=True, text=True, timeout=180, stdin=subprocess.DEVNULL,
-                             env={**os.environ, "BEEPER_READONLY": "1"}).stdout
-        rows = json.loads(out)["data"]
-    except Exception as e:
-        print("beeper:", e); return []
-    return [clean(m["text"]) for m in rows if m.get("type") == "TEXT" and m.get("text") and not clean(m["text"]).lower().startswith("клод:")]
 
 
 SKIP_PROMPT = re.compile(r"^(<|\[|Background \(from|Reply with|Caveat:|This session|Another Claude|Do what the system prompt)|```|<cross-session")
@@ -73,7 +55,7 @@ def build(output=None):
     output = Path(output) if output is not None else OUT
     t = time.time()
     seen, rows = set(), []
-    for src, items in (("beeper", beeper()), ("claude", claude_prompts()), ("typed", typed())):
+    for src, items in (("claude", claude_prompts()), ("typed", typed())):
         n = 0
         for x in items:
             x = x.strip()
@@ -142,7 +124,7 @@ class Memory:
 
     # Round three (2026-11-13): from data/corpus.jsonl (bench/corpus.py) when it is there. Voice takes stay out: on held-out
     # typed lines in AI apps they made it speak more and be right less (docs/rounds/2026-11-13-typing.md).
-    SOURCES = ("typed", "cc", "codex", "beeper", "fb", "vault", "import")
+    SOURCES = ("typed", "cc", "codex", "fb", "import")
 
     def load(self):
         texts = from_corpus(self.SOURCES)

@@ -2,8 +2,8 @@
 
 After a typing pause in a field that holds at least one finished sentence, the app sends the paragraph before the caret
 (app/PauseRewrite.swift). Claude rewrites it the way the user would send it after one more read, through the ⌥Tab rework
-path (engine/rework.py, command "polish") with the same context: the person card and the user's last lines for the chat on
-screen (engine/whom.py), their writing notes and the keyboard language. The app shows the rewrite as a chip with the
+path (engine/rework.py, command "polish") with the same context: the keyboard line (engine/whom.py) and
+their writing notes. The app shows the rewrite as a chip with the
 changed words marked; Tab puts it in, Backspace right after takes it back. Nothing is sent and Return is never pressed.
 
 Setting `pauseRewrite` (off, the cloud mark; engine/cloud.py). Under the daily Claude cap (`backOfficeCap`, USD):

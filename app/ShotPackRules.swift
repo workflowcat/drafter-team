@@ -33,9 +33,9 @@ struct ShotPicture: Codable, Equatable {
 
 /// Where a shot was passed on (the list after ⇥, and the record in shot.json).
 enum ShotTarget: String, Codable, CaseIterable {
-    case field, clipboard, file, claude, codex, claudeCode, ask, person
-    /// A target that is gone (a private app of the first user, before 26 November 2026) in an old shot.json reads as Clipboard, so
-    /// the shot still loads.
+    case field, clipboard, file, claude, codex, claudeCode, ask
+    /// A target that is gone (a private app of the first user, or Person, a chat draft, before 26 November 2026) in an old
+    /// shot.json reads as Clipboard, so the shot still loads.
     init(from decoder: Decoder) throws {
         let raw = try decoder.singleValueContainer().decode(String.self)
         self = ShotTarget(rawValue: raw) ?? .clipboard
@@ -45,7 +45,7 @@ enum ShotTarget: String, Codable, CaseIterable {
         switch self {
         case .field: return "Put in"; case .clipboard: return "Clipboard"; case .file: return "File"
         case .claude: return "Claude"; case .codex: return "Codex"; case .claudeCode: return "Claude Code"
-        case .ask: return "Ask Claude here"; case .person: return "Person"
+        case .ask: return "Ask Claude here"
         }
     }
     /// Leaves the Mac when the user picks it (a cloud mark on the entry).
@@ -299,24 +299,6 @@ struct ShotPack: Codable, Equatable {
     static func askInput(_ md: String) -> String { md + "\n\n" + askTail }
     static let askArgs = ["-p", "--allowedTools", "Read", "--output-format", "text"]
     static let askTimeout = 180.0
-
-    /// Person: the chat search and the draft (draft only, never sent).
-    static func beeperSearch(_ name: String) -> [String] { ["chats", "search", name, "--json", "-q", "--read-only", "--limit", "6"] }
-    static func beeperDraft(chat: String, file: String, note: String) -> [String] {
-        var a = ["chats", "draft", "--chat", chat, "--file", file]
-        let n = note.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !n.isEmpty { a += ["--text", n] }
-        return a
-    }
-    /// The chats from `beeper chats search --json`: {"data": [{"id", "title", "type"}]}, direct chats first.
-    static func chats(_ json: Data) -> [(id: String, title: String)] {
-        guard let o = try? JSONSerialization.jsonObject(with: json) as? [String: Any], let d = o["data"] as? [[String: Any]] else { return [] }
-        let rows = d.compactMap { c -> (String, String, Bool)? in
-            guard let id = c["id"] as? String, !id.isEmpty else { return nil }
-            return (id, (c["title"] as? String) ?? id, (c["type"] as? String) == "single")
-        }
-        return (rows.filter { $0.2 } + rows.filter { !$0.2 }).map { (id: $0.0, title: $0.1) }
-    }
 
     /// The found things kept in shot.json: links, e-mails, phones, dates and money, never a sensitive one, each once,
     /// at most 20. `items`: the detector's kind, value and sensitive flag (app/DetectRules.swift), in text order.

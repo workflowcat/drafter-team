@@ -33,25 +33,6 @@ enum AvailabilityRules {
         return h
     }
 
-    /// The picker's refine rows rewrite the `;free` query one choice at a time: days, length or part of the day.
-    static func refine(_ query: String, days: Days? = nil, minutes: Int? = nil, part: Part? = nil) -> String {
-        var t = " " + query.trimmingCharacters(in: .whitespaces) + " "
-        func drop(_ p: String) { t = rx(p).stringByReplacingMatches(in: t, range: NSRange(t.startIndex..., in: t), withTemplate: " ") }
-        if let days {
-            drop(#"(?<![\p{L}])(today|tomorrow|this week|next week|сьогодні|завтра|сегодня|наступного тижня|цього тижня|следующей неделе|этой неделе|\d{4}-\d{2}-\d{2})(?![\p{L}])"#)
-            t += ["today": "today", "tomorrow": "tomorrow", "week": "this week", "nextWeek": "next week"][days.rawValue]! + " "
-        }
-        if let minutes {
-            drop(#"(?<![\p{L}\d])\d{1,3}(\s*(min|minutes|хв|мин))?(?![\p{L}\d])|(?<![\p{L}])(1\s*)?(h|hr|hour|год|година|час)(?![\p{L}])"#)
-            t = t.replacingOccurrences(of: ";free ", with: ";free \(minutes) ")
-        }
-        if let part {
-            drop(#"(?<![\p{L}])(mornings?|afternoons?|ранок|вранці|зранку|утром|утро|після обіду|пообіді|после обеда|днем|днём)(?![\p{L}])"#)
-            if part != .any { t += part.rawValue + " " }
-        }
-        return t.split(separator: " ").joined(separator: " ")
-    }
-
     struct Hours: Equatable {
         var start = 9 * 60, end = 18 * 60     // minutes of the day, the user's time
         var buffer = 30                        // minutes kept before and after an event at a place

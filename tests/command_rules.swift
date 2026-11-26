@@ -12,37 +12,30 @@ struct CommandRulesTest {
         CommandItem(kind: .snippet, key: ";addr", title: "Sample st 1, Example City", ref: ";addr"),
         CommandItem(kind: .preset, key: ";gmeet", title: "New Google Meet", detail: "meet.google.com"),
         CommandItem(kind: .preset, key: ";sheet", title: "New sheet", detail: "sheets.new"),
-        CommandItem(kind: .lookup, key: ";docs", title: "Search Google Drive", on: false, ref: "docs"),
-        CommandItem(kind: .lookup, key: ";meetings", title: "Find a meeting link", on: false, ref: "meetings"),
+        CommandItem(kind: .snippet, key: ";thx", title: "Thank you, sample", ref: ";thx"),
+        CommandItem(kind: .snippet, key: ";tel", title: "+000 0000 000", ref: ";tel"),
         CommandItem(kind: .person, key: "", title: "Ana Example", detail: "Sample Studio", ref: "0"),
         CommandItem(kind: .card, key: "", title: "Meetup Sample", ref: "3"),
     ]
 
     static func main() {
-        // ;free rows with a day set (availability round 2): only for ;fr…, in the field's language, keys the lookup reads
-        check(CommandRules.freeRows(";fr", uk: false, on: true).count == 4, "free rows for ;fr")
-        check(CommandRules.freeRows(";free", uk: true, on: true).first?.title == "Вільний час: завтра, 30 хв", "free rows in Ukrainian")
-        check(CommandRules.freeRows(";docs", uk: false, on: true).isEmpty && CommandRules.freeRows("", uk: false, on: true).isEmpty, "no free rows for other queries")
-        check(CommandRules.freeRows(";free", uk: false, on: false).allSatisfy { !$0.on && $0.kind == .lookup }, "free rows off without Google")
-        let ranked = CommandRules.filter([CommandItem(kind: .lookup, key: ";free", title: "Find free times to insert")] + CommandRules.freeRows(";free", uk: false, on: true), ";free")
-        check(ranked.first?.key == ";free" && ranked.count == 5, "plain ;free first, then the set ones")
         // exact key first, then key prefix, then title words
         let me = CommandRules.filter(items, "mee").map(\.title)
-        check(me.first == "Find a meeting link", "key prefix ;mee -> ;meetings first: \(me)")
+        check(me.first == "New Google Meet", "title word ;mee -> the Meet quick start first, in list order: \(me)")
         let gm = CommandRules.filter(items, "gm").map(\.title)
         check(gm.first == "New Google Meet", "key prefix ;gm -> the Meet quick start: \(gm)")
-        let tie = CommandRules.filter([CommandItem(kind: .lookup, key: ";x1", title: "Sample row", on: false), CommandItem(kind: .preset, key: ";x2", title: "Sample row")], "sample")
-        check(tie.first?.key == ";x2", "on before off in one rank")
+        let tie = CommandRules.filter([CommandItem(kind: .snippet, key: ";x1", title: "Sample row"), CommandItem(kind: .preset, key: ";x2", title: "Sample row")], "sample")
+        check(tie.first?.key == ";x1", "list order in one rank")
         check(me.contains("Meetup Sample"), "a title word matches")
         check(CommandRules.filter(items, ";sig").first?.key == ";sig", "with the ; typed")
         check(CommandRules.filter(items, "ana").first?.kind == .person, "a person by name")
         check(CommandRules.filter(items, "zzz").isEmpty, "nothing")
         check(CommandRules.filter(items, "").count == CommandRules.most, "empty query: the first rows")
 
-        // hidden aliases: ;doc means ;docs while no item owns ;doc; a quick start that owns ;doc wins
-        check(CommandRules.filter(items, "doc").first?.key == ";docs", ";doc -> ;docs")
+        // hidden aliases: a quick start that owns ;doc is found by it
+        check(CommandRules.aliases[";doc"] == nil, "no ;doc alias")
         let withDoc = items + [CommandItem(kind: .preset, key: ";doc", title: "New Google Doc")]
-        check(CommandRules.filter(withDoc, "doc").first?.key == ";doc", "an owned ;doc wins over the alias")
+        check(CommandRules.filter(withDoc, "doc").first?.key == ";doc", "an owned ;doc is found")
         let withEn = items + [CommandItem(kind: .snippet, key: ";en", title: "translate")]
         check(CommandRules.filter(withEn, "e").first?.key == ";en", ";e -> ;en")
 

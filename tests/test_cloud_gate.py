@@ -159,7 +159,7 @@ class Server(unittest.TestCase):
         sys.modules.pop("rework", None)
 
     def test_keyboard_and_person_hint_only_with_the_switch_on(self):
-        # engine/whom.py: the keyboard line and the chat's person block never leave with the switch off
+        # engine/whom.py: the keyboard line never leaves with the switch off
         req = {"text": "made-up text for a check", "cmd": "shorter", "kb": "uk"}
         self.settings = {"rework": False}
         self.ns["rework"](dict(req))

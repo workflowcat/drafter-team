@@ -2,16 +2,12 @@
 import Foundation
 
 enum LinkSource: String, CaseIterable, Codable {
-    case copied, mentioned, mail, beeper, drive, obsidian
+    case copied, mentioned
 
     var label: String {
         switch self {
         case .copied: return "Copied"
         case .mentioned: return "Mentioned"
-        case .mail: return "Mail"
-        case .beeper: return "Beeper"
-        case .drive: return "Drive"
-        case .obsidian: return "Obsidian"
         }
     }
 
@@ -19,10 +15,6 @@ enum LinkSource: String, CaseIterable, Codable {
         switch self {
         case .copied: return "link"
         case .mentioned: return "globe"
-        case .mail: return "mail"
-        case .beeper: return "chat"
-        case .drive: return "folder"
-        case .obsidian: return "book"
         }
     }
 }
@@ -75,13 +67,6 @@ enum LinksRules {
     /// An invalid or non-web address has no normalized URL. Preserve query order and percent encoding.
     static func normalize(_ raw: String) -> String {
         let value = cleanURL(raw)
-        if let parts = URLComponents(string: value), parts.scheme?.lowercased() == "obsidian" {
-            guard parts.host == "open", parts.user == nil, parts.password == nil,
-                  parts.queryItems?.contains(where: { $0.name == "vault" && !($0.value ?? "").isEmpty }) == true,
-                  parts.queryItems?.contains(where: { $0.name == "file" && !($0.value ?? "").isEmpty }) == true,
-                  parts.url != nil else { return "" }
-            return parts.string ?? ""
-        }
         guard !value.contains(where: \.isWhitespace),
               var parts = URLComponents(string: value),
               let scheme = parts.scheme?.lowercased(), ["http", "https"].contains(scheme),
@@ -101,7 +86,6 @@ enum LinksRules {
     }
 
     static func host(of url: String) -> String {
-        if URLComponents(string: url)?.scheme == "obsidian" { return "Obsidian" }
         guard let host = URLComponents(string: normalize(url))?.host?.lowercased() else { return "" }
         return host.hasPrefix("www.") ? String(host.dropFirst(4)) : host
     }
@@ -140,24 +124,8 @@ enum LinksRules {
         return merge(local: items, remote: [])
     }
 
-    /// /sources/find returns {found: [{title, url, file, src, t, from}]}; the caller passes `found`.
-    /// `file` may be an attachment name, not an absolute local path. Do not invent a downloadable URL.
-    static func parseSources(_ raw: [[String: Any]]) -> [LinkItem] {
-        let items = raw.compactMap { row -> LinkItem? in
-            func string(_ key: String) -> String { trim(row[key] as? String ?? "") }
-            guard let source = LinkSource(rawValue: string("src").lowercased()),
-                  [.mail, .beeper, .drive, .obsidian].contains(source) else { return nil }
-            let url = normalize(string("url")), file = string("file")
-            guard !url.isEmpty || !file.isEmpty else { return nil }
-            let when = (row["t"] as? NSNumber)?.doubleValue ?? Double(string("t")) ?? 0
-            return make(url: url, title: string("title"), source: source, origin: string("from"),
-                        when: when, tags: [], journalId: nil, file: file)
-        }
-        return merge(local: [], remote: items)
-    }
-
     /// Key for deduplicating hub items: URLs dedupe by normalized URL, local absolute file paths dedupe by path,
-    /// and non-path remote attachment names keep source/origin/title so distinct emails with "invoice.pdf" do not collapse.
+    /// and bare file names keep source/origin/title so two different "invoice.pdf" rows do not collapse.
     private static func itemKey(normalizedURL: String, file: String, source: LinkSource, origin: String, title: String) -> String {
         if !normalizedURL.isEmpty { return "url:" + normalizedURL }
         if file.hasPrefix("/") { return "file:" + file }

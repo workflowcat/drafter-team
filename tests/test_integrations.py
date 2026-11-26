@@ -31,16 +31,13 @@ class Off(unittest.TestCase):
         self.assertEqual(set(integrations.TABLE), set(local.DEFAULTS["integrations"]))
 
     def test_actions_that_need_an_integration_are_not_offered(self):
-        need = {a.ID for a in actions.ALL if getattr(a, "NEEDS", ())}
-        self.assertTrue({"vault.note"} <= need)
         for a in actions.ALL:
             self.assertTrue(hasattr(a, "NEEDS"), a.ID)
             self.assertEqual(actions.usable(a), not a.NEEDS, a.ID)
 
     def test_command_plans_drop_off_integrations(self):
         import command
-        self.assertIsNone(command.option("note", {"title": "t", "text": "x"}))
-        self.assertEqual(command.plan(";docs plan")["options"], [])
+        self.assertIsNone(command.option("note", {"title": "t", "text": "x"}))   # no note action any more
 
     def test_engine_never_starts_claude_when_off(self):
         import claude_type, claude_worker, router
@@ -52,23 +49,20 @@ class Off(unittest.TestCase):
     def test_knowledge_pack_builds_from_nothing(self):
         import know
         out = Path(TMP.name) / "know.json"
-        pack = know.build(out, dictionary=Path(TMP.name) / "none.json", snippets=Path(TMP.name) / "none.json", contacts=[])
+        pack = know.build(out, dictionary=Path(TMP.name) / "none.json", snippets=Path(TMP.name) / "none.json")
         self.assertEqual(pack["entries"], [])
-
-    def test_style_does_not_crash_without_beeper(self):
-        import style
-        self.assertIsNone(style.build())
 
 
 class On(unittest.TestCase):
     def test_on_only_when_enabled_and_present(self):
-        folder = Path(TMP.name) / "vault"; folder.mkdir(exist_ok=True)
-        use({"integrations": {"vault": {"enabled": True, "path": str(folder)}, "claude": {"enabled": False, "bin": str(folder / "missing")},
-                              "gam": {"enabled": False, "bin": str(folder)}}})
-        self.assertTrue(integrations.available("vault"))
-        self.assertFalse(integrations.available("voice_guide"))   # removed: an unknown name is never available
-        self.assertFalse(integrations.available("gam"))           # a path, but not turned on
-        self.assertFalse(integrations.available("nonsense"))
+        fake = Path(TMP.name) / "claude"; fake.write_text("#!/bin/sh\n"); fake.chmod(0o755)
+        use({"integrations": {"claude": {"enabled": False, "bin": str(fake)}}})
+        self.assertFalse(integrations.available("claude"))        # a path, but not turned on
+        use({"integrations": {"claude": {"enabled": True, "bin": str(fake)}}})
+        self.assertTrue(integrations.available("claude"))
+        self.assertEqual(set(integrations.TABLE), {"claude"})
+        for gone in ("voice_guide", "nonsense"):                  # removed or unknown: never available
+            self.assertFalse(integrations.available(gone), gone)
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-"""The command line (2026-10-21; ⌘K in Drafter's window, the floating panel from a lookup chip): one line - "забукай 30 хв з Савою завтра після обіду",
+"""The command line (2026-10-21; ⌘K in Drafter's window): one line - "забукай 30 хв з Савою завтра після обіду",
 "find a free hour on Thursday", "remind me to send the act on Friday", ";sig" - becomes up to three options, each one
 step the user can run with Enter (nothing runs before that). Online: Claude Haiku reads the line (router.py); offline: the
 same action triggers and the local model as the chips use. Snippets live in data/snippets.json ({";key": "text"})."""
@@ -47,11 +47,6 @@ def option(kind, f):
             due = f.get("due")
             return {"chip": f"Reminder «{f['title']}»" + (f" · {show(datetime.fromisoformat(due))}" if due else ""),
                     "run": {"kind": "eventkit.reminder", "title": f["title"], "due": due}}
-        if kind == "note" and not actions.usable(actions.BY_ID["vault.note"]):
-            return None
-        if kind == "note":
-            return {"id": "vault.note", "chip": f"Note in {local.setting('vault', 'name') or 'the vault'} «{f.get('title') or 'untitled'}»", "run": {"kind": "python"},
-                    "fields": {"title": f.get("title", ""), "text": f.get("text", "")}}
         if kind == "snippet":
             return {"chip": f"Save snippet {f['key']} → «{f['text'][:50]}»", "run": {"kind": "snippet.save", "key": f["key"], "text": f["text"]}}
         if kind == "answer":
@@ -66,7 +61,6 @@ Kinds and fields (dates "YYYY-MM-DDTHH:MM" or "YYYY-MM-DD", his time zone):
 - event: book a time. title (short, calendar style, language of the line, with the person's name), start, minutes (default 30)
 - free: find free time in his calendar. from, to (days), minutes, title, earliest ("09:00"), latest ("19:00")
 - reminder: title, due
-- note: save a note. title, text
 - snippet: save a text snippet. key (starts with ;), text
 - answer: a direct short answer (a sum, a conversion, a date, a quick fact). text
 UI labels must be English. Preserve the language of authored content (titles and notes).
@@ -79,11 +73,6 @@ Line: {line}"""
 def plan(line, local_ask=None):
     line = (line or "").strip()
     if not line: return {"options": []}
-    match = re.fullmatch(r";(docs|links|meetings|free|accounts)(?:\s+(.*))?", line)
-    if match:
-        import lookup, integrations
-        if not integrations.available("gam"): return {"options": [], "by": "lookup"}
-        return {**lookup.search({"kind": match.group(1), "query": match.group(2) or ""}), "by": "lookup"}
     t = time.perf_counter()
     snip = snippets()
     if line in snip:

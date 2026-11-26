@@ -67,20 +67,11 @@ def cached(repo, rev=None):
 def record(label, cand, adapter=None, set_path=None, smoke=False, extra=(), env=None):
     """The held set recorded as Drafter types it (bench/typebench.py through bench/models/record.py, which adds the
     prompt knobs in `extra`). Same arguments as bench/weights/common.record. -> recording path."""
-    import typescore
     c = candidate(cand)
     sp = W.held_set(set_path or SET)
     args = [c["repo"], "--set", str(sp), "--boost", str(W.gate_boost()), "--label", label,
             "--cap", str(c["cap"]), "--n", "3" if smoke else "100000", *map(str, extra)]
     if adapter: args += ["--adapter", str(adapter)]
-    if "--no-people" in args:
-        args.remove("--no-people")
-    else:
-        try:
-            d = json.loads((W.DATA / "bench/people-fresh.json").read_text())
-            if d.get("rows") and d.get("set_sha") == typescore.set_sha(sp): args.append("--people")
-        except Exception:
-            pass
     e = dict(env or {})
     if c.get("rev"): e.setdefault("DRAFTER_MODEL_REVISION", c["rev"])
     code, lines = W.guarded(HERE / "record.py", args, c["guard"], timeout=4 * 3600, env=e,

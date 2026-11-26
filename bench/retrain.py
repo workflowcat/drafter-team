@@ -7,11 +7,10 @@ Runs only when the last retrain is 7+ days old, the Mac is on power and the user
 (--force skips those checks).
 
 The rolling test set (2026-11-01; before, 30 fixed messages from 19 October replayed through the running engine
-decided). Each run first draws a new fresh set from what the user wrote since the last retrain (bench/make_fresh.py: 40
-Beeper replies with the chat above them, 60 lines to Claude; data/replay-fresh.json) and their older lines in each of
-those chats (bench/people_fresh.py). Training leaves those lines out (bench/make_train.py), so both layers are tested
-on lines they never saw; next week they train and a new set is drawn. Each layer is recorded on the set the way
-Drafter types (bench/typebench.py with the word booster and the per-person lines), scored through the decision gate
+decided). Each run first draws a new fresh set from what the user wrote since the last retrain (bench/make_fresh.py:
+lines typed into AI apps and chat apps; data/replay-fresh.json). Training leaves those lines out (bench/make_train.py),
+so both layers are tested on lines they never saw; next week they train and a new set is drawn. Each layer is recorded
+on the set the way Drafter types (bench/typebench.py with the word booster), scored through the decision gate
 on held-out folds (bench/gate.py summary), and the new layer is kept only when it saves more letters over both apps
 (by more than MARGIN points) and neither app's share of right first words drops by more than RIGHT_DROP. On a switch
 the gate is refit on the new layer's recording and Drafter restarts. Report: data/review/retrain-YYYY-MM-DD.md."""
@@ -111,11 +110,6 @@ def record(adapter, label):
     g = json.loads((ROOT / "data/gate.json").read_text()) if (ROOT / "data/gate.json").exists() else {}
     args = [base_model(st), "--adapter", str(Path(adapter).relative_to(ROOT) if Path(adapter).is_absolute() else adapter),
             "--boost", str(g.get("boost", 0) or 0), "--label", label]
-    try:      # the user's older lines per chat, when they were read for this very set (Beeper may have been off)
-        import typescore
-        d = json.loads((ROOT / "data/bench/people-fresh.json").read_text())
-        if d.get("rows") and d.get("set_sha") == typescore.set_sha(ROOT / "data/replay-fresh.json"): args.append("--people")
-    except Exception: pass
     code, last = step("bench/typebench.py", *args, timeout=2400)
     if code: raise RuntimeError(f"{label} failed ({code}): {last}")
     return ROOT / "data/bench" / f"{label}.jsonl", last
@@ -143,7 +137,7 @@ def _compare(cur_dir, new_dir, report):
     try:
         items = json.loads((ROOT / "data/replay-fresh.json").read_text())
         missing = missing_kinds(items)
-        if missing:     # the 8 November set (60 AI-app lines, 0 chat lines) stayed the default until the next draw
+        if missing:     # a set without AI-app lines is not a fair test
             report.append(f"- the test set has no {', '.join(missing)} lines: not a fair test, kept the current layer")
             return False, None
         expected = {(i, pos) for i, item in enumerate(items) for pos in range(1, len(item["text"]))
@@ -166,10 +160,11 @@ def _compare(cur_dir, new_dir, report):
 
 
 def missing_kinds(items):
-    """The kinds of line a fair layer test needs (chats and AI apps) that `items` lacks: [] when both are there.
+    """The kinds of line a fair layer test needs that `items` lacks: [] when it has AI-app lines. Chat lines (src
+    "beeper", the historical name of the chat kind) are tested when there are some but are not required.
     A line's kind: its `src` ("beeper" / "claude"), else its app (Beeper = chat, any other = AI app)."""
     have = {i.get("src") or ("beeper" if i.get("app") == "Beeper" else "claude") for i in items}
-    return [k for k in ("beeper", "claude") if k not in have]
+    return [k for k in ("claude",) if k not in have]
 
 
 def fresh_set(report):
@@ -181,8 +176,7 @@ def fresh_set(report):
         report.append(f"- fresh set: {line}")
         if code: return 0
         items = json.loads(candidate.read_text())
-        # 8 November: `beeper` was not on launchd's PATH, the set held 0 chat lines and the layers were judged on
-        # AI-app lines alone. Both kinds or no comparison.
+        # no AI-app lines, no comparison
         missing = missing_kinds(items)
         if missing:
             report.append(f"- no {', '.join(missing)} lines in the fresh set: not a fair test of the layers")
@@ -219,12 +213,6 @@ def main():
         if cut:
             STAMP.parent.mkdir(parents=True, exist_ok=True)
             STAMP.write_text(str(cut))
-    code, line = step("bench/people_fresh.py", timeout=900)
-    report.append(f"- the user's older lines per chat: {line}")
-    if code:
-        report.append("- no per-chat lines: the Beeper test would not match how Drafter types; no retrain this time")
-        write_report(report)
-        return
     # 2. Train on this week's staged phrases, leaving the timestamp-free live corpus
     # at the old cutoff for every bench, gate refit and retry until comparison completes.
     staged = ROOT / "data/phrases-next.jsonl"

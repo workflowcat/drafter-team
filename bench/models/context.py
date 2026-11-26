@@ -35,14 +35,13 @@ VARIANTS = {
     "before-32": ["--before-tokens", 32],
     "before-64": ["--before-tokens", 64],
     "no-know": ["--know", "none"],
-    "no-people": ["--no-people"],
     "no-examples": ["--head", "rules,words"],
     "no-words": ["--head", "rules,examples"],
     "no-style": ["--head", "words,examples"],
     "no-head": ["--head", ""],
     "no-booster": ["--boost", 0],
 }
-QUICK = ["full", "ctx-0", "ctx-256", "no-know", "no-people", "no-examples", "no-head"]
+QUICK = ["full", "ctx-0", "ctx-256", "no-know", "no-examples", "no-head"]
 SMOKE = ["full", "ctx-0"]
 
 

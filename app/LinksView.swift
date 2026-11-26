@@ -4,7 +4,7 @@ import SwiftUI
 
 /// One store per open page. Extraction runs once per journal revision, away from the main thread.
 private final class LinksHubStore: ObservableObject {
-    @Published var query = "" { didSet { if query != oldValue { refilter(); scheduleSearch() } } }
+    @Published var query = "" { didSet { if query != oldValue { refilter() } } }
     @Published var source: LinkSource? { didSet { refilter() } }
     @Published var host: String? { didSet { refilter() } }
     @Published private(set) var shown: [LinkItem] = []
@@ -12,64 +12,22 @@ private final class LinksHubStore: ObservableObject {
     @Published private(set) var allCount = 0
     @Published private(set) var hosts: [(host: String, count: Int)] = []
     @Published private(set) var extracting = false
-    @Published private(set) var loading = false
-    @Published private(set) var error = ""
-    @Published private(set) var engineReady = false
 
     private var local: [LinkItem] = []
-    private var remote: [LinkItem] = []
     private var items: [LinkItem] = []
     private var active = false
-    private var preview = false
     private var revision: Int?
     private var buildToken = 0
-    private var searchToken = 0
-    private var searchWork: DispatchWorkItem?
-    private var engineTimer: Timer?
     private static let queue = DispatchQueue(label: "drafter.links", qos: .userInitiated)
 
-    func start(preview: Bool) {
-        self.preview = preview
+    func start() {
         active = true
         revision = nil
-        engineReady = false
-        updateEngine(ready: Engine.shared.ready)
-        startEngineWatch()
     }
 
     func stop() {
         active = false
-        engineTimer?.invalidate()
-        engineTimer = nil
         buildToken &+= 1
-        searchToken &+= 1
-        searchWork?.cancel()
-        searchWork = nil
-        loading = false
-    }
-
-    /// Observe Engine.ready only while the page is visible and the engine is still warming up; stop once ready.
-    private func startEngineWatch() {
-        engineTimer?.invalidate()
-        engineTimer = nil
-        guard active, !preview, !engineReady else { return }
-        let t = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-            guard let self, self.active else { return }
-            self.updateEngine(ready: Engine.shared.ready)
-        }
-        t.tolerance = 0.2
-        engineTimer = t
-    }
-
-    func updateEngine(ready: Bool) {
-        guard active, !preview else { return }
-        if ready {
-            engineTimer?.invalidate()
-            engineTimer = nil
-        }
-        guard engineReady != ready else { return }
-        engineReady = ready
-        scheduleSearch(immediate: true)
     }
 
     func rebuild(_ rows: [TapeItem], revision: Int) {
@@ -120,52 +78,8 @@ private final class LinksHubStore: ObservableObject {
         }
     }
 
-    func retry() { scheduleSearch(immediate: true) }
-
-    private func scheduleSearch(immediate: Bool = false) {
-        searchWork?.cancel()
-        searchWork = nil
-        searchToken &+= 1 // Invalidate in-flight replies as soon as the query changes, before the debounce.
-        let token = searchToken
-        let hadRemote = !remote.isEmpty
-        remote = []
-        error = ""
-        loading = false
-        // With no remote rows, a key only filters the cached items; it never re-extracts or re-merges the journal.
-        if hadRemote { combine() }
-        guard active, !preview, engineReady else { return }
-        let query = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        // the engine's source search needs a word of 3+ letters (engine/sources.py); shorter ones only filter here
-        guard query.split(whereSeparator: { !$0.isLetter && !$0.isNumber }).contains(where: { $0.count >= 3 }) else { return }
-        loading = true
-        let work = DispatchWorkItem { [weak self] in
-            guard let self, self.active, !self.preview, self.engineReady, self.searchToken == token else { return }
-            var parts = URLComponents()
-            parts.path = "/sources/find"
-            parts.queryItems = [URLQueryItem(name: "q", value: query), URLQueryItem(name: "n", value: "30")]
-            // Python's parse_qs treats a literal + as a space. Preserve a typed plus in the query.
-            guard let path = parts.string?.replacingOccurrences(of: "+", with: "%2B") else {
-                self.loading = false
-                self.error = "Could not load sources."
-                return
-            }
-            Engine.shared.get(path, timeout: 5) { [weak self] response in
-                guard let self, self.active, !self.preview, self.engineReady, self.searchToken == token else { return }
-                self.loading = false
-                guard let rows = response?["found"] as? [[String: Any]] else {
-                    self.error = "Could not load sources."
-                    return
-                }
-                self.remote = LinksRules.parseSources(rows)
-                self.combine()
-            }
-        }
-        searchWork = work
-        DispatchQueue.main.asyncAfter(deadline: .now() + (immediate ? 0 : 0.3), execute: work)
-    }
-
     private func combine() {
-        items = LinksRules.merge(local: local, remote: remote)
+        items = LinksRules.merge(local: local, remote: [])
         refilter()
     }
 
@@ -192,11 +106,11 @@ struct LinksView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            PageHeader("Links & Files", subtitle: "Copied links, journal mentions, Mail, Beeper, Drive & Obsidian", count: s.allCount) {
+            PageHeader("Links & Files", subtitle: "Links and files you copied or mentioned", count: s.allCount) {
                 PageSearchField(
                     placeholder: "Search links and files",
                     text: $s.query,
-                    loading: s.loading || s.extracting,
+                    loading: s.extracting,
                     focus: $searchFocus,
                     accessibility: "Search links and files"
                 )
@@ -220,20 +134,17 @@ struct LinksView: View {
                 }
                 .overlay {
                     if s.shown.isEmpty {
-                        Text(s.extracting || s.loading ? "Loading links and files…" : emptyText)
+                        Text(s.extracting ? "Loading links and files…" : emptyText)
                             .font(NativeFont.text(14)).foregroundStyle(UIInk.muted)
                             .padding(24).allowsHitTesting(false)
                     }
                 }
             }
-            if !s.error.isEmpty || (!m.preview && !s.engineReady) {
-                statusBar
-            }
         }
         .padding(.horizontal, PageLayout.margin)
         .padding(.bottom, 14)
         .onAppear {
-            s.start(preview: m.preview)
+            s.start()
             s.rebuild(m.rows, revision: m.rowsGen)
             searchFocus = true
         }
@@ -300,19 +211,6 @@ struct LinksView: View {
         }.frame(height: 28)
     }
 
-    private var statusBar: some View {
-        HStack(spacing: 8) {
-            if !s.error.isEmpty {
-                Text(s.error).font(NativeFont.text(12)).foregroundStyle(UIInk.muted)
-                Button("Retry") { s.retry() }.buttonStyle(.plain).font(NativeFont.text(12, .medium)).disabled(!s.engineReady)
-            } else if !m.preview, !s.engineReady {
-                Text("Sources offline").font(NativeFont.text(12)).foregroundStyle(UIInk.muted)
-            }
-            Spacer()
-            Text("\(s.shown.count)").font(NativeFont.mono(11)).foregroundStyle(UIInk.muted)
-                .accessibilityLabel("\(s.shown.count) links and files shown")
-        }.frame(height: 22)
-    }
 }
 
 private struct LinksHubRow: View {
@@ -385,10 +283,6 @@ private struct LinksHubRow: View {
 
     private var location: String {
         guard !item.url.isEmpty, let parts = URLComponents(string: item.url) else { return item.filePath ?? "" }
-        if parts.scheme == "obsidian" {
-            return (parts.queryItems ?? []).filter { ["vault", "file"].contains($0.name) }
-                .compactMap(\.value).joined(separator: " / ")
-        }
         return item.host + (parts.percentEncodedPath.removingPercentEncoding ?? parts.path)
     }
 

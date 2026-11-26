@@ -162,12 +162,12 @@ struct SettingsLoadChecks {
 """##
 
     static func main() {
-        check(Settings().obsidianVault.isEmpty, "vault defaults off")
-        check(Settings.decode(Data(#"{"obsidianVault":42}"#.utf8))?.obsidianVault == "", "malformed vault keeps default")
-        check(Settings.decode(Data(#"{"obsidianVault":"/tmp/Orchard"}"#.utf8))?.obsidianVault == "/tmp/Orchard", "vault loads")
-        var vault = Settings(); vault.obsidianVault = "/tmp/Orchard"
-        check(Settings.decode(try! JSONEncoder().encode(vault))?.obsidianVault == vault.obsidianVault, "vault round trip")
-        check(SettingsPlan.advanced.contains("obsidianVault"), "vault is advanced")
+        // the Obsidian folder left the core (26 November 2026): an old file that holds it loads, and the key is not written back
+        let withVault = Settings.decode(Data(#"{"obsidianVault":"/tmp/Orchard","rework":true}"#.utf8))
+        check(withVault?.rework == true, "an old file with obsidianVault still loads")
+        let vaultOut = (try? JSONSerialization.jsonObject(with: JSONEncoder().encode(withVault ?? Settings()))) as? [String: Any] ?? [:]
+        check(vaultOut["obsidianVault"] == nil, "obsidianVault is not written back")
+        check(SettingsPlan.removed.contains("obsidianVault") && !SettingsPlan.advanced.contains("obsidianVault"), "obsidianVault is removed")
         let raw = (try? JSONSerialization.jsonObject(with: Data(oldFile.utf8))) as? [String: Any] ?? [:]
         check(raw.count == 114, "the old file holds 114 keys: \(raw.count)")
         guard let s = Settings.decode(Data(oldFile.utf8)) else { check(false, "the old file loads"); return }

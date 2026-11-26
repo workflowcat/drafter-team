@@ -104,25 +104,21 @@ class Weights(unittest.TestCase):
     def test_settings_file_overrides_default_weights(self):
         with tempfile.TemporaryDirectory() as d, mock.patch.object(C, "DATA", Path(d)):
             self.assertEqual(C.weights(), C.WEIGHTS)
-            (Path(d) / "corpus-weights.json").write_text('{"beeper": 1}')
-            self.assertEqual(C.weights()["beeper"], 1)
+            (Path(d) / "corpus-weights.json").write_text('{"fb": 1}')
+            self.assertEqual(C.weights()["fb"], 1)
             self.assertEqual(C.weights()["typed"], C.WEIGHTS["typed"])
 
 
 class NightlyMix(unittest.TestCase):
-    def test_chats_do_not_drown_prompts(self):
-        """Round three: the nightly mix samples chats at 0.1 and leaves takes out, as the weights round trains."""
+    def test_nightly_mix_matches_the_sweep(self):
+        """Round three: the nightly mix leaves takes out, as the weights round trains."""
         import sys
         sys.path.insert(0, str(Path(C.__file__).parent / "weights"))
         from train_sweep import MIX
-        self.assertEqual(C.WEIGHTS["beeper"], 0.1)
         self.assertEqual(C.WEIGHTS["take"], 0)
         self.assertEqual({k: v for k, v in C.WEIGHTS.items() if v}, MIX)
-        # the source sizes of 14 November: 60,265 chats against 2,911 typed and 3,771 prompts
-        sizes = {"typed": 2911, "take": 1385, "cc": 3771, "codex": 33, "beeper": 60265, "vault": 69, "fb": 2263}
-        lines = {k: n * C.WEIGHTS[k] for k, n in sizes.items()}
-        self.assertLess(lines["beeper"] / sum(lines.values()), 0.4)
-        self.assertGreater(lines["typed"] + lines["cc"], lines["beeper"])
+        self.assertEqual(set(C.WEIGHTS), set(C.ORDER))
+        self.assertEqual(set(C.READERS), set(C.ORDER))
 
     def test_zero_weight_source_is_left_out(self):
         import make_train
@@ -131,23 +127,7 @@ class NightlyMix(unittest.TestCase):
         self.assertNotIn("take", {r["src"] for r in out})
 
 
-class Vault(unittest.TestCase):
-    def test_only_his_own_notes_outside_skipped_scopes(self):
-        with tempfile.TemporaryDirectory() as d:
-            v = Path(d)
-            def note(rel, origin, body):
-                p = v / rel; p.parent.mkdir(parents=True, exist_ok=True)
-                p.write_text(f"---\ntype: artifact\ncreated: 2026-01-02\norigin: {origin}\n---\n{body}")
-            note("Artifacts/Writing/mine.md", "me", "# Title\n\nA paragraph I wrote about [[Some Page|the plan]] here.\n\n![[pic.png]]")
-            note("Artifacts/Notes/agent.md", "claude", "An agent wrote this paragraph for me.")
-            note("Stories/Private/case.md", "me", "A private matter note I wrote myself.")
-            note("Entities/Private/person.md", "me", "Notes about a person kept private.")
-            note("System/old/log.md", "me", "An old log line of mine from before.")
-            note(".claude/worktrees/x/copy.md", "me", "A copy inside an agent worktree.")
-            with mock.patch.object(C, "VAULT", v), mock.patch.object(C, "ORIGIN", "me"):
-                got = [t for _, _, t in C.vault()]
-        self.assertEqual(sorted(got), ["A paragraph I wrote about the plan here.", "A private matter note I wrote myself."])
-
+class Paragraphs(unittest.TestCase):
     def test_long_paragraphs_are_cut_at_sentence_ends(self):
         para = " ".join(f"Sentence number {i} is here." for i in range(60))
         pieces = list(C.paragraphs(para + "\n\nShort one."))

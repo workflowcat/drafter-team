@@ -69,7 +69,7 @@ class Ahead(unittest.TestCase):
     def test_finished_context_read_keeps_ahead_hit_but_changed_text_or_settings_do_not(self):
         complete = Mock(return_value={'text': ''})
         ns = ahead_load(complete, [0])
-        req = dict(before='let me kn', context='same synthetic chat', app='Beeper',
+        req = dict(before='let me kn', context='same synthetic chat', app='Telegram',
                    context_fresh=False, max_tokens=8, chips=False)
         ns['look_ahead'](req, 'ow')
         settle()
@@ -79,7 +79,6 @@ class Ahead(unittest.TestCase):
             self.assertNotEqual(key, ns['ahead_key']({**taken, **change}))
         self.assertTrue(ns['complete'](taken)['ahead'])
         complete.assert_called_once()  # only the speculative call
-        self.assertTrue(ns['earlier'].call_args.kwargs['remember'])
 
 
 class ContextReads(unittest.TestCase):

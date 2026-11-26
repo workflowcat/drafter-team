@@ -78,11 +78,11 @@ class PhraseStaging(unittest.TestCase):
                                      (0, (False, None))):
             with self.subTest(training=training, comparison=comparison):
                 events = self.run_attempt(training=training, comparison=comparison)
-                self.assertEqual(events, ['bench/people_fresh.py', 'engine/memory.py', 'bench/corpus.py',
+                self.assertEqual(events, ['engine/memory.py', 'bench/corpus.py',
                                          'bench/make_train.py', 'train'] + (['compare'] if training == 0 else []))
         # A leftover staging file is rebuilt, not consumed by either the retry's training or benches.
         (self.root / 'data/phrases-next.jsonl').write_text('stale staging')
-        self.assertEqual(self.run_attempt(), ['bench/people_fresh.py', 'engine/memory.py', 'bench/corpus.py',
+        self.assertEqual(self.run_attempt(), ['engine/memory.py', 'bench/corpus.py',
                                               'bench/make_train.py', 'train', 'compare'])
 
     def test_missing_live_phrases_still_trains_on_staged_file(self):
@@ -105,14 +105,14 @@ class PhraseInputs(unittest.TestCase):
             staged = Path(folder) / 'phrases-next.jsonl'
             live.write_text('old live corpus')
             sources = {name: (lambda name=name: [f'synthetic {name} source phrase'])
-                       for name in ('beeper', 'claude_prompts', 'typed')}
+                       for name in ('claude_prompts', 'typed')}
             ns = extract('engine/memory.py', {'build'},
                          dict(Path=Path, time=time, json=json, OUT=live,
                               WORD=re.compile(r'\w+'), **sources))
             ns['build'](staged)
             self.assertEqual(live.read_text(), 'old live corpus')
             self.assertEqual({json.loads(line)['src'] for line in staged.read_text().splitlines()},
-                             {'beeper', 'claude', 'typed'})
+                             {'claude', 'typed'})
             ns['build']()
             self.assertEqual(live.read_bytes(), staged.read_bytes())
 
@@ -126,13 +126,13 @@ class PhraseInputs(unittest.TestCase):
             live = root / 'data/phrases.jsonl'
             staged = root / 'data/phrases-next.jsonl'
             live.write_text(json.dumps({'src': 'typed', 'text': 'old synthetic vocabulary'}) + '\n')
-            rows = [{'src': 'beeper', 'text': 'new synthetic vocabulary'},
+            rows = [{'src': 'typed', 'text': 'new synthetic vocabulary'},
                     {'src': 'voice', 'text': 'held synthetic sentence'}]
             staged.write_text(''.join(json.dumps(row) + '\n' for row in rows))
             from held import Held
             with patch.object(module, 'ROOT', root), \
                  patch.object(module, 'Held', side_effect=lambda: Held(['held synthetic sentence'])):
-                for args, expected in ((['--phrases', str(staged)], '[Beeper]\nnew synthetic vocabulary'),
+                for args, expected in ((['--phrases', str(staged)], '[Claude]\nnew synthetic vocabulary'),
                                        ([], '[Claude]\nold synthetic vocabulary')):
                     module.main(args)
                     output = [json.loads(line)['text'] for name in ('train', 'valid')

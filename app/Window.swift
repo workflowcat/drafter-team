@@ -361,15 +361,11 @@ final class WindowModel: ObservableObject {
         let t = command.trimmingCharacters(in: .whitespaces)
         guard !t.isEmpty else { seq += 1; options = []; thinking = false; return }
         seq += 1; let mine = seq; thinking = true; status = ""; options = []
-        Engine.shared.post("/command", ["text": t], timeout: t.hasPrefix(";accounts") ? 60 : 30) { j in
+        Engine.shared.post("/command", ["text": t], timeout: 30) { j in
             guard mine == self.seq else { return }
             self.thinking = false
             self.options = (j?["options"] as? [[String: Any]]) ?? []
             self.status = self.options.isEmpty ? "No suggestions. Try rephrasing." : "\((j?["by"] as? String) == "haiku" ? "Haiku" : "on this Mac") · click to run"
-            if LookupQuery.parse(t) != nil || (j?["by"] as? String) == "lookup" {
-                if j == nil { self.status = "Search service is unavailable. Press Return to retry."; return }
-                self.status = (j?["error"] as? String) ?? ((j?["source"] as? String ?? "") + " · " + (self.options.isEmpty ? (j?["status"] as? String ?? "No matches") : "choose a result to copy"))
-            }
         }
     }
 
@@ -377,7 +373,7 @@ final class WindowModel: ObservableObject {
         guard let r = a["run"] as? [String: Any], let kind = r["kind"] as? String else { return }
         let report: (String, Bool) -> Void = { text, ok in DispatchQueue.main.async { self.status = (ok ? "✓ " : "") + text; if ok { self.options = [] } } }
         switch kind {
-        case "copy", "insert", "lookup.insert": History.copy(r["text"] as? String ?? ""); report("Copied · ⌘V to paste", true)
+        case "copy", "insert": History.copy(r["text"] as? String ?? ""); report("Copied · ⌘V to paste", true)
         case "snippet.save": Engine.shared.post("/snippet", ["key": r["key"] ?? "", "text": r["text"] ?? ""]) { j in report((j?["done"] as? String) ?? "Not saved", j != nil) }
         case "eventkit.event": Actions.event(r, report)
         case "eventkit.reminder": Actions.reminder(r, report)

@@ -354,7 +354,6 @@ extension ShotTarget {
         switch self {
         case .field: return "corner-down-left"; case .clipboard: return "clipboard"; case .file: return "download"
         case .claude, .codex, .ask: return "sparkle"; case .claudeCode: return "terminal"
-        case .person: return "user"
         }
     }
 }

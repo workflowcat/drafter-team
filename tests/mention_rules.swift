@@ -17,8 +17,9 @@ struct MentionRulesTest {
         precondition(p("a;ana") == nil, "the ; starts a word")
         precondition(p("(;Ганна") == MentionTyped(old: ";Ганна", query: "Ганна", pick: nil), "after a bracket, Cyrillic")
         precondition(p("first line ;ana\nsecond") == nil, "only the line with the caret")
-        // reserved words win: the lookups, ;ctx, snippets and quick starts, and any key the typed word begins
-        for r in [";docs", ";doc", ";free 3", ";free", ";meetings", ";mee", ";links", ";accounts", ";ctx"] { precondition(p(r) == nil, r) }
+        // reserved words win: ;ctx, snippets and quick starts, and any key the typed word begins
+        for r in [";ctx", ";ct", ";ctx 2"] { precondition(p(r) == nil, r) }
+        precondition(p(";docs") != nil, "the old Google words are names again")
         precondition(p(";sig", [";sign"]) == nil && p(";sign 2", [";sign"]) == nil, "a snippet key")
         precondition(p(";meet", [";meet"]) == nil, "a quick start")
         precondition(p(";fred") != nil, "a name that only starts like nothing reserved")

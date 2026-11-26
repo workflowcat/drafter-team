@@ -10,7 +10,7 @@ Inputs (all in data/, all optional; a missing one gives fewer entries, never an 
 - entities.json (engine/entities.py): the folded records - people deduped, twins folded, relations, case-form surfaces.
 - know.json (engine/know.py): tokens, case forms, ordinary-word guards, and the dictionary's leftover terms.
 - words.json (engine/dictionary.py): the user's dictionary words and what voice heard for them.
-- people.json (the user's own lines per Beeper chat), corpus.jsonl and typed.jsonl (the user's lines): context counts only.
+- corpus.jsonl and typed.jsonl (the user's lines): context counts only.
 - names-edits.json: the user's edits on the Names page (spell, merge, hide), applied on every build.
 
 Derived (each written whole, in place):
@@ -385,18 +385,12 @@ def corpus_rows(data):
     return rows
 
 
-def chat_map(data):
-    d = read_json(data / 'people.json', {})
-    chats = d.get('chats') if isinstance(d, dict) else None
-    return {k: [x for x in (c.get('mine') or []) if isinstance(x, str)] for k, c in (chats or {}).items() if isinstance(c, dict)}
-
-
 def build(data=DATA, out=None, now=None, derive_files=True):
     data = Path(data)
     out = Path(out) if out else data / 'names.json'
     entries = build_entries(entities=read_json(data / 'entities.json', {}), know=read_json(data / 'know.json', {}),
                             words=read_json(data / 'words.json', {}), edits=read_json(data / 'names-edits.json', []),
-                            rows=corpus_rows(data), chats=chat_map(data))
+                            rows=corpus_rows(data), chats={})
     store = {'version': 1, 'built': now or time.time(), 'entries': ordered(entries)}
     store['voice'] = voice_hint(store)
     atomic(out, json.dumps(store, ensure_ascii=False, indent=0) + '\n')

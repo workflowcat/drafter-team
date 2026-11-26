@@ -31,7 +31,6 @@ final class Command: NSObject, NSTextFieldDelegate {
     private var seq = 0
     private var timer: Timer?
     private var origin: Spot?            // the field the user was in, for snippets and inserts
-    private var lookupTrigger: String?
     private var undo: (() -> Bool)?
     var isOpen: Bool { panel?.isVisible ?? false }
 
@@ -73,12 +72,6 @@ final class Command: NSObject, NSTextFieldDelegate {
         chosen = 0; status.stringValue = "↑↓ choose · ⏎ copy · esc close"
         draw()
         if let view = panel?.contentView?.subviews.first { try UIShots.save(view, folder + "/command.png") }
-        input.stringValue = ";free 30 next week"
-        options = [["chip": "Insert all 3 available times"], ["chip": "Mon 26 Oct 2026, 09:00–09:30 (Europe/Kyiv)"], ["chip": "Mon 26 Oct 2026, 10:30–11:00 (Europe/Kyiv)"]]
-        status.stringValue = "Primary calendar only · Europe/Kyiv · ↑↓ choose · ⏎ insert"
-        draw()
-        if let view = panel?.contentView?.subviews.first { try UIShots.save(view, folder + "/lookup.png") }
-
     }
 
     func toggle() { isOpen ? close() : open() }
@@ -86,7 +79,6 @@ final class Command: NSObject, NSTextFieldDelegate {
     func open() {
         if panel == nil { panel = make() }
         origin = Focus.spot(skip: Drafter.shared.settings.skip).0
-        lookupTrigger = nil
         Ghost.shared.hide()
         input.stringValue = ""; planned = ""; chosen = 0; undo = nil; top = 0
         chosenMoved = false
@@ -100,17 +92,6 @@ final class Command: NSObject, NSTextFieldDelegate {
         panel?.makeKeyAndOrderFront(nil)
         panel?.makeFirstResponder(input)
         log("command: opened")
-    }
-
-    func lookup(_ trigger: String, expected: Spot?) {
-        guard let expected, let current = Focus.spot(skip: Drafter.shared.settings.skip).0,
-              CFEqual(expected.el, current.el), expected.app.processIdentifier == current.app.processIdentifier,
-              LookupQuery.unchanged(before: current.before, value: current.value, caret: current.caret,
-                                    expectedBefore: expected.before, expectedValue: expected.value, expectedCaret: expected.caret,
-                                    trigger: trigger) else { Ghost.shared.flash("Text changed; search cancelled"); return }
-        open()
-        origin = expected; lookupTrigger = trigger; input.stringValue = trigger
-        options = []; planned = ""; draw(); plan()
     }
 
     func close() {
@@ -152,7 +133,7 @@ final class Command: NSObject, NSTextFieldDelegate {
         seq += 1; chosenMoved = false
         undo = nil
         let q = input.stringValue.trimmingCharacters(in: .whitespaces)
-        options = LookupQuery.parse(q) != nil ? [] : recent(q).prefix(q.isEmpty ? 9 : 3).map { $0 }; chosen = 0; top = 0; planned = ""
+        options = recent(q).prefix(q.isEmpty ? 9 : 3).map { $0 }; chosen = 0; top = 0; planned = ""
         draw()
         timer?.invalidate()
         timer = Timer.scheduledTimer(withTimeInterval: 0.8, repeats: false) { [weak self] _ in self?.plan() }
@@ -196,27 +177,16 @@ final class Command: NSObject, NSTextFieldDelegate {
         let t = input.stringValue.trimmingCharacters(in: .whitespaces)
         guard !t.isEmpty, t != planned else { return }
         seq += 1; let mine = seq; chosenMoved = false
-        let isLookup = LookupQuery.parse(t) != nil
-        status.toolTip = nil
-        status.stringValue = isLookup ? "Searching…" : "Thinking…"
+        status.stringValue = "Thinking…"
         let started = Date()
-        Engine.shared.post("/command", ["text": t], timeout: t.hasPrefix(";accounts") ? 60 : 30) { j in
+        Engine.shared.post("/command", ["text": t], timeout: 30) { j in
             guard mine == self.seq else { return }
             self.planned = t; self.chosen = 0
-            let lookup = isLookup || (j?["by"] as? String) == "lookup"
-            self.options = ((j?["options"] as? [[String: Any]]) ?? []) + (lookup ? [] : Array(self.recent(t).prefix(3)))
-            // ;free: plain words in the field's language, links, refine rows (app/Availability.swift)
-            if let j, let rows = Availability.pickerRows(j, query: t, context: self.origin.map { Keys.shared.contextFor($0, refresh: false) } ?? "") { self.options = rows }
+            self.options = ((j?["options"] as? [[String: Any]]) ?? []) + Array(self.recent(t).prefix(3))
             self.top = 0
             let by = (j?["by"] as? String) == "haiku" ? "Haiku" : (j?["by"] as? String) == "snippet" ? "snippet" : "on this Mac"
             self.status.stringValue = self.options.isEmpty ? "No suggestions. Try rephrasing."
                 : "\(by) · " + String(format: "%.1f s", Date().timeIntervalSince(started)) + " · ↑↓ choose · ⏎ run"
-            if lookup {
-                let action = self.lookupTrigger == nil ? "↑↓ choose · ⏎ copy" : "↑↓ choose · ⏎ insert"
-                self.status.stringValue = (j?["error"] as? String) ?? (j == nil ? "Search service is unavailable. Press Return to retry." : ((j?["source"] as? String ?? "") + " · " + (self.options.isEmpty ? (j?["status"] as? String ?? "No matches") : action)))
-                if j == nil || j?["error"] != nil { self.planned = "" }
-                self.status.toolTip = self.status.stringValue
-            }
             self.draw()
             log("command: \(self.options.count) options by \(j?["by"] as? String ?? "?") in \(j?["ms"] as? Int ?? 0) ms")
         }
@@ -243,25 +213,6 @@ final class Command: NSObject, NSTextFieldDelegate {
         let a = options[chosen]
         log("command: run \(kind)")
         switch kind {
-        case "lookup.insert":
-            let text = run["text"] as? String ?? ""
-            guard !text.isEmpty else { return }
-            let expected = origin, trigger = lookupTrigger
-            close()
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                guard let trigger else { History.copy(text); Pill.shared.flash("Copied · ⌘V to paste"); return }
-                guard let expected,
-                      let current = Focus.spot(skip: Drafter.shared.settings.skip).0,
-                      CFEqual(expected.el, current.el), expected.app.processIdentifier == current.app.processIdentifier,
-                      LookupQuery.unchanged(before: current.before, value: current.value, caret: current.caret,
-                                            expectedBefore: expected.before, expectedValue: expected.value, expectedCaret: expected.caret,
-                                            trigger: trigger) else {
-                    History.copy(text); Pill.shared.flash("Copied · original field changed or unavailable"); return
-                }
-                Snippets.expand(old: trigger, new: text, key: "lookup", expected: current)
-            }
-        case "lookup.refine":   // a ;free refine row: the query with one choice changed, planned again
-            input.stringValue = run["query"] as? String ?? input.stringValue; planned = ""; plan()
         case "insert":
             let text = run["text"] as? String ?? ""
             close()

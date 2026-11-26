@@ -50,7 +50,6 @@ def run_case(name, template="plain", repo="made-up/model", source=None, **extra)
               re=re, json=json, threading=threading, latest=[4], DATA=Path("/nonexistent"),
               time=types.SimpleNamespace(perf_counter=lambda: 10.0), claude_on=lambda *a: False,
               run=lambda fn, **kw: fn(cancelled), idle_mod=idle_prompt,
-              earlier=lambda *a, **kw: "I can bring the paper boat.",
               local=types.SimpleNamespace(short_name=lambda: "the user"), chat_ids=chat_ids, **extra)
     tree = ast.parse(source if source is not None else SOURCE.read_text())
     functions = [n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name in CASES]
@@ -64,7 +63,7 @@ def run_case(name, template="plain", repo="made-up/model", source=None, **extra)
     elif name == "local_rewrite":
         result = ns[name]("the paper boat is ready", "make it shorter", "use short lines")
     else:
-        result = ns[name]("chat", None, "Zebra", "They: Is the paper boat ready?", "Chat with: River\n")
+        result = ns[name]("chat", None, "Zebra", "They: Is the paper boat ready?")
     ids = result[0] if name == "idle_ids" else calls[0][0]
     return dict(ids=ids, messages=tok.messages, tok=tok, calls=calls, result=result, cancelled=cancelled, ns=ns)
 

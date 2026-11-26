@@ -11,7 +11,7 @@ class Typos(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             d = Path(tmp)
             rows = [{"src": "typed", "text": "fresh zorba again. fresh zorba"}, {"src": "typed", "text": "fresh zorba ⟦drafter-test⟧"},
-                    {"src": "other", "text": "fresh zorba"}, {"src": "beeper", "text": "свіжа квасоля, свіжа квасоля v2 v2"}]
+                    {"src": "other", "text": "fresh zorba"}, {"src": "import", "text": "свіжа квасоля, свіжа квасоля v2 v2"}]
             (d / "corpus.jsonl").write_text("\n".join(json.dumps(r, ensure_ascii=False) for r in rows))
             pairs = typos.bigrams(typos.lines_of(d))
             self.assertEqual(pairs[("fresh", "zorba")], 2)

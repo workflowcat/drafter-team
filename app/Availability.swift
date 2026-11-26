@@ -1,5 +1,5 @@
 // Availability as a reply (17 November 2026): the app side of app/AvailabilityRules.swift. Busy times from the user's calendars
-// (EventKit, the calendars Settings leaves on: `calendarsOff`, the same set as ;free and call names); the rules pick the
+// (EventKit, the calendars Settings leaves on: `calendarsOff`, the same set as call names); the rules pick the
 // slots and write the line. Three ways in:
 //   - their last message asks for a time: an option on the next-message card ("Можу вт 18.11 о 10:00, …"),
 //   - they proposed a slot: "works", or the nearest free one instead,
@@ -121,48 +121,6 @@ enum Availability {
     }
 }
 
-extension Availability {
-    /// The `;free` picker (command panel, engine/lookup.py reads the calendar): rows in the field's language and plain
-    /// words - all times in one line, as a list, each alone, the list with add-to-calendar links - then refine rows
-    /// (today, tomorrow, this week, next week; 15, 30, 60 min; morning, afternoon). ↑↓ and ⏎ or Tab, as before.
-    static func pickerRows(_ j: [String: Any], query: String, context: String) -> [[String: Any]]? {
-        guard let raw = j["slots"] as? [[String: Any]] else { return nil }
-        let iso = ISO8601DateFormatter()
-        let slots = raw.compactMap { ($0["start"] as? String).flatMap(iso.date) }
-        let minutes = j["minutes"] as? Int ?? 30, now = Date()
-        let last = AvailabilityRules.lastTheirs(context) ?? ""
-        let lang = AvailabilityRules.lang(last.isEmpty ? query.replacingOccurrences(of: ";free", with: "") : last, keyboard: KeyLayout.language)
-        let theirs = AvailabilityRules.zone(last), mine = TimeZone.current
-        func insert(_ chip: String, _ text: String) -> [String: Any] { ["chip": chip, "run": ["kind": "lookup.insert", "text": text] as [String: Any]] }
-        func refine(_ chip: String, _ q: String) -> [String: Any]? { q == query ? nil : ["chip": "→ " + chip, "run": ["kind": "lookup.refine", "query": q] as [String: Any]] }
-        var rows: [[String: Any]] = []
-        if !slots.isEmpty {
-            let line = AvailabilityRules.offerLine(slots, minutes: minutes, now: now, lang: lang, mine: mine, theirs: theirs)
-            rows.append(insert(line, line))
-            if slots.count > 1 {
-                let list = AvailabilityRules.offerLine(slots, minutes: minutes, now: now, lang: lang, mine: mine, theirs: theirs, list: true)
-                rows.append(insert(list.replacingOccurrences(of: "\n", with: " "), list))
-            }
-            for t in slots {
-                let one = AvailabilityRules.capitalized(AvailabilityRules.when(t, minutes: minutes, now: now, lang: lang, mine: mine, theirs: theirs))
-                rows.append(insert(one, one))
-            }
-            let title = AvailabilityRules.eventTitle(theirName: AvailabilityRules.theirName(context), myName: "", lang: lang)
-            let linked = AvailabilityRules.offerLine(slots, minutes: minutes, now: now, lang: lang, mine: mine, theirs: theirs,
-                                                     links: slots.map { AvailabilityRules.calendarLink($0, minutes: minutes, title: title) })
-            rows.append(insert("+ " + AvailabilityRules.w(lang, "add") + " · " + title, linked))
-        }
-        let refines: [(String, String)] = [
-            ("today", AvailabilityRules.refine(query, days: .today)), ("tomorrow", AvailabilityRules.refine(query, days: .tomorrow)),
-            ("this week", AvailabilityRules.refine(query, days: .week)), ("next week", AvailabilityRules.refine(query, days: .nextWeek)),
-            ("15 min", AvailabilityRules.refine(query, minutes: 15)), ("30 min", AvailabilityRules.refine(query, minutes: 30)),
-            ("60 min", AvailabilityRules.refine(query, minutes: 60)), ("mornings", AvailabilityRules.refine(query, part: .morning)),
-            ("afternoons", AvailabilityRules.refine(query, part: .afternoon)), ("any time of day", AvailabilityRules.refine(query, part: .any))]
-        rows += refines.compactMap { refine($0.0, $0.1) }
-        return rows
-    }
-}
-
 extension Keys {
     /// The empty box's screen was read: when their last message asks for a time, the availability option goes on the
     /// card now (the replies join it when the local model answers). Calendar only; nothing leaves the Mac.
@@ -175,18 +133,14 @@ extension Keys {
         Availability.first = (s.el, all)
         guard !Ghost.shared.isDraft, let now = Focus.spot(skip: Drafter.shared.settings.skip).0, CFEqual(now.el, s.el),
               Keys.replyBox(now) || Keys.boxKind(now) == false, let r = now.rect ?? Focus.fieldStart(now.el) else { return }
-        var opts = all
-        if let p = PromiseHooks.first, CFEqual(p.el, s.el) { opts.insert(p.opt, at: 0) }
         spot = now
-        Ghost.shared.showDraft(Keys.numbered(opts), field: Focus.frame(now.el), caret: r)
+        Ghost.shared.showDraft(Keys.numbered(all), field: Focus.frame(now.el), caret: r)
         log("availability: \(o["avail"] ?? "") shown")
     }
 
-    /// Options that go before the replies on a card for this field: a due promise, then availability.
+    /// Options that go before the replies on a card for this field: availability.
     static func leading(for el: AXUIElement) -> [[String: String]] {
-        var out: [[String: String]] = []
-        if let p = PromiseHooks.first, CFEqual(p.el, el) { out.append(p.opt) }
-        if let a = Availability.first, CFEqual(a.el, el) { out += a.opts }
-        return out
+        if let a = Availability.first, CFEqual(a.el, el) { return a.opts }
+        return []
     }
 }

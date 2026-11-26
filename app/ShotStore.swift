@@ -3,8 +3,8 @@
 // when marked), shot.json (ShotPack, app/ShotPackRules.swift) and shot.md (the agent text). Every write runs on one
 // serial queue, off the main thread; shot.json is merged with what is on disk so a send or an answer is never lost.
 // The targets after ⇥ in the strip (app/CaptureNote.swift) live here: clipboard, file, an app (Claude, Codex),
-// Claude Code, Ask Claude here (`claude -p`, Read only), a person (a Beeper draft, never sent). Never Return anywhere.
-// The log keeps "shot: sent to <target>" and counts, never the note, the read text or a chat's title.
+// Claude Code, Ask Claude here (`claude -p`, Read only). Never Return anywhere.
+// The log keeps "shot: sent to <target>" and counts, never the note or the read text.
 import AppKit
 import Carbon
 
@@ -258,16 +258,6 @@ enum ShotSend {
         }
         return ("/usr/bin/env", ["claude"])
     }
-    /// The `beeper` CLI (engine/people.py beeper_bin looks in the same places).
-    static var beeperBin: String? {
-        let fm = FileManager.default
-        if let p = LocalConfig.integration("beeper")["bin"] as? String, !p.isEmpty, fm.isExecutableFile(atPath: (p as NSString).expandingTildeInPath) {
-            return (p as NSString).expandingTildeInPath
-        }
-        return [NSHomeDirectory() + "/.npm-global/bin/beeper", "/opt/homebrew/bin/beeper", "/usr/local/bin/beeper", NSHomeDirectory() + "/.local/bin/beeper"]
-            .first { fm.isExecutableFile(atPath: $0) }
-    }
-
     /// Runs a tool off the main thread: stdout (nil on failure or after `timeout`), on main.
     static func run(_ bin: String, _ args: [String], stdin: String? = nil, cwd: URL? = nil, env: [String: String] = [:],
                     timeout: Double, done: @escaping (String?) -> Void) {
@@ -307,18 +297,5 @@ enum ShotSend {
             Pill.shared.show(a, seconds: max(8, min(30, Double(a.count) / 12)), lines: 4)
             log("shot: answer \(a.count) chars in \(Int(Date().timeIntervalSince(t0))) s")
         }
-    }
-
-    /// Person: the chats for a name (direct ones first), on main.
-    static func chats(_ name: String, done: @escaping ([(id: String, title: String)]) -> Void) {
-        guard let bin = beeperBin else { done([]); return }
-        run(bin, ShotPack.beeperSearch(name), env: ["BEEPER_READONLY": "1"], timeout: 8) { out in
-            done(out.map { ShotPack.chats(Data($0.utf8)) } ?? [])
-        }
-    }
-    /// The picture and the note as a draft in that chat. Never sent.
-    static func draft(chat: String, id: String, note: String, done: @escaping (Bool) -> Void) {
-        guard let bin = beeperBin else { done(false); return }
-        run(bin, ShotPack.beeperDraft(chat: chat, file: ShotStore.pngURL(id).path, note: note), timeout: 30) { done($0 != nil) }
     }
 }

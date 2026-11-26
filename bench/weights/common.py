@@ -65,7 +65,7 @@ def held_set(path=None):
     """The held-out set every score here uses: the retrain's (data/replay-fresh.json) unless --set names another."""
     p = Path(path) if path else DATA / "replay-fresh.json"
     p = p if p.is_absolute() else ROOT / p
-    if not path:        # the default set can be the 8 November draw with no chat lines: refuse it, name another
+    if not path:        # a default set without AI-app lines is not a fair test: refuse it, name another
         from retrain import missing_kinds
         missing = missing_kinds(json.loads(p.read_text()))
         if missing: raise SystemExit(f"{p.name} has no {', '.join(missing)} lines: pass --set (e.g. data/bench/weights/held-137.json)")
@@ -87,17 +87,11 @@ def cut_time():
 
 def record(label, repo=BASE, adapter=None, set_path=None, smoke=False, env=None, app=None, cap=3.0, guard_gb=4.0):
     """The held-out set recorded as Drafter types it (bench/retrain.py `record`, same arguments). -> recording path."""
-    import typescore
     set_path = held_set(set_path)
     args = [repo, "--set", str(set_path), "--boost", str(gate_boost()), "--label", label, "--cap", str(cap),
             "--n", "3" if smoke else "100000"]
     if adapter: args += ["--adapter", str(adapter)]
     if app: args += ["--app", app]
-    try:
-        d = json.loads((DATA / "bench/people-fresh.json").read_text())
-        if d.get("rows") and d.get("set_sha") == typescore.set_sha(set_path): args.append("--people")
-    except Exception:
-        pass
     code, lines = guarded(ROOT / "bench/typebench.py", args, guard_gb, timeout=3 * 3600, env=env,
                           log=RESULTS / "logs" / f"{label}.log")
     if code: raise RuntimeError(f"{label}: typebench failed ({code}): {lines[-1:] or ''}")
@@ -195,7 +189,8 @@ def lang_of(text):
 
 def his_lines(set_path=None, per_kind=(("ai", 2000), ("chat", 1000)), seed=5, max_chars=400):
     """The user's held-in lines (dated before the cut, no held line), as {"text", "app", "group", "lang"}, `n` per kind:
-    ai = typed lines in AI apps, Claude Code and Codex prompts; chat = Beeper messages. Takes are left out."""
+    ai = typed lines in AI apps, Claude Code and Codex prompts; chat = lines typed or imported from chat apps. Takes are
+    left out."""
     import random
     import corpus as Corp
     import tweaks
@@ -204,7 +199,7 @@ def his_lines(set_path=None, per_kind=(("ai", 2000), ("chat", 1000)), seed=5, ma
     is_held = held_lines(held_set(set_path))
     pools = {}
     for r in Corp.load(DATA / "corpus.jsonl", before=cut_time()):
-        if r["src"] not in ("typed", "cc", "codex", "beeper"): continue
+        if r["src"] not in ("typed", "cc", "codex", "import"): continue
         t = norm(r["text"])
         if len(t) < 12 or len(t) > max_chars or is_held(t): continue
         app = APP_TAG.get(r["src"]) or r.get("app") or "Claude"

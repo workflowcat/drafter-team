@@ -27,9 +27,8 @@ trained on your writing and added to 16 layers of the model.
 | `typed` | Lines you sent with ↵ while Drafter was on (`data/typed.jsonl`) |
 | `take` | Your voice takes, the cleaned text |
 | `cc`, `codex` | Your own prompts in coding-agent sessions |
-| `beeper` | Messages you sent, through the optional Beeper integration |
-| `vault` | Notes you wrote yourself in an optional notes folder |
 | `fb` | Posts from an optional social media export (`social.facebook_archive` in the local config) |
+| `import` | Your own writing in data/import/ and the folders in `corpus.folders` |
 
 The first source wins a duplicate. The filters drop:
 
@@ -41,8 +40,8 @@ The first source wins a duplicate. The filters drop:
   other language is filtered: `user.languages` changes only this rule.
 
 A typed line that matches a take is marked as dictated. `bench/make_train.py --corpus data/corpus.jsonl` turns the
-corpus into training lines, with a weight per source (`corpus.WEIGHTS`). Typed lines count twice; notes and posts
-count half; chat messages count a tenth, so they do not drown the prompts; voice takes are left out (they add fillers).
+corpus into training lines, with a weight per source (`corpus.WEIGHTS`). Typed lines count twice; posts count half;
+imports, Claude Code and Codex prompts once; voice takes are left out (they add fillers).
 
 ## The weekly retrain
 
@@ -51,7 +50,7 @@ flowchart TD
     A[nightly job] --> B{7 days since last? on power? idle 10 min?}
     B -- no --> Z[stop]
     B -- yes --> C[draw fresh test lines since the last retrain]
-    C --> D{50+ lines, chats and AI apps?}
+    C --> D{50+ lines, some from AI apps?}
     D -- no --> Z
     D -- yes --> E[train a new layer, test lines left out]
     E --> F[record both layers on the test lines]
@@ -63,14 +62,14 @@ flowchart TD
 `bench/retrain.py` does the work. The rules a new layer must meet:
 
 - Both layers are tested on fresh lines that neither has seen. `bench/make_fresh.py` draws them from what you
-  wrote since the last retrain: lines typed into an AI app (Claude, ChatGPT, Codex and others in its `AI_APPS`) and,
-  with the Beeper integration on, chat messages with their context. `bench/make_train.py` leaves them out of training.
+  wrote since the last retrain: lines typed into an AI app (Claude, ChatGPT, Codex and others in its `AI_APPS`) and
+  lines typed into a chat app, with the text above them. `bench/make_train.py` leaves them out of training.
 - Each layer is recorded the way Drafter types (`bench/typebench.py`, with the booster) and scored through the
   gate on held-out folds (`gate.summary`).
 - The new layer wins only when letters saved over both app kinds go up by more than 0.5 points, and neither
   app kind's share of right first words falls by more than 2 points.
 - On a switch, the old layer moves to `data/adapters-prev/` and the gate is refit on the new layer's recording.
-- Fewer than 50 fresh lines, or a set without both chat and AI-app lines, means no retrain that time.
+- Fewer than 50 fresh lines, or a set without AI-app lines, means no retrain that time.
 
 `.venv/bin/python bench/retrain.py --compare data/adapters data/adapters-prev` runs the test alone and moves nothing.
 Each run writes a report to `data/review/`.

@@ -1,7 +1,7 @@
 """Local knowledge, no models or services. Importing this module reads nothing.
 
 Build explicitly or from nightly. Readers swap whole packs on mtime changes.
-The pack is built from Google Contacts (engine/contacts.py), the dictionary and the snippets.
+The pack is built from the dictionary and the snippets.
 """
 import argparse
 from collections import Counter
@@ -147,15 +147,12 @@ def usage(entries, lines):
     return counts, lower
 
 
-def build(out=None, *, dictionary=None, snippets=None, lines=(), now=None, common=(), spell_known=None, contacts=None):
+def build(out=None, *, dictionary=None, snippets=None, lines=(), now=None, common=(), spell_known=None):
     out = Path(out) if out is not None else data_dir() / 'know.json'
     dictionary = Path(dictionary) if dictionary is not None else data_dir() / 'words.json'
     snippets = Path(snippets) if snippets is not None else data_dir() / 'snippets.json'
     now = time.time() if now is None else now
     entries = []
-    if contacts is not None:
-        from contacts import merge
-        entries = merge(entries, contacts)
     safe_names = {n.casefold() for e in entries for n in [e['name']] + e['aliases']}
     def read(path, default):
         try: return json.loads(path.read_text())
@@ -181,9 +178,7 @@ def build(out=None, *, dictionary=None, snippets=None, lines=(), now=None, commo
             for alias in e['aliases']: ts.update(tokens(alias))
         forms = set()
         if e['kind'] == 'person' and not e.get('cards_only'):
-            # Contacts get forms only from an actual Cyrillic name, never guessed Latin.
-            if e.get('source') != 'contacts' or CYRILLIC.fullmatch(e['name'].replace(' ', '')):
-                forms = person_forms(e)
+            forms = person_forms(e)
         e['tokens'], e['forms'] = sorted(ts), sorted(w for w in forms - ts if w[:1].isupper())
         e['common'] = sorted({w.casefold() for w in ts | forms if w.casefold() in ordinary or (spell_known and spell_known(w.lower()))})
     lines = list(lines)
@@ -192,7 +187,7 @@ def build(out=None, *, dictionary=None, snippets=None, lines=(), now=None, commo
         e['common'] = sorted(set(e['common']) | {w.casefold() for w in e['tokens'] + e['forms'] if lower[w.casefold()] >= 5})
     counts, _ = usage(entries, lines)
     for i, e in enumerate(entries):
-        e['heat'] = round((0.25 if e.get('source') == 'contacts' else 1) * (1 + counts[i]), 4)
+        e['heat'] = round(1 + counts[i], 4)
     pack = {'version': 1, 'built': now, 'entries': entries}
     atomic(Path(out).with_name('known-words.txt'), '\n'.join(sorted({w for e in entries for w in e['tokens'] + e['forms']})) + '\n')
     atomic(out, json.dumps(pack, ensure_ascii=False, indent=1) + '\n')
@@ -299,15 +294,12 @@ if __name__ == '__main__':
     data = data_dir()
     ap.add_argument('--out', type=Path, default=data / 'know.json')
     args = ap.parse_args()
-    from contacts import refresh
-    people = refresh()
-    pack = build(args.out, lines=sent_lines(data / 'typed.jsonl'), contacts=people)
+    pack = build(args.out, lines=sent_lines(data / 'typed.jsonl'))
     print(f"knowledge: {len(pack['entries'])} entries -> {args.out}")
     # the entity store next to it (engine/entities.py): its own failure never fails this build
     try:
         import entities
-        store = entities.build(contacts=people or None, lines=entities.sent_rows(data / 'typed.jsonl'),
-                               chats=entities.chat_lines(data / 'people.json'))
+        store = entities.build(lines=entities.sent_rows(data / 'typed.jsonl'))
         print(f"entities: {len(store['records'])} records" + (f", kept the last {', '.join(store['failed'])}" if store['failed'] else ''))
     except Exception as e:
         print(f"entities: not built ({type(e).__name__})")

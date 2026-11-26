@@ -394,7 +394,7 @@ final class ClassicStrip: StripFace {
         announce(said.joined(separator: ". "))
     }
 
-    /// One row of the offer on screen changed (who the call is likely with, from /prep): same size, same time left.
+    /// One row of the offer on screen changed: same size, same time left.
     func offerRow(_ i: Int, _ text: String) {
         var rows = words.stringValue.components(separatedBy: "\n")
         guard panel?.isVisible == true, i < rows.count, !controls.isEmpty else { return }

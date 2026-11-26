@@ -30,7 +30,6 @@ struct EntitySurfaceFlags: Codable, Equatable {
 }
 
 struct EntityPack: Codable, Equatable {
-    var obsidianVault: String? = nil
     var facts: [EntityFact] = []
     var pointers: [EntityPointer] = []
     var newest: String? = nil

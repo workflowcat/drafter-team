@@ -223,7 +223,7 @@ final class Ghost {
     let cardMark = KindMark()   // the next message: an item, blue
     private var draftField: CGRect?, draftCaret = CGRect.zero
     private var options: [[String: String]] = [], index = 0
-    /// The next-message option on show (nil when no card): its extra keys, e.g. "promise" (app/Promises.swift).
+    /// The next-message option on show (nil when no card): its extra keys, e.g. "avail" (app/Availability.swift).
     var shownOption: [String: String]? { isDraft && index < options.count ? options[index] : nil }
 
     func showDraft(_ opts: [[String: String]], field: CGRect?, caret: CGRect) {

@@ -664,16 +664,6 @@ enum CallWatch {
         Offer.show(ask(name: name, title: (event?["title"] as? String).flatMap { $0.isEmpty ? nil : $0 }, people: people),
                    kind: "Call", side: name, accept: "Record", seconds: 30, app: app) { if test { log("offer test: taken") } else { CallWatch.accept() } }
         log("call: offered for \(app)" + (test ? " (test)" : ""))
-        // call prep: notes from the vault cache that match the call windows' titles
-        if let pid = running?.processIdentifier {
-            let titles = windowTitles(pid) + [NSWorkspace.shared.frontmostApplication.map { Focus.windowTitle($0) } ?? ""]
-            Engine.shared.post("/prep", ["text": titles.joined(separator: " · ")]) { j in
-                let lines = (j?["lines"] as? [String]) ?? []
-                // who it is likely with takes the second row in place: same size, same time left
-                guard let first = lines.first, Offer.active, Offer.app == app else { return }
-                Pill.shared.offerRow(1, first)
-            }
-        }
     }
 
     /// The record offer's rows, the same live and in the strip preview (2026-11-01, Codex notch review: a question, as

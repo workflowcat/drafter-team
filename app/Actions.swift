@@ -10,8 +10,6 @@ enum Actions {
     static func run(_ a: [String: Any]) {
         guard let r = a["run"] as? [String: Any], let kind = r["kind"] as? String else { return }
         switch kind {
-        case "lookup.search":
-            Command.shared.lookup(r["old"] as? String ?? "", expected: Keys.shared.spot)
         case "replaceSelection":
             Talk.shared.replaceSelection(r["old"] as? String ?? "", with: r["new"] as? String ?? "")
         case "replace":

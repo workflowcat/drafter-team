@@ -1,10 +1,9 @@
-"""The entity store and context packs (engine/entities.py) on a made-up cast only: a fake vault folder and fake
-contacts in a temporary folder. No personal file, server, app or model.
+"""The entity store and context packs (engine/entities.py) on a made-up cast only: source records handed to build()
+(`slices`) in a temporary folder. No personal file, server, app or model.
 
     .venv/bin/python -B tests/test_entities.py
 """
 import json
-import os
 from pathlib import Path
 import sys
 import tempfile
@@ -18,11 +17,23 @@ from server_src import lift
 CASES = Path(__file__).resolve().parent / 'entity_cases.json'
 NOW = 1794000000          # 2026-11-07
 TODAY = '2026-11-14'
-HANNA = 'vault:Entities/People/Ганна Ткач.md'
+HANNA = 'notes:people/hanna'
+
+
+def note(rid, kind, name, aliases=(), date='', role='', org='', summary='', facts=(), links=(), urls=(), handles=None, **kw):
+    """One made-up source record, in the shape build() takes."""
+    r = {'system': kw.pop('system', 'notes'), 'id': rid, 'kind': kind, 'name': name, 'aliases': list(aliases), 'summary': summary,
+         'handles': handles or {}, 'facts': [{'text': t, 'source': 'notes', 'date': date, 'quote': q, 'rank': i, 'private': False}
+                                             for i, (t, q) in enumerate(facts)],
+         'links': [{'to': to, 'key': key, 'n': 1, 'date': date} for to, key in links], 'private': False, 'date': date, **kw}
+    if role: r['role'] = role
+    if org: r['org'] = org
+    if urls: r['urls'] = list(urls)
+    return r
 
 
 class Cast(unittest.TestCase):
-    """Made-up people, a client, two projects; private sentinels everywhere the filters must hold."""
+    """Made-up people, a client, two projects, and cards of another made-up source."""
 
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory(); self.addCleanup(self.tmp.cleanup)
@@ -30,39 +41,34 @@ class Cast(unittest.TestCase):
         self.data = root / 'data'; self.data.mkdir()
         (self.data / 'drafter.local.json').write_text(json.dumps({'user': {'name': 'Owner Sample'}}))
         self.codius = root / 'Codius'; (self.codius / 'lantern').mkdir(parents=True)
-        self.vault = root / 'vault'
-        def note(rel, fm, body='Body text.'):
-            p = self.vault / rel; p.parent.mkdir(parents=True, exist_ok=True)
-            p.write_text('---\n' + fm.strip() + '\n---\n' + body + '\n')
-        note('Entities/People/Ганна Ткач.md', 'type: person\nrole: finance lead\norg: "[[Lantern Labs]]"\naliases: [Hanna Tkach, Ганна, HT]\n'
-             'created: 2026-10-01\nupdated: 2026-11-02')
-        note('Entities/People/Owner Sample.md', 'type: person\nsummary: his own note')
-        note('Entities/People/Іван Семпл.md', 'type: person\nupdated: 2026-11-01')
-        note('Entities/People/Іван Інший.md', 'type: person\nupdated: 2026-11-01')
-        note('Entities/Organizations/Lantern Labs.md', 'type: org\nkind: organization\nsummary: client, ordering tool\nrelated: ["[[Lantern]]"]\nupdated: 2026-11-12')
-        note('Stories/Lantern.md', 'type: story\nstatus: active\nnext: invoice export\nsummary: ordering tool for Lantern Labs\nupdated: 2026-11-11\n'
-             'origin: agent\nurl: https://lantern-gate.example.workers.dev')
-        note('Stories/Base.md', 'type: story\nupdated: 2026-11-01')
-        note('Stories/Notes View.md', 'type: view\nsummary: a view')
-        note('Entities/People/Quiet Person.md', 'type: person\nprivate: true\nsummary: PRIVATE-MARKED-NOTE')
-        note('Entities/Private/Secret Person.md', 'type: person\nrole: PRIVATE-ROLE\nsummary: PRIVATE-FOLDER-NOTE')
-        note('Stories/Private/Hidden Matter.md', 'type: story\nsummary: PRIVATE-STORY-NOTE')
-        note('Entities/People/.obsidian/Junk.md', 'type: person\nsummary: OBSIDIAN-JUNK')
-        note('System/old/Old Person.md', 'type: person\nsummary: SYSTEM-OLD')
-        self.contacts = [
-            {'id': 'google:people/c1', 'name': 'Hanna T.', 'aliases': [], 'handles': {'email': ['Hanna@Example.test'], 'phone': ['+380 44 555 0100']}, 'cards_only': False},
-            {'id': 'google:people/c2', 'name': 'Petro Contact', 'aliases': [], 'handles': {'email': ['petro@example.test']}, 'cards_only': False},
-            {'id': 'google:otherContacts/c3', 'name': 'noreply@example.test', 'aliases': [], 'handles': {'email': ['noreply@example.test']}, 'cards_only': True},
-            {'id': 'google:people/c4', 'name': 'Іван Семпл', 'aliases': [], 'handles': {}, 'cards_only': False},
+        self.notes = [
+            note('people/hanna', 'person', 'Ганна Ткач', ['Hanna Tkach', 'Ганна', 'HT'], '2026-11-02', role='finance lead', org='Lantern Labs',
+                 facts=[('finance lead', False), ('works at Lantern Labs', False)], links=[('notes:orgs/lantern-labs', 'org')]),
+            note('people/owner', 'person', 'Owner Sample', summary='his own note'),
+            note('people/ivan', 'person', 'Іван Семпл', date='2026-11-01'),
+            note('people/ivan-other', 'person', 'Іван Інший', date='2026-11-01'),
+            note('orgs/lantern-labs', 'org', 'Lantern Labs', date='2026-11-12', summary='client, ordering tool',
+                 facts=[('client, ordering tool', False)], links=[('notes:stories/lantern', 'related')]),
+            note('stories/lantern', 'project', 'Lantern', date='2026-11-11', summary='ordering tool for Lantern Labs',
+                 facts=[('status: active', False), ('next: invoice export', True), ('ordering tool for Lantern Labs', True)],
+                 urls=['https://lantern-gate.example.workers.dev']),
+            note('stories/base', 'project', 'Base', date='2026-11-01'),
         ]
-        # the user's own yes: the contact card "Hanna T." is the vault's Ганна Ткач
-        self.same({'same': [[HANNA, 'contacts:google:people/c1']]})
+        self.cards = [
+            note('c1', 'person', 'Hanna T.', system='cards', handles={'email': ['Hanna@Example.test'], 'phone': ['+380 44 555 0100']}),
+            note('c2', 'person', 'Petro Card', system='cards', handles={'email': ['petro@example.test']}),
+            note('c3', 'person', 'noreply@example.test', system='cards', handles={'email': ['noreply@example.test']}, cards_only=True),
+            note('c4', 'person', 'Іван Семпл', system='cards'),
+        ]
+        # the user's own yes: the card "Hanna T." is Ганна Ткач
+        self.same({'same': [[HANNA, 'cards:c1']]})
 
     def same(self, d):
         (self.data / 'entity-same.json').write_text(json.dumps(d, ensure_ascii=False))
 
     def build(self, **kw):
-        args = dict(vault=self.vault, contacts=self.contacts, now=NOW, data=self.data, ordinary={'labs', 'base', 'other'}, codius=self.codius)
+        args = dict(slices={'notes': self.notes, 'cards': self.cards}, now=NOW, data=self.data, ordinary={'labs', 'base', 'other'},
+                    codius=self.codius)
         args.update(kw)
         return entities.build(**args)
 
@@ -71,15 +77,15 @@ class Cast(unittest.TestCase):
 
     # privacy ------------------------------------------------------------------------------------------------------
 
-    def test_private_records_never_reach_the_store_or_a_pack(self):
+    def test_own_name_is_never_a_record(self):
         store = self.build()
-        written = (self.data / 'entities.json').read_text() + (self.data / 'entity-sources.json').read_text()
-        packs = '\n'.join(entities.render(r, 3, today=TODAY) for r in store['records'])
-        for secret in ('PRIVATE', 'Hidden Matter', 'Quiet Person', 'Secret Person', 'OBSIDIAN-JUNK', 'SYSTEM-OLD', 'Notes View'):
-            self.assertNotIn(secret, written, secret)
-            self.assertNotIn(secret, packs, secret)
-        self.assertNotIn('Owner Sample', [r['name'] for r in store['records']])   # the user's own name is never a record
+        self.assertNotIn('Owner Sample', [r['name'] for r in store['records']])
         self.assertFalse(any(r['private'] for r in store['records']))
+        self.assertFalse((self.data / 'entity-sources.json').exists())   # no source cache any more
+
+    def test_a_record_marked_private_says_so(self):
+        store = self.build(slices={'notes': self.notes + [dict(note('people/quiet', 'person', 'Quiet Sample'), private=True)]})
+        self.assertTrue(self.rec(store, 'Quiet Sample')['private'])
 
     def test_phone_numbers_never_in_a_pack(self):
         store = self.build()
@@ -90,44 +96,30 @@ class Cast(unittest.TestCase):
                 self.assertNotIn('0100', text)
         self.assertIn('+380 44 555 0100', self.rec(store, 'Ганна Ткач')['handles']['phone'])   # the user's own card keeps it
 
-    def test_allowed_private_records_only_one_by_one_and_marked(self):
-        # an old file may still name a source that is gone: ignored
-        (self.data / 'context-allow.json').write_text(json.dumps({'gone': ['x:1'], 'vault': ['Entities/Private/Secret Person.md']}))
-        (self.data / 'entity-sources.json').write_text(json.dumps({'gone': {'records': [{'system': 'gone', 'id': 'x:1', 'name': 'Old Thing'}]}}))
-        store = self.build()
-        s = self.rec(store, 'Secret Person')
-        self.assertTrue(s['private'])
-        self.assertIn('PRIVATE-ROLE', entities.render(s, 3, today=TODAY))
-        self.assertNotIn('Old Thing', [r['name'] for r in store['records']])
-        written = (self.data / 'entities.json').read_text()
-        for still in ('PRIVATE-MARKED-NOTE', 'PRIVATE-STORY-NOTE'):
-            self.assertNotIn(still, written, still)
-
-    def test_vault_off_reads_no_vault(self):
-        store = self.build(vault=False)
-        self.assertFalse(any(s['system'] == 'vault' for r in store['records'] for s in r['sources']))
+    def test_no_build_reads_a_source_of_its_own(self):
+        store = self.build(slices=None)
+        self.assertEqual([r for r in store['records'] if r['sources'][0]['system'] != 'term'], [])
 
     # merging, ids, kinds ------------------------------------------------------------------------------------------
 
     def test_one_record_per_thing(self):
         store = self.build()
         h = self.rec(store, 'Ганна Ткач')
-        self.assertEqual({s['system'] for s in h['sources']}, {'vault', 'contacts'})   # the user's own "same"
+        self.assertEqual({s['system'] for s in h['sources']}, {'notes', 'cards'})   # the user's own "same"
         self.assertEqual(h['id'], HANNA)
-        self.assertEqual(h['targets']['obsidian'], 'Entities/People/Ганна Ткач')
         self.assertEqual(h['targets']['mail'], 'Hanna@Example.test')
         lantern = self.rec(store, 'Lantern')
         self.assertEqual(lantern['kind'], 'project')
-        self.assertEqual({s['system'] for s in lantern['sources']}, {'vault'})
+        self.assertEqual({s['system'] for s in lantern['sources']}, {'notes'})
         self.assertIn(self.rec(store, 'Lantern Labs')['id'], h['related'])
-        # same full name in Contacts, no handle to confirm: kept apart and counted for a "Same?" row
+        # same full name in the cards, no handle to confirm: kept apart and counted for a "Same?" row
         ivans = [r for r in store['records'] if r['name'] == 'Іван Семпл']
         self.assertEqual(len(ivans), 2)
         self.assertEqual(store['same_pending'], 1)
 
     def test_his_own_same_and_not_same(self):
-        ivan, other = 'vault:Entities/People/Іван Семпл.md', 'vault:Entities/People/Іван Інший.md'
-        self.same({'same': [[ivan, 'contacts:google:people/c4'], [ivan, other]], 'not': [[ivan, other]]})
+        ivan, other = 'notes:people/ivan', 'notes:people/ivan-other'
+        self.same({'same': [[ivan, 'cards:c4'], [ivan, other]], 'not': [[ivan, other]]})
         store = self.build()
         self.assertEqual(len([r for r in store['records'] if r['name'] == 'Іван Семпл']), 1)
         self.assertEqual(len([r for r in store['records'] if r['name'] == 'Іван Інший']), 1)   # the user's "not the same" wins
@@ -144,20 +136,12 @@ class Cast(unittest.TestCase):
         self.assertFalse(entities.correct(base['id'], '9', data=self.data))
 
     def test_ids_follow_a_merge(self):
-        self.build(vault=False)
+        self.build(slices={'cards': self.cards})
         first = json.loads((self.data / 'entities.json').read_text())
-        self.assertIn('contacts:google:people/c1', [r['id'] for r in first['records']])
+        self.assertIn('cards:c1', [r['id'] for r in first['records']])
         self.build()
         ids = json.loads((self.data / 'entity-ids.json').read_text())
-        self.assertEqual(ids['contacts:google:people/c1'], HANNA)
-
-    def test_a_failed_source_keeps_its_last_slice(self):
-        self.build()
-        people = self.vault / 'Entities/People'
-        os.chmod(people, 0); self.addCleanup(os.chmod, people, 0o755)
-        store = self.build()
-        self.assertEqual(store['failed'], ['vault'])
-        self.assertIn('Ганна Ткач', [r['name'] for r in store['records']])
+        self.assertEqual(ids['cards:c1'], HANNA)
 
     # surfaces -----------------------------------------------------------------------------------------------------
 
@@ -184,11 +168,10 @@ class Cast(unittest.TestCase):
         h, lantern = self.rec(store, 'Ганна Ткач'), self.rec(store, 'Lantern')
         line = entities.render(h, 2, today=TODAY)
         self.assertTrue(line.startswith('- **Ганна Ткач** - finance lead, at Lantern Labs.'), line)
-        self.assertIn('Ганна Ткач.md`', line)
         full = entities.render(lantern, 3, today=TODAY)
         self.assertIn('(project)', full)
-        self.assertIn('status: active (vault, 2026-11-11).', full)
-        self.assertIn('“next: invoice export” (vault, 2026-11-11).', full)   # someone else's words go in quotes
+        self.assertIn('status: active (notes, 2026-11-11).', full)
+        self.assertIn('“next: invoice export” (notes, 2026-11-11).', full)   # someone else's words go in quotes
         self.assertIn('Repo: `', full)
         self.assertEqual(entities.render(h, 1, today=TODAY), '')
         for r in store['records']:
@@ -209,7 +192,7 @@ class Cast(unittest.TestCase):
         big = []
         for i in range(9):
             big.append({'id': f'x:{i}', 'kind': 'project', 'name': f'Made Up {i}', 'who': 'a made-up thing with a long description ' * 2,
-                        'pack': {'facts': [{'text': f'made-up fact {j} ' * 5, 'source': 'vault', 'date': '2026-11-10', 'quote': False} for j in range(4)],
+                        'pack': {'facts': [{'text': f'made-up fact {j} ' * 5, 'source': 'notes', 'date': '2026-11-10', 'quote': False} for j in range(4)],
                                  'pointers': [{'label': 'Repo', 'value': f'/tmp/made-up-{i}', 'path': True},
                                               {'label': 'URL', 'value': f'https://made-up-{i}.example', 'path': False}], 'newest': '2026-11-10'}})
         b = entities.block([(r, 3, i) for i, r in enumerate(big)], today=TODAY)
@@ -251,7 +234,7 @@ class Cast(unittest.TestCase):
         self.assertEqual(get('/context?q=lant&level=x')[0]['level'], 2)
         self.assertIn('**Lantern**', get('/context/brief?q=Lantern')[0]['text'])
         self.assertEqual(get('/entity?q=Lantern%20Labs')[0]['entities'][0]['kind'], 'org')
-        self.assertNotIn('PRIVATE', json.dumps(get('/entity?q=Secret%20Person')[0]))
+        self.assertEqual(get('/entity?q=Owner%20Sample')[0]['entities'], [])
         on['contextPacks'] = False
         self.assertEqual(get('/context?q=Lantern')[1], 403)
         on['contextPacks'] = True

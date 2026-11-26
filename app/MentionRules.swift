@@ -1,10 +1,10 @@
 // Contact mentions from the keyboard (17 November 2026, the user; `@` dropped the same day: it clashes with the mention
 // pickers of Notion, Claude, Slack and other apps), pure. Two ways in, both fully local (data/entities.json, the `;`
 // card's store of contacts and people cards); nothing is sent.
-// - `;ana` (3+ letters, the `;` family of `;docs` and `;free`): a small list of people; a number puts in one field of
+// - `;ana` (3+ letters, the `;` family of snippets and quick starts): a small list of people; a number puts in one field of
 //   the chosen one. The numbers never move: 1 name, 2 phone, 3 email, 4 address, 5 company, 6 a one-line card. So
-//   `;ana 2` is always Ana's phone. Reserved words win: a snippet key, a quick start, `;docs` `;links` `;meetings`
-//   `;free` `;accounts` `;ctx` `;en` `;uk`, or any key the typed word begins. In AI assistants and coding agents a
+//   `;ana 2` is always Ana's phone. Reserved words win: a snippet key, a quick start, `;ctx`
+//   `;en` `;uk`, or any key the typed word begins. In AI assistants and coding agents a
 //   plain `;ana` stays the `;` card (it attaches context); `;ana 2` works there too.
 // - No trigger: a known person's name with a field word at the end of the line ("Ana's number", "email of Ana",
 //   "номер Ані", "Ана пошта") offers that field as a chip; Tab puts it after the words.
@@ -28,7 +28,7 @@ enum MentionRules {
 
     /// Here a plain `;name` is the `;` card's (context for an assistant or an agent), not the list.
     static func cardFirst(_ dest: String) -> Bool { dest == "ai" || dest == "agent" }
-    static let reservedWords: Set<String> = [";docs", ";links", ";meetings", ";free", ";accounts", ";ctx", ";en", ";uk"]
+    static let reservedWords: Set<String> = [";ctx", ";en", ";uk"]
 
     private static let rx = try! NSRegularExpression(pattern: #"(?:^|[\s(\[«"'])(;([\p{L}][\p{L}'’ʼ-]{2,29}))( ([1-6])?)?$"#)
 

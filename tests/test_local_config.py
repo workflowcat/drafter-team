@@ -13,7 +13,7 @@ sys.path.insert(0, str(ROOT / "actions"))
 MADE_UP = {"user": {"name": "Marta Example", "short_name": "Marta", "own_names": ["Marta"], "own_stems": ["mart"],
                     "about": "She builds boats and writes to her crew.", "style_rules": "Marta writes short lines.",
                     "timezone": "Europe/Lisbon", "city": "Porto", "email": "marta@example.com"},
-           "integrations": {"vault": {"enabled": True, "path": "~/Notes"}}}
+           "integrations": {"claude": {"enabled": True, "bin": "~/bin/claude"}}}
 
 
 def prompts():
@@ -51,10 +51,10 @@ class Config(unittest.TestCase):
 
     def test_paths_expand_and_integrations_follow_the_file(self):
         import local
-        self.assertFalse(local.enabled("vault"))
+        self.assertFalse(local.enabled("claude"))
         self.file.write_text(json.dumps(MADE_UP)); local._cache["key"] = None
-        self.assertTrue(local.enabled("vault"))
-        self.assertEqual(local.setting("vault", "path"), str(Path.home() / "Notes"))
+        self.assertTrue(local.enabled("claude"))
+        self.assertEqual(local.setting("claude", "bin"), str(Path.home() / "bin/claude"))
         self.assertEqual(local.timezone(), "Europe/Lisbon")
 
     def test_snippets_seed_only_a_new_file(self):

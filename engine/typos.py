@@ -16,7 +16,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 WORD = re.compile(r"[\w'’ʼ-]+")
 RUSSIAN = re.compile(r"[ыэъёЫЭЪЁ]")
-SOURCES = ("typed", "take", "cc", "codex", "beeper", "fb", "vault", "import")
+SOURCES = ("typed", "take", "cc", "codex", "fb", "import")
 NAMES = ["cost", "count", "gap", "ctx", "len", "uk", "ai", "chat", "mac"]
 MIN_LABELS = 40
 

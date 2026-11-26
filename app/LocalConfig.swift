@@ -36,19 +36,4 @@ enum LocalConfig {
     static func integration(_ name: String) -> [String: Any] {
         (json["integrations"] as? [String: Any])?[name] as? [String: Any] ?? [:]
     }
-
-    /// The config turns it on (whether its tool answers is `available`).
-    static func enabled(_ name: String) -> Bool { integration(name)["enabled"] as? Bool == true }
-
-    /// On in the config and its file is there (engine/integrations.py checks the same). The app
-    /// itself only asks for "gam": the Google lookups and the Google account block in Settings.
-    static func available(_ name: String) -> Bool {
-        guard enabled(name) else { return false }
-        for key in ["bin", "path", "db"] {
-            if let p = integration(name)[key] as? String, !p.isEmpty {
-                return FileManager.default.fileExists(atPath: (p as NSString).expandingTildeInPath)
-            }
-        }
-        return true
-    }
 }

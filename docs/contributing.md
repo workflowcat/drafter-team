@@ -85,7 +85,7 @@ No code may press Send for you. An action may fill a draft box. You send it your
 
 ### Optional integrations stay optional
 
-A feature that needs another tool must ask `integrations.available(name)` (engine) or `LocalConfig.available`
+A feature that needs another tool must ask `integrations.available(name)` (engine) or `LocalConfig.integration`
 (app) and stay quiet when the answer is no. A new install has every integration off. See
 [Privacy](privacy.md).
 

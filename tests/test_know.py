@@ -14,15 +14,9 @@ class PackBuild(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory(); self.addCleanup(self.tmp.cleanup)
         self.root = Path(self.tmp.name)
-        # contacts as engine/contacts.py parses them (the pack's people), made up
-        self.contacts = [
-            {'id': 'h', 'name': 'Ганна Онищенко', 'kind': 'person', 'aliases': ['Hanna Onyshchenko', 'Hanna'],
-             'handles': {'email': ['hanna@example.test'], 'phone': ['+380 44 555 0100']}, 'role': 'Demo writer',
-             'org': 'Sample Office', 'source': 'contacts', 'cards_only': False},
-            {'id': 'm', 'name': 'Максим Ковальський', 'kind': 'person', 'aliases': [], 'handles': {}, 'role': '', 'org': '',
-             'source': 'contacts', 'cards_only': False}]
         self.dictionary = self.root / 'words.json'
         self.dictionary.write_text(json.dumps({'words': [
+            {'text':'Ганна Онищенко','kind':'name'}, {'text':'Максим Ковальський','kind':'name'},
             {'text':'CustomTerm','kind':'term'}, {'text':'Base'}, {'text':'DataKit'},
             {'text':'Old Seed Sentinel','source':'people'},
             {'text':'Scoped Secret','scope':'private'}, {'text':'FreshRepo','kind':'project'}]}))
@@ -30,7 +24,6 @@ class PackBuild(unittest.TestCase):
         self.out = self.root / 'know.json'
 
     def build(self, **kw):
-        kw.setdefault('contacts', self.contacts)
         return know.build(self.out, dictionary=self.dictionary, snippets=self.snips, now=100000, **kw)
 
     def test_private_words_and_old_seeds_never_exported(self):
@@ -39,15 +32,14 @@ class PackBuild(unittest.TestCase):
         for secret in ('Sentinel', 'Secret', 'https://example.test', '{name}'):
             self.assertNotIn(secret, output)
         h = next(e for e in pack['entries'] if e['name'].startswith('Ганна'))
-        self.assertEqual(h['handles'], {'email':['hanna@example.test'], 'phone':['+380 44 555 0100']})
-        self.assertEqual((h['role'], h['org']), ('Demo writer', 'Sample Office'))
+        self.assertEqual((h['kind'], h['handles']), ('person', {}))
         self.assertEqual({e['kind'] for e in pack['entries']}, {'person','term','phrase'})
 
     def test_tokens_surnames_forms_and_common_guard(self):
         p = self.build(common={'datakit'})
         h = p['entries'][0]
         self.assertIn('Онищенко', h['tokens']); self.assertIn('Ганною', h['forms'])
-        self.assertIn('Hanna', h['tokens']); self.assertIn('Ганні', h['forms'])
+        self.assertIn('Ганна', h['tokens']); self.assertIn('Ганні', h['forms'])
         self.assertIn('base', next(e for e in p['entries'] if e['name']=='Base')['common'])
         self.assertIn('datakit', next(e for e in p['entries'] if e['name']=='DataKit')['common'])
         words = self.out.with_name('known-words.txt').read_text().splitlines()
@@ -56,9 +48,9 @@ class PackBuild(unittest.TestCase):
         self.assertFalse(list(self.root.glob('.know.json*')))
 
     def test_heat_sent_usage_and_frequent_lowercase(self):
-        p = self.build(lines=['ask Hanna about DataKit'] * 6 + ['base base base'] * 5)
+        p = self.build(lines=['ask Ганна about DataKit'] * 6 + ['base base base'] * 5)
         h = p['entries'][0]
-        self.assertEqual(h['heat'], 1.75)   # a contact counts a quarter: 0.25 x (1 + 6 lines)
+        self.assertEqual(h['heat'], 7)      # 1 + 6 lines that name her
         base = next(e for e in p['entries'] if e['name']=='Base')
         self.assertLess(base['heat'], 2)  # ordinary lowercase mentions never heat a term
         pix = next(e for e in p['entries'] if e['name']=='DataKit')
@@ -68,17 +60,15 @@ class PackBuild(unittest.TestCase):
 
     def test_reload_and_people_endpoint_data(self):
         self.build(); reader = know.Pack(self.out)
-        self.assertEqual(reader.people('онищ')[0]['handles']['email'], ['hanna@example.test'])
+        self.assertEqual(reader.stats()['entries'], 7)
+        self.assertEqual(reader.people('онищ'), [])   # a dictionary name has no handle: not a person card
         self.assertEqual(reader.people('Secret'), [])
+        know.atomic(self.out, json.dumps({'entries': [{'name': 'Hanna Sample', 'kind': 'person', 'aliases': [], 'tokens': ['Hanna'],
+                                                       'forms': [], 'handles': {'email': ['hanna@example.test']}}]}))
+        self.assertEqual(reader.people('han')[0]['handles']['email'], ['hanna@example.test'])
         self.assertEqual(reader.people('h'), [])
-        know.atomic(self.out, json.dumps({'entries': []}))
-        self.assertEqual(reader.people('han'), [])
-        self.build(); self.assertEqual(len(reader.people('han')), 1)
-        self.out.unlink(); self.assertEqual(reader.people('han'), [])
-
-    def test_no_contacts_builds_from_the_rest(self):
-        pack = self.build(contacts=None)
-        self.assertEqual({e['kind'] for e in pack['entries']}, {'term', 'phrase'})
+        self.build(); self.assertEqual(reader.people('han'), [])
+        self.out.unlink(); self.assertEqual(reader.stats()['entries'], 0)
 
 
 class Language(unittest.TestCase):

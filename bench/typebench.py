@@ -25,9 +25,8 @@ ap.add_argument("--cap", type=float, default=3.0, help="MLX memory limit for thi
 ap.add_argument("--min-free", type=int, default=25, help="stop when system free memory falls under this %%")
 ap.add_argument("--boost", type=float, default=None, help="mix the user's own next words in (Model.booster), this share")
 ap.add_argument("--know", default="data/know.json", help="local knowledge pack path, or none")
-ap.add_argument("--people", action="store_true", help="Beeper replies get the user's older messages in that chat (data/bench/people-fresh.json)")
 ap.add_argument("--ctx-chars", type=int, default=None, help="keep only the last N characters of the screen context (the engine: 1000; 0 = none)")
-ap.add_argument("--app", default=None, help="only the items from this app (Beeper, Claude)")
+ap.add_argument("--app", default=None, help="only the items from this app (e.g. Claude, Slack)")
 ap.add_argument("--notes", default="", help="parity round: a writing instruction for every line (engine/prompt.py notes)")
 ap.add_argument("--every", type=int, default=1, help="parity round: only every Nth key of a line (short A/B runs)")
 ap.add_argument("--strength", type=float, default=1.0, help="parity round: the user's layer merge scale, 0..1")
@@ -45,7 +44,6 @@ import mlx.core as mx
 from mlx_lm.generate import generate_step
 from model import Model
 from prompt import Builder
-import people
 import know, words as words_mod
 knowledge = know.Pack(None if a.know == "none" else ROOT / a.know)
 knowledge.reload()
@@ -61,7 +59,7 @@ sha = typescore.set_sha(ROOT / a.set)
 typescore.SETS.mkdir(parents=True, exist_ok=True)
 if not (typescore.SETS / f"{sha}.json").exists(): (typescore.SETS / f"{sha}.json").write_bytes((ROOT / a.set).read_bytes())
 (ROOT / "data/bench" / f"{label}.meta.json").write_text(json.dumps({"set": a.set, "set_sha": sha, "repo": a.repo, "adapter": a.adapter,
-    "tokens": a.tokens, "know": a.know, "know_sha": typescore.set_sha(ROOT / a.know) if a.know != "none" and (ROOT / a.know).exists() else None, "boost": a.boost, "people": a.people, "app": a.app, "ctx_chars": a.ctx_chars, "fused": os.environ.get("DRAFTER_LORA_FUSE", "1") == "1", "stable": not a.no_stable, "notes": a.notes, "every": a.every, "strength": a.strength, "clip": not a.no_clip, "made": time.strftime("%Y-%m-%d %H:%M")}, indent=1))
+    "tokens": a.tokens, "know": a.know, "know_sha": typescore.set_sha(ROOT / a.know) if a.know != "none" and (ROOT / a.know).exists() else None, "boost": a.boost, "app": a.app, "ctx_chars": a.ctx_chars, "fused": os.environ.get("DRAFTER_LORA_FUSE", "1") == "1", "stable": not a.no_stable, "notes": a.notes, "every": a.every, "strength": a.strength, "clip": not a.no_clip, "made": time.strftime("%Y-%m-%d %H:%M")}, indent=1))
 
 
 def free_pct():
@@ -86,13 +84,6 @@ if a.boost:   # the user's words from before the fresh lines only (bench/ngram.p
         if not words_mod.RUSSIAN.search(line): W.add(line, rebuild=False)
     W.vocab = sorted(W.uni)
     print(f"booster {a.boost}: {len(W.vocab)} words", flush=True)
-def people_rows():
-    d = json.loads((ROOT / "data/bench/people-fresh.json").read_text())
-    if isinstance(d, dict):          # since 2026-11-01 tied to its set
-        if d.get("set_sha") != sha: raise SystemExit("data/bench/people-fresh.json is for another fresh set: run bench/people_fresh.py")
-        d = d["rows"]
-    return {r["i"]: r["mine"] for r in d}
-PEOPLE = people_rows() if a.people else {}
 ru = lambda toks, logits: logits + m.russian_mask(logits.shape)
 
 
@@ -130,12 +121,11 @@ with out_p.open("w") as f:
             print(f"stopped at item {i}: system free memory under {a.min_free}%", flush=True); break
         if a.app and it["app"] != a.app: continue
         if a.ctx_chars is not None: it = {**it, "context": it.get("context", "")[-a.ctx_chars:] if a.ctx_chars else ""}
-        mine = people.earlier(PEOPLE[i], it.get("context", "")) if i in PEOPLE else ""
         text = it["text"]
         for pos in range(1, len(text)):
             before = text[:pos]
             if len(before.strip()) < 2 or pos % a.every: continue
-            heal, toks, pre = record(before, it["app"], it.get("context", ""), mine, it.get("title", ""), "" if a.no_clip else it.get("clip", ""))
+            heal, toks, pre = record(before, it["app"], it.get("context", ""), "", it.get("title", ""), "" if a.no_clip else it.get("clip", ""))
             f.write(json.dumps({"i": i, "pos": pos, "heal": heal, "toks": toks, "max_tokens": a.tokens, "prefill_ms": round(pre, 1)}, ensure_ascii=False) + "\n")
         mx.clear_cache(); done += 1
         if mx.get_peak_memory() / 2**30 > a.cap:

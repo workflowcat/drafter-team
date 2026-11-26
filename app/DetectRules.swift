@@ -645,7 +645,7 @@ enum Detect {
         "bash", "cat", "grep", "rg", "find", "mkdir", "rm", "mv", "cp", "chmod", "chown", "launchctl", "defaults", "open",
         "wrangler", "cf", "gh", "op", "xcodebuild", "xcrun", "tail", "head", "sed", "awk", "echo", "export", "source", "uv",
         "deno", "bun", "kill", "pkill", "pgrep", "ps", "lsof", "du", "df", "tar", "unzip", "ffmpeg", "jq", "sqlite3", "psql",
-        "cfgit", "cfmirror", "ship", "transcribe", "beeper", "touch", "ln", "which", "man", "code", "claude", "codex", "vim", "nano"]
+        "cfgit", "cfmirror", "ship", "transcribe", "touch", "ln", "which", "man", "code", "claude", "codex", "vim", "nano"]
     static let subs: Set<String> = ["push", "pull", "commit", "status", "checkout", "clone", "log", "diff", "add", "merge", "rebase",
         "fetch", "branch", "switch", "stash", "worktree", "install", "run", "i", "ci", "build", "test", "start", "dev", "ps",
         "up", "down", "exec", "logs", "update", "upgrade", "deploy", "init", "list", "login", "publish", "uninstall", "tag"]

@@ -3,11 +3,10 @@ features, this table says what each one is and how to tell that its tool answers
 
 An integration is on only when the local config turns it on (data/drafter.local.json, `integrations.<name>.enabled`)
 AND its tool answers. Off, its chips and actions are not offered at all; code that reads it gets nothing and goes on.
-app/LocalConfig.swift asks the same question for the app's own chips (the Google lookups).
 
     .venv/bin/python engine/integrations.py     # the table, with each one's state on this Mac
 """
-import os, shutil, sys, time
+import shutil, sys, time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -15,9 +14,6 @@ import local
 
 # name: (what it is, what uses it)
 TABLE = {
-    "beeper": ("the `beeper` CLI (Beeper chat app)", "per-person memory, example messages (style.py)"),
-    "gam": ("GAM, the Google Workspace admin CLI", ";docs / ;meetings / ;free lookups, Google contacts for the knowledge pack"),
-    "vault": ("a notes folder (an Obsidian vault)", "the vault note action (actions/vault_note.py), training corpus source"),
     "claude": ("a signed-in `claude` CLI", "every cloud feature on that connection (each also behind its own switch in engine/cloud.py) and your own Claude actions"),
 }
 
@@ -31,18 +27,7 @@ def claude_bin():
     return shutil.which("claude") or (str(Path.home() / ".local/bin/claude") if (Path.home() / ".local/bin/claude").is_file() else "")
 
 
-def beeper_bin():
-    p = local.setting("beeper", "bin")
-    if p and Path(p).is_file(): return p
-    import people
-    found = people.beeper_bin()
-    return found if os.path.isabs(found) else ""
-
-
 CHECKS = {
-    "beeper": lambda: bool(beeper_bin()),
-    "gam": lambda: Path(local.setting("gam", "bin") or "/nonexistent").is_file(),
-    "vault": lambda: Path(local.setting("vault", "path") or "/nonexistent").is_dir(),
     "claude": lambda: bool(claude_bin()),
 }
 

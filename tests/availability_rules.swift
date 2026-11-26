@@ -116,13 +116,6 @@ struct AvailabilityChecks {
         check(mornings == [at(23, 9), at(23, 10, 30)], "next week mornings: \(mornings)")
         check(A.slots(busy: [], now: now, days: 1, count: 3, calendar: cal, hours: A.hours(.afternoon), from: at(18, 0)).first == at(18, 13), "afternoon")
 
-        // the picker's refine rows
-        check(A.refine(";free 30 tomorrow", days: .nextWeek) == ";free 30 next week", "days: \(A.refine(";free 30 tomorrow", days: .nextWeek))")
-        check(A.refine(";free 30 tomorrow", minutes: 60) == ";free 60 tomorrow", "length")
-        check(A.refine(";free tomorrow", minutes: 15) == ";free 15 tomorrow", "length added")
-        check(A.refine(";free 30 завтра вранці", part: .afternoon) == ";free 30 завтра afternoon", "part")
-        check(A.refine(";free 30 tomorrow morning", part: .any) == ";free 30 tomorrow", "any part")
-
         // at Tab: a slot that filled in between goes
         let later = busy + [A.Busy(start: at(19, 10), end: at(19, 11))]
         check(A.stillFree(s, busy: later, now: now, calendar: cal) == s.filter { $0 != at(19, 10) }, "a filled slot is dropped")

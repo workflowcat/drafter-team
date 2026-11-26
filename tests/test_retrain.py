@@ -62,32 +62,33 @@ class Lifecycle(unittest.TestCase):
             if count < 50 or code: self.assertEqual(target.read_bytes(), old)
             else: self.assertEqual(len(json.loads(target.read_text())), count)
 
-    def test_fresh_set_without_chat_lines_is_not_a_test(self):
-        """8 November: `beeper` missing from launchd's PATH gave 60 AI-app lines and 0 chat lines."""
+    def test_fresh_set_without_ai_app_lines_is_not_a_test(self):
+        """Chat lines alone (60 chat lines, 0 AI-app lines) are not a fair test of the layers."""
         target = self.root / 'data/replay-fresh.json'
         old = target.read_bytes()
         def step(*args, **kw):
-            Path(args[2]).write_text(json.dumps([{'text': 'synthetic', 'src': 'claude'}] * 60))
+            Path(args[2]).write_text(json.dumps([{'text': 'synthetic', 'src': 'beeper'}] * 60))
             return 0, 'synthetic'
         report = []
         with patch.object(retrain, 'step', side_effect=step):
             self.assertEqual(retrain.fresh_set(report), 0)
         self.assertEqual(target.read_bytes(), old)
-        self.assertIn('no beeper lines', report[-1])
+        self.assertIn('no claude lines', report[-1])
 
-    def test_comparison_refuses_a_set_without_chat_lines(self):
-        """The default set left by the 8 November draw: 60 AI-app lines, 0 chat lines. No recording, layer kept."""
-        (self.root / 'data/replay-fresh.json').write_text(json.dumps([{'text': 'made up', 'src': 'claude', 'app': 'Claude'}] * 60))
+    def test_comparison_refuses_a_set_without_ai_app_lines(self):
+        """A set of 60 chat lines and 0 AI-app lines: no recording, layer kept."""
+        (self.root / 'data/replay-fresh.json').write_text(json.dumps([{'text': 'made up', 'src': 'beeper', 'app': 'Slack'}] * 60))
         report = []
         with patch.object(retrain, 'record', side_effect=AssertionError('recorded')):
             self.assertEqual(retrain.compare('old', 'new', report), (False, None))
-        self.assertIn('no beeper lines', report[-1])
+        self.assertIn('no claude lines', report[-1])
 
     def test_missing_kinds_by_src_or_app(self):
         self.assertEqual(retrain.missing_kinds([{'src': 'beeper'}, {'src': 'claude'}]), [])
         self.assertEqual(retrain.missing_kinds([{'app': 'Beeper'}, {'app': 'ChatGPT'}]), [])
-        self.assertEqual(retrain.missing_kinds([{'src': 'claude', 'app': 'Claude'}]), ['beeper'])
-        self.assertEqual(retrain.missing_kinds([]), ['beeper', 'claude'])
+        self.assertEqual(retrain.missing_kinds([{'src': 'claude', 'app': 'Claude'}]), [])
+        self.assertEqual(retrain.missing_kinds([{'src': 'beeper', 'app': 'Slack'}]), ['claude'])
+        self.assertEqual(retrain.missing_kinds([]), ['claude'])
 
     def test_comparison_rejects_equal_truncation_missing_positions_and_wrong_set(self):
         rows = {(0, 2): {}, (1, 2): {}}
@@ -159,7 +160,7 @@ class Lifecycle(unittest.TestCase):
         self.run_night(0)
         self.assertGreater(last_retrain(self.root), 0)
         # No top-level bench execution (which would read private files/load models).
-        for name in ('people_fresh', 'make_fresh', 'typebench', 'gate', 'ngram'):
+        for name in ('make_fresh', 'typebench', 'gate', 'ngram'):
             tree = ast.parse(SOURCE.with_name(name + '.py').read_text())
             calls = [n for n in ast.walk(tree) if isinstance(n, ast.Call) and
                      isinstance(n.func, ast.Name) and n.func.id == 'last_retrain']

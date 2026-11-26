@@ -153,11 +153,10 @@ enum KeyRules {
     /// What a call offer shows as its key: ⇧ Right Option takes it when voice is on; else only the Record button.
     static func callOfferKey(voice: Bool) -> String { voice ? "⇧ right ⌥" : "" }
 
-    /// Row 4: Tab on a chip. Chips that put text at the caret (a snippet, an emoji, a copy, a fix, a lookup) are taken;
+    /// Row 4: Tab on a chip. Chips that put text at the caret (a snippet, an emoji, a copy, a fix) are taken;
     /// a chip that runs an outside action (calendar, reminder, note, opening an app, a draft elsewhere)
     /// never runs on Tab: the Tab goes to the app and a click on the chip runs it.
-    static let textKinds: Set<String> = ["expand", "replace", "replaceSelection", "proofread", "reader.note", "pauseRewrite", "insert",
-                                         "lookup.insert", "lookup.search", "copy"]
+    static let textKinds: Set<String> = ["expand", "replace", "replaceSelection", "proofread", "reader.note", "pauseRewrite", "insert", "copy"]
     static func tabRunsChip(kind: String?) -> Bool { kind.map { textKinds.contains($0) } ?? false }
 
     /// Row 4b (18 November 2026, the user: Tab "jumps to claude control once suggestion is done"): a plain Tab within

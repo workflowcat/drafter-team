@@ -194,7 +194,7 @@ enum ScreenContextRules {
         func allowed(_ now: Double) -> Bool { now >= until }
     }
 
-    /// Accessibility where it is clean (exact text, ~25 ms, and the Beeper chat finder matches its lines), the picture
+    /// Accessibility where it is clean (exact text, ~25 ms), the picture
     /// where it is empty or a page of labels, unless the picture keeps failing in this app.
     static func source(ax: String, memory: AppMemory, now: Double) -> Source {
         if axClean(ax) { return .ax }

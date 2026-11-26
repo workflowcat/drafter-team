@@ -199,7 +199,7 @@ final class Keys {
         if type == .keyDown { keyRevision += 1; keyAt = Date(); noteKey(typed, flags: event.flags) }
         let code = event.getIntegerValueField(.keyboardEventKeycode)
         if type == .keyDown, code != 48 { lastTabTake = KeyRules.tabStamp(lastTabTake, aborted: false, otherKey: true) }   // not "right after a take" any more
-        // the command field is ⌘K in Drafter's window; the floating command panel opens from a lookup chip only (⌃⌥Space
+        // the command field is ⌘K in Drafter's window; the floating command panel has no key of its own (⌃⌥Space
         // and ⌘Space are left alone). While it is open its field takes the keys.
         if Quick.shared.tap(type, event) { return nil }   // the Quick panel (app/Quick.swift): its key, and its keys while open
         if type == .keyDown, ContextPanel.shared.isOpen {                                                    // the context preview (app/Entities.swift)
@@ -287,7 +287,7 @@ final class Keys {
                     DispatchQueue.main.async { _ = Snippets.takeSmart() }
                 } else {
                     let t = g.text, o = g.shownOption
-                    DispatchQueue.main.async { self.accept(Availability.recheck(o) ?? t); log("next message taken by click"); PromiseHooks.taken(o) }
+                    DispatchQueue.main.async { self.accept(Availability.recheck(o) ?? t); log("next message taken by click") }
                 }
                 return nil
             }
@@ -377,7 +377,7 @@ final class Keys {
         }
         // instant replies (17 November 2026): ⌥1 ⌥2 ⌥3 on a next-message card put that reply in (it fills the box, never sends)
         if g.isDraft, Snippets.pendingSmart == nil, mods == .maskAlternate, let i = AltKeys.codes[Int(code)], let o = g.draftOption(i), let t = o["text"] {
-            DispatchQueue.main.async { self.accept(Availability.recheck(o) ?? t); log("next message \(i + 1) taken by ⌥\(i + 1)"); PromiseHooks.taken(o) }; return nil
+            DispatchQueue.main.async { self.accept(Availability.recheck(o) ?? t); log("next message \(i + 1) taken by ⌥\(i + 1)") }; return nil
         }
         // parity round: ⌥1 ⌥2 ⌥3 put that idea in the ghost's place (AltKeys), only on a plain ghost with that many ideas
         if let i = AltKeys.pick(code: Int(code), option: mods.contains(.maskAlternate), control: mods.contains(.maskControl),
@@ -399,7 +399,7 @@ final class Keys {
                 DispatchQueue.main.async { g.expand(true); log("next message opened by Tab") }; return nil
             }
             if g.isDraft, Snippets.pendingSmart != nil { DispatchQueue.main.async { _ = Snippets.takeSmart() }; return nil }   // a smart snippet's preview
-            if g.isDraft { let t = g.text, o = g.shownOption; lastTabTake = Date(); DispatchQueue.main.async { self.accept(Availability.recheck(o) ?? t); log("next message taken"); PromiseHooks.taken(o) }; return nil }
+            if g.isDraft { let t = g.text, o = g.shownOption; lastTabTake = Date(); DispatchQueue.main.async { self.accept(Availability.recheck(o) ?? t); log("next message taken") }; return nil }
             // word by word (the user, 2026-10-19): Tab takes the next word and its space; the rest stays grey
             if !g.text.isEmpty { let t = Keys.nextWord(g.text), rev = editRevision; lastTabTake = Date(); DispatchQueue.main.async { self.accept(t, rev: rev) }; return nil }
         }
@@ -565,7 +565,7 @@ final class Keys {
         let kind = Keys.boxKind(s)
         emptyChat = kind != nil; emptyAI = kind ?? false
         if emptyChat { scheduleIdle(s, before: s.before, ctx: contextFor(s), mine: seq) }
-        if Keys.replyBox(s) { instantDraft(); askPromise(s) }   // a chat or mail box: instant replies; promises: app/Promises.swift
+        if Keys.replyBox(s) { instantDraft() }   // a chat or mail box: instant replies
     }
 
     var draftSeq = 0
@@ -607,7 +607,7 @@ final class Keys {
                         guard mine == self.draftSeq, !opts.isEmpty, let now = Focus.spot(skip: Drafter.shared.settings.skip).0, CFEqual(now.el, s.el),
                               Keys.replyBox(now), !Ghost.shared.visible || self.idleShown || Ghost.shared.isDraft,
                               let r = now.rect ?? Focus.fieldStart(now.el) else { return }
-                        opts = Keys.leading(for: now.el) + opts   // a due promise, then free slots (app/Promises.swift, app/Availability.swift)
+                        opts = Keys.leading(for: now.el) + opts   // free slots first (app/Availability.swift)
                         self.spot = now
                         Ghost.shared.showDraft(Keys.numbered(Array(opts.prefix(5))), field: Focus.frame(now.el), caret: r)
                         self.lastGhostMeta = ("instant", j?["ms"] as? Int ?? 0, Date())
@@ -799,18 +799,13 @@ final class Keys {
         lastRead = (s, keyRevision, Date())
         if s.mid { askMid(s, rect: rect, mine: mine, ax: ax); return }   // mid-line: the plain ghost only
         Entities.wordEnd(s)                                       // a name just typed in an AI app: the quiet mark (app/Entities.swift)
-        if let lookup = LookupQuery.parse(s.before), LocalConfig.available("gam") {   // optional integration: off, no chip
-            chipTimer?.invalidate(); shownSeq = mine; spot = s
-            Ghost.shared.unsure = 0; Ghost.shared.show("", action: lookup.action, at: rect)
-            return
-        }
         let snippet = Snippets.offer(s.before)
         let typed = SnippetRules.word(s.before).lowercased()
         let exactSnippet = Snippets.all.keys.contains { $0.lowercased() == typed } ? snippet : nil
-        // the one `;` picker (app/Commands.swift): snippets, quick starts, lookups, people and cards in one labelled list;
+        // the one `;` picker (app/Commands.swift): snippets, quick starts, people and cards in one labelled list;
         // `;ana 2` still puts Ana's phone in at once (app/Mention.swift); in AI apps a name opens the `;` card instead
         let semi = exactSnippet == nil && Snippets.ready && (s.before.components(separatedBy: "\n").last ?? "").contains(";")
-        let reserved = Set(Snippets.all.keys).union(Presets.all.flatMap { $0.keys }).union(LookupQuery.reserved).union(MeetingRules.keys)
+        let reserved = Set(Snippets.all.keys).union(Presets.all.flatMap { $0.keys }).union(MeetingRules.keys)
         if semi, MentionRules.parse(s.before, reserved: reserved)?.pick != nil, MentionCard.shared.offer(s, reserved: reserved) {
             chipTimer?.invalidate(); shownSeq = mine; spot = s
             return
@@ -875,7 +870,7 @@ final class Keys {
     static var fallbackAnchor: Bool { Drafter.shared.settings.fallbackAnchor }
 
     /// Mid-line (the caret at a gap with text after it on its line): only the local plain ghost is asked for. No chips,
-    /// snippets, endings, lookups or the reader check: each of those reads the line as ending
+    /// snippets, endings or the reader check: each of those reads the line as ending
     /// at the caret. The read stands for the field as before (lastBefore and the draft start are left as they were, so
     /// a line sent with Return is never cut at the caret).
     private func askMid(_ s: Spot, rect: CGRect, mine: Int, ax: Int) {

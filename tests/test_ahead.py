@@ -72,13 +72,13 @@ class Ahead(unittest.TestCase):
 
     def test_a_different_screen_is_a_different_request(self):
         ns = load(lambda req, low=False, seq=None, pack=None, **kw: {"text": "x"}, [1])
-        a = ns["ahead_key"]({"before": "hi", "app": "Beeper", "context": "one"})
-        self.assertNotEqual(a, ns["ahead_key"]({"before": "hi", "app": "Beeper", "context": "two"}))
-        self.assertEqual(a, ns["ahead_key"]({"before": "hi", "app": "Beeper", "context": "one", "after": "z", "early": True}))
-        self.assertEqual(a, ns["ahead_key"]({"before": "hi", "app": "Beeper", "context": "one", "gap_ms": 84, "stream": True}))
+        a = ns["ahead_key"]({"before": "hi", "app": "Telegram", "context": "one"})
+        self.assertNotEqual(a, ns["ahead_key"]({"before": "hi", "app": "Telegram", "context": "two"}))
+        self.assertEqual(a, ns["ahead_key"]({"before": "hi", "app": "Telegram", "context": "one", "after": "z", "early": True}))
+        self.assertEqual(a, ns["ahead_key"]({"before": "hi", "app": "Telegram", "context": "one", "gap_ms": 84, "stream": True}))
         self.assertEqual(
-            ns["ahead_key"]({"before": "hi", "app": "Beeper", "context": "one", "combo": True, "gap_ms": 84, "stream": True}),
-            ns["ahead_key"]({"before": "hi", "app": "Beeper", "context": "one", "combo": True, "gap_ms": 210}),
+            ns["ahead_key"]({"before": "hi", "app": "Telegram", "context": "one", "combo": True, "gap_ms": 84, "stream": True}),
+            ns["ahead_key"]({"before": "hi", "app": "Telegram", "context": "one", "combo": True, "gap_ms": 210}),
         )
 
     def test_gap_ms_and_stream_still_hit_look_ahead_and_futures(self):
@@ -135,31 +135,6 @@ class Cancellation(unittest.TestCase):
                 ns['complete'](req)
                 self.assertTrue(ns['stale'](0))
                 self.assertEqual(ns['latest'][0], 1)
-
-    def test_complete_with_cached_old_screen_cannot_move_sticky_chat(self):
-        import people
-        import tempfile
-        with tempfile.TemporaryDirectory() as folder:
-            p = people.People(Path(folder) / 'people.json')
-            for chat in ('old', 'new'):
-                p.chats[chat] = {'mine': [f'{chat} synthetic message {i}' for i in range(4)]}
-                for line in p.chats[chat]['mine']: p._mark(people.mark(line), chat)
-            old = '\n'.join(p.chats['old']['mine'][:2])
-            p.block('\n'.join(p.chats['new']['mine'][:2]))
-            parts = Mock(return_value=('hello', 'Beeper', '', old, 'Beeper'))
-            ns = lift('_complete', 'earlier', 'extras', time=time, re=re, FMT='raw', AI_APPS=(), MAX_TOKENS=8, MIN_P=.3, MAX_WORDS=3, short=lambda req, text: False,
-                      parts=parts, builder_for=lambda fmt: types.SimpleNamespace(ids=lambda *a: ([0], ''), ids_stable=lambda *a: ([0], '', 0)),
-                      snippets=types.SimpleNamespace(offer=lambda b: None),
-                      phrases=types.SimpleNamespace(suggest=lambda b: ('', 0)),
-                      gate=lambda: None, selector=lambda: None, word_first=lambda *a: "", people_mem=p, clean=lambda b, t: t, knowledge=know.Pack(),
-                      finisher=types.SimpleNamespace(finish=lambda *a: ''),
-                      model=types.SimpleNamespace(asleep=False, loading=False, hit_limit=False, sure_len=None,
-                                                  complete=lambda *a, **kw: ('', 0, 0)),
-                      run=lambda fn, **kw: fn(lambda: False))
-            for low in (False, True):
-                ns['_complete']({'before': 'hello', 'context': old, 'chips': False}, low=low, seq=3)
-                self.assertEqual(p.last, 'new')
-                self.assertEqual(parts.call_args.kwargs, {'remember': not low})
 
     def test_running_zero_generation_job_sees_new_completion(self):
         ns = load(lambda r, **kw: {'text': ''}, [0])

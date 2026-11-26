@@ -5,6 +5,7 @@ A simulated user types each held-out line key by key. When no grey text is up, t
 it returns is shown (a new ghost). While the user types the same letters the ghost stays (type-through, costs nothing, not
 a new ghost); Tab takes the next grey word when it is exactly the user's; anything else drops it.
 
+src "beeper" = the chat kind (a historical name).
 Measured, per app (claude = AI apps, beeper = chats) and per language (uk / en by the line's letters):
   keys       key spots where a new ghost could be asked (no ghost up)
   shown      new ghosts;  coverage = shown / keys
@@ -213,7 +214,7 @@ def dates(items, typed_path=None):
 
 def split(items, share=0.5, typed_path=None):
     """-> (calibration indices, test indices): the earlier `share` of message groups by date, then the later ones.
-    Undated lines (Beeper replies) go by their order in the set, which make_fresh writes oldest first."""
+    Undated lines go by their order in the set, which make_fresh writes oldest first."""
     when, gid = dates(items, typed_path)
     order = sorted(range(len(items)), key=lambda i: (when[i] or 0, i))
     by_group = []

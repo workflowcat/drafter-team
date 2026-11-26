@@ -32,9 +32,9 @@ def health_stand_ins():
     return dict(
         model=model, CURRENT={"entry": None}, FMT="raw", builder=types.SimpleNamespace(head_ids=[]),
         guard=types.SimpleNamespace(rss_gb=lambda: 0.5, _cap=[3.6]), FAST={"m": None, "used": 0, "loads": 0, "refused": 0},
-        wordgate=lambda: None, gate=lambda: None, people_mem=types.SimpleNamespace(chats={}), ahead_stats=stats,
+        wordgate=lambda: None, gate=lambda: None, ahead_stats=stats,
         knowledge=types.SimpleNamespace(stats=stats, people=lambda q: []), who=types.SimpleNamespace(stats={}),
-        source_index=types.SimpleNamespace(stats=stats), dictionary=types.SimpleNamespace(load=lambda: {"words": []}),
+        dictionary=types.SimpleNamespace(load=lambda: {"words": []}),
         actions=types.SimpleNamespace(ALL=[], take_pending=lambda wait: []),
         provider=types.SimpleNamespace(kind=lambda: "", connected=lambda: False, state={"last_error": ""}),
         edits=types.SimpleNamespace(waiting=lambda: []),

@@ -33,7 +33,8 @@ and goes to the app. Docs write keys in macOS order (⌃⌥⇧⌘) and use "Esc"
 - Recordings (calls and long notes): Call*, Recording, Recordings, RecordWindow, MeetingNotes, Shots, Shot*,
   ScreenVideo*, Tape*, Speakers, Transcript*, FileTranscribe, AudioImport.
 - The window: Window, Stream*, Journal* (the SQLite journal), Search*, Inspector*, Entity*, Names*, People*, Links*,
-  TodayThread*, Topic*, SettingsView, Settings, SettingsRules, HelpViews, Look, Panel, PageChrome, PageParts.
+  TodayThread*, Topic*, ShareBriefRules (Share notes), SettingsView, Settings, SettingsRules, HelpViews, Look, Panel,
+  PageChrome, PageParts.
 - Clipboard and screenshots: Quick* (the clipboard picker), Clip*, Pick*, Paste*, Capture*, Deck*, Markup*, ScrollShot,
   PictureLook*.
 - Snippets and commands: Snippets, SnippetRules, SpokenSnippetRules, Fields, SmartFields, Command*, Commands, Presets,
@@ -44,14 +45,13 @@ and goes to the app. Docs write keys in macOS order (⌃⌥⇧⌘) and use "Esc"
 `engine/`: server.py HTTP on 127.0.0.1:8798, started by the app · model.py one warm MLX model · catalog.py,
 fetch_model.py typing models · gatecore.py show/hide gate · prompt.py, chat_template.py prompts · words.py word
 finisher · memory.py phrase memory · fim.py mid-line ghosts · cadence.py, instant.py, idle_prompt.py · typos.py,
-word_fixes.py, synonyms.py · people.py, style.py, whom.py chats (optional Beeper) · rework.py, pause_rewrite.py,
-voice_claude.py the cloud helpers · cloud.py which switch owns each · provider.py Connect a model · claude_type.py,
-claude_worker.py, worker_pool.py the CLI workers · router.py online/offline · command.py, actions.py, lookup.py,
-snippets.py · notes.py, ask.py, prep.py, promises.py, speakers.py recordings · names.py, entities.py, know.py,
-contacts.py, dictionary.py, obsidian.py, sources.py, local_search.py knowledge · journal_db.py · edits.py, marks.py,
-reader.py, tweaks.py · integrations.py optional tools · local.py local config · guard.py memory watchdog · voice.py
-voice process (Parakeet, Whisper), voice_settings.py, voice_language.py, voice_timing.py, whisper_mel.py,
-stand_ins.py.
+word_fixes.py, synonyms.py · whom.py keyboard hint · rework.py, pause_rewrite.py, voice_claude.py the cloud helpers ·
+cloud.py which switch owns each · provider.py Connect a model · claude_type.py, claude_worker.py, worker_pool.py the
+CLI workers · router.py online/offline · command.py, actions.py, snippets.py · notes.py, ask.py, promises.py,
+speakers.py recordings · names.py, entities.py, know.py, dictionary.py knowledge · journal_db.py · edits.py, marks.py,
+reader.py, tweaks.py · integrations.py optional tools · local.py local config · data_dir.py the data folder ·
+guard.py memory watchdog · voice.py voice process (Parakeet, Whisper), voice_settings.py, voice_language.py,
+voice_timing.py, whisper_mel.py, stand_ins.py.
 
 Also: `actions/` chip actions · `dictionary/` words, presets, cues · `bench/` benches, retrain, nightly.sh ·
 `scripts/` setup, doctor, downloads, checks, rotate_logs.py, prune_audio.py · `tests/` · `data/` the user's data, never in git.

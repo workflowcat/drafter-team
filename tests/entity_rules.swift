@@ -28,7 +28,7 @@ import Foundation
                    pack: EntityPack(facts: [], pointers: [EntityPointer(label: "Note", value: "/tmp/\(name).md", path: true)], newest: ""), heat: heat, cards_only: cards)
         }
         var store = EntityStore(records: [
-            ent("p:hanna", "person", "Ганна Ткач", related: ["o:lantern"], heat: 6, targets: ["obsidian": "Entities/People/Hanna Tkach"], handles: ["email": ["hanna@example.test"], "tg": ["hanna_x"]]),
+            ent("p:hanna", "person", "Ганна Ткач", related: ["o:lantern"], heat: 6, handles: ["email": ["hanna@example.test"], "tg": ["hanna_x"]]),
             ent("p:hanna2", "person", "Ганна Інша", related: ["o:other"]),
             ent("o:lantern", "org", "Lantern Labs"),
             ent("x:lantern", "project", "Lantern", heat: 3),
@@ -73,11 +73,12 @@ import Foundation
         precondition(EntityRules.find(";h", in: store).isEmpty)
         // the forms for each place
         let h = store.records[0]
-        precondition(RefRules.forms(h, dest: "obsidian").first == RefRules.Form(label: "link", text: "[[Entities/People/Hanna Tkach|Ганна Ткач]]"))
-        precondition(RefRules.forms(h, dest: "mail").map { $0.label } == ["name", "address", "email", "Telegram", "link"])
+        precondition(RefRules.forms(h, dest: "plain").first == RefRules.Form(label: "name", text: "Ганна Ткач"))
+        precondition(RefRules.dest(id: "md.obsidian", title: "Notes", kind: "other") == "plain")
+        precondition(RefRules.forms(h, dest: "mail").map { $0.label } == ["name", "address", "email", "Telegram"])
         precondition(RefRules.forms(h, dest: "mail")[1].text == "Ганна Ткач <hanna@example.test>")
         precondition(RefRules.forms(h, dest: "ai").first?.label == "context")
-        precondition(RefRules.forms(store.records[6], dest: "obsidian").map { $0.label } == ["email"])
+        precondition(RefRules.forms(store.records[6], dest: "plain").map { $0.label } == ["email"])
         precondition(RefRules.dest(id: "com.googlecode.iterm2", title: "claude ~/Codius", kind: "other") == "agent")
         precondition(RefRules.dest(id: "com.googlecode.iterm2", title: "zsh", kind: "other") == "plain")
         precondition(RefRules.level("agent") == 3 && RefRules.level("ai") == 2 && RefRules.level("chat") == 1)

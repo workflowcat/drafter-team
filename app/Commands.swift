@@ -1,9 +1,9 @@
 // The one `;` picker (rules: app/CommandRules.swift). Right ⌘ twice or the menu opens it with an empty query and it
 // takes the keys the user types; `;` + 2 letters in a field opens it with what the user typed, and the keys go on to the field.
-// One list, a label on each row: snippets, quick starts, lookups (shown "off" until Google is set up), people, other
+// One list, a label on each row: snippets, quick starts, people, other
 // cards. ↑↓ choose, ⇥ (and ↵ when it holds the query) puts in or opens, 1-6 on a person a field (as the `;ana` list), esc closes. Text goes in through
 // Snippets.expand and Entities.replace (Focus.spot: never a password field, a skipped app or under secure input).
-// Local only: a pick sends nothing; a lookup row only types its trigger, and the lookup asks before it searches.
+// Local only: a pick sends nothing.
 import AppKit
 import Carbon
 
@@ -37,12 +37,6 @@ final class CommandCard {
             guard let k = p.keys.first else { continue }
             out.append(CommandItem(kind: .preset, key: k, title: p.title, detail: URL(string: p.url)?.host ?? "", ref: p.url))
         }
-        let gam = LocalConfig.available("gam")
-        for k in LookupQuery.reserved.sorted() {
-            let l = LookupQuery(trigger: k, kind: String(k.dropFirst()), query: "")
-            out.append(CommandItem(kind: .lookup, key: k, title: l.label, on: gam, ref: k))
-        }
-        out += CommandRules.freeRows(q, uk: uk, on: gam)   // ;free with a day set
         // voice modes last (research item 3): found by ;mode or "voice", never in the way of snippets
         let vc = Talk.shared.levelChoice()
         out += CommandRules.voiceModeRows(modes: Array(Drafter.shared.settings.voiceModes.keys), current: vc.mode.isEmpty ? vc.level.label : vc.mode, uk: uk)
@@ -188,10 +182,6 @@ final class CommandCard {
         case .snippet:
             guard let f = needField(), let text = Snippets.all[it.ref] else { return }
             Snippets.expand(old: was, new: text, key: it.ref, expected: f)
-        case .lookup:
-            guard it.on else { Pill.shared.flash(uk ? "Пошук вимкнено: потрібен Google (Settings)" : "Lookups are off: set up Google in Settings"); return }
-            guard let f = needField() else { return }
-            _ = Entities.replace(old: was, new: it.key + " ", expected: f)   // the lookup chip takes it from here
         case .person, .card:
             guard let f = needField(), let i = Int(it.ref), i < Entities.store.records.count else { return }
             let e = Entities.store.records[i], k = field ?? 1
@@ -226,7 +216,6 @@ enum CommandDraw {
         switch k {
         case .snippet: return (Kind.snippet.mark, Kind.snippet.color)
         case .preset: return (Kind.link.mark, Kind.link.color)
-        case .lookup: return (Kind.lookup.mark, Kind.lookup.color)
         case .person: return (Kind.person.mark, Kind.person.color)
         case .card: return ("doc.text", Native.blue)
         case .action: return (Kind.action.mark, Kind.action.color)
@@ -252,10 +241,10 @@ enum CommandDraw {
         for (i, it) in rows.enumerated() {
             let r = NSRect(x: 6, y: y + CGFloat(i) * CommandView.row, width: b.width - 12, height: CommandView.row)
             let (m, tint) = mark(it.kind)
-            let tail = it.on ? it.detail : CommandRules.offWord(uk: uk)
+            let tail = it.detail
             let words = it.key.isEmpty ? it.title : it.key + "  " + it.title
-            Panel.row(r, symbol: m, tint: it.on ? tint : Native.faint, text: words, app: String(tail.prefix(40)), time: CommandRules.label(it.kind, uk: uk),
-                      chosen: i == sel, font: Native.text(13, i == sel ? .medium : .regular), ink: it.on ? Native.ink : Native.muted)
+            Panel.row(r, symbol: m, tint: tint, text: words, app: String(tail.prefix(40)), time: CommandRules.label(it.kind, uk: uk),
+                      chosen: i == sel, font: Native.text(13, i == sel ? .medium : .regular), ink: Native.ink)
         }
         let fy = y + CGFloat(max(1, rows.count)) * CommandView.row + 4
         Panel.divider(x0: 0, x1: b.width, y: fy)
@@ -275,7 +264,6 @@ extension CommandCard {
             CommandItem(kind: .action, key: ";meet", title: "Notes for Sample sync", detail: "14:00"),
             CommandItem(kind: .preset, key: ";gmeet", title: "New Google Meet", detail: "meet.google.com"),
             CommandItem(kind: .snippet, key: ";sig", title: "Best regards, Sample Person"),
-            CommandItem(kind: .lookup, key: ";meetings", title: "Find a meeting link", on: false),
             CommandItem(kind: .person, key: "", title: "Ana Example", detail: "Sample Studio"),
             CommandItem(kind: .card, key: "", title: "Meetup Sample", detail: "event"),
         ]

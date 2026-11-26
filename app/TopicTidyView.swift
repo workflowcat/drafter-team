@@ -99,14 +99,8 @@ struct TopicTidyView: View {
                     }
                     .background(RoundedRectangle(cornerRadius: Native.corner(2)).fill(UIInk.card))
                     .overlay { RoundedRectangle(cornerRadius: Native.corner(2)).strokeBorder(UIInk.line, lineWidth: 0.5) }
-                    ObsidianActions(title: topic.title, date: Date(timeIntervalSince1970: topic.latestAt),
-                        markdown: ObsidianExportRules.formatTopicNote(title: topic.title,
-                            date: Date(timeIntervalSince1970: topic.latestAt),
-                            people: topic.primaryTag?.kind == "person" ? [topic.primaryTag!.name] : [],
-                            entities: topic.primaryTag.map { [$0.name] } ?? [],
-                            summary: topic.subtitle, notes: topicBody(topic)),
-                        brief: ObsidianExportRules.formatShareBrief(title: topic.title,
-                            summary: topicBody(topic), links: LinksRules.extractURLs(from: topicBody(topic))))
+                    ShareNotesButton(brief: ShareBriefRules.formatShareBrief(title: topic.title,
+                        summary: topicBody(topic), links: LinksRules.extractURLs(from: topicBody(topic))))
                     Toggle("Archive raw fragments after merge", isOn: $archiveSources)
                         .toggleStyle(.checkbox).font(NativeFont.text(12))
                         .help("Pinned notes stay visible. Archived fragments can be restored at any time.")
@@ -218,5 +212,22 @@ struct TopicTidyView: View {
     }
     private func glyph(_ kind: String) -> String {
         kind == "spoken" ? "waves" : kind == "copied" ? "copy" : "keys"
+    }
+}
+
+/// Share notes only copies a plain brief to the clipboard (ShareBriefRules); nothing is written or sent.
+private struct ShareNotesButton: View {
+    @EnvironmentObject var m: WindowModel
+    let brief: String
+    @State private var notice = ""
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Button("Share notes") {
+                if !m.preview { History.copy(brief) }
+                notice = m.preview ? "Sample brief copied" : "Brief copied"
+            }.disabled(brief.isEmpty).help("Copy a brief to share")
+            if !notice.isEmpty { Text(notice).font(NativeFont.text(11)).foregroundStyle(UIInk.muted) }
+        }.controlSize(.small)
     }
 }

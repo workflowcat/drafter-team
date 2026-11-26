@@ -108,9 +108,6 @@ flowchart LR
 
 | Name | What it is | What uses it |
 |---|---|---|
-| `beeper` | The `beeper` CLI for the Beeper chat app | Your older lines per chat, example messages, chat lines in the corpus |
-| `gam` | GAM, the Google Workspace admin CLI | `;docs`, `;meetings` and `;free` lookups, contacts |
-| `vault` | A notes folder | A note action (writes a Markdown file there, nothing else), notes you wrote in the corpus |
 | `claude` | A signed-in `claude` CLI | Actions of your own that run it (`actions/_claude.py`); picking it under "Connect a model" also turns it on |
 
 No action sends a message for you.

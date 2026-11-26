@@ -1,5 +1,5 @@
 """Training set for a LoRA on the user's own writing (local only, data/train/): every line from the phrase memory
-(Beeper messages the user sent, their prompts to Claude) and what the user sent while Drafter was on, in the same
+(the user's prompts and sent lines) and what the user sent while Drafter was on, in the same
 shape the engine prompts with ("[App]\\n" + text). Left out, so the tests stay fair: the 30 replay items and the fresh
 set (data/replay-fresh.json, drawn again by every retrain from the lines since the last one: the rolling test set)."""
 import argparse, json, random, sys
@@ -9,7 +9,7 @@ sys.path.insert(0, str(ROOT / "bench"))
 from held import Held, norm
 
 
-APP_TAG = {"cc": "Claude", "codex": "Codex", "beeper": "Beeper"}
+APP_TAG = {"cc": "Claude", "codex": "Codex"}
 
 
 def weighted(rows, weights, seed=3):
@@ -55,7 +55,7 @@ def from_phrases(phrases, typed=None, out=None, held_set=None, before=None):
     is_held = Held()
     extra = Held([x["text"] for x in json.loads(Path(held_set).read_text())]) if held_set else (lambda t: False)
     held = is_held.texts
-    APP = {"beeper": "Beeper", "voice": "Voice Notes", "claude": "Claude", "typed": "Claude"}
+    APP = {"voice": "Voice Notes", "claude": "Claude", "typed": "Claude"}
     late = lambda r: before is not None and (r.get("t") or 0) >= before
     rows = []
     for l in Path(phrases).read_text().splitlines():

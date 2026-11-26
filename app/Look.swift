@@ -169,11 +169,11 @@ enum Native {
 /// Item (a thing put in: a snippet, a person, a fact, words) in the accent colour, action (it does something or
 /// rewrites) purple, a fix orange.
 enum Kind {
-    case snippet, person, fact, voice, link, action, lookup, translate, rework, fix, next
+    case snippet, person, fact, voice, link, action, translate, rework, fix, next
     var mark: String {
         switch self {
         case .snippet: return "bookmark"; case .person: return "idcard"; case .fact: return "calendar"; case .voice: return "mic"
-        case .link: return "link"; case .action: return "bolt"; case .lookup: return "search"; case .translate: return "translate"
+        case .link: return "link"; case .action: return "bolt"; case .translate: return "translate"
         case .rework: return "spark"; case .fix: return "pencil"; case .next: return "chat"
         }
     }
@@ -181,7 +181,7 @@ enum Kind {
         switch self {
         case .snippet, .person, .fact, .link, .next: return Native.blue
         case .voice: return Native.violet   // said, as in the journal (TapeKind.said)
-        case .action, .lookup, .translate, .rework: return Native.violet
+        case .action, .translate, .rework: return Native.violet
         case .fix: return Native.warn
         }
     }
@@ -189,7 +189,7 @@ enum Kind {
     static func of(_ id: String) -> Kind {
         switch id {
         case "snippet": return .snippet; case "person": return .person; case "fact": return .fact; case "preset": return .link
-        case "lookup": return .lookup; case "translate": return .translate; case "proofread", "pauseRewrite": return .fix
+        case "translate": return .translate; case "proofread", "pauseRewrite": return .fix
         default: return id.hasPrefix("voice.") ? .voice : .action
         }
     }

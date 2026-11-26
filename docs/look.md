@@ -57,7 +57,7 @@ Drafter floats over your work and fades when you are done. Shared pieces in `app
 
 `Kind` in `app/Look.swift` gives each kind of offer one symbol and one colour, the same at the caret, in the strip
 and in the window: items (snippet, person, fact, voice, link, next message) in the accent colour, actions (action,
-lookup, translate, rework) purple, a fix orange.
+translate, rework) purple, a fix orange.
 
 ## The journal stream
 

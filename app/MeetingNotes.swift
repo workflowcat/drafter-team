@@ -1,7 +1,7 @@
 // Meeting notes from the app (17 November 2026; rules and reasons: app/MeetingRules.swift). One start for the menu bar's
 // first item, the `;meet` / `;notes` quick start and the strip's calendar offer: a call app holding the microphone records
 // the call (both sides, CallWatch); otherwise an in-person note of the user's microphone, labelled "In person". The event comes
-// from the user's calendars through EventKit, the same set as `;free` and call names (Meeting.calendars, Settings › Calendars).
+// from the user's calendars through EventKit, the same set as free slots and call names (Meeting.calendars, Settings › Calendars).
 import AppKit
 import EventKit
 

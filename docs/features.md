@@ -98,9 +98,9 @@ Open it from the menu bar pen.
 
 | Feature | Key | Default |
 |---|---|---|
-| The one `;` picker: snippets, quick starts, lookups, people | Right ⌘ twice, or `;` plus 2 letters | on |
+| The one `;` picker: snippets, quick starts, people | Right ⌘ twice, or `;` plus 2 letters | on |
 | Snippets: `;mail` puts in your address | ⇥ | on |
-| People: `;ana` lists people; 1 name, 2 phone, 3 email, 4 address, 5 company | 1 to 6 | on (your contacts) |
+| People: `;ana` lists people; 1 name, 2 phone, 3 email, 4 address, 5 company | 1 to 6 | on (names in your dictionary) |
 | "Ana's number" offers the field as a chip | ⇥ | on |
 | In AI apps a name gets a quiet mark; ⌥⇥ attaches what Drafter knows about it | ⌥⇥ | on |
 
@@ -126,9 +126,6 @@ All off until you turn them on in `data/drafter.local.json` ([customise](customi
 | Name | What it adds |
 |---|---|
 | `claude` | A signed-in `claude` CLI for actions of your own (`actions/_claude.py`) |
-| `gam` | `;docs`, `;meetings`, `;free` Google lookups through GAM |
-| `beeper` | Your older lines per chat from Beeper, for better guesses in chats |
-| `vault` | A notes folder (Obsidian): a note action that writes a Markdown file there, people and projects, your notes for training |
 
 ## What is not in this repository
 

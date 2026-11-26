@@ -24,7 +24,7 @@ def set_sha(path):
 
 
 def meta(path):
-    """What a recording was made with (typebench writes <label>.meta.json): set, its fingerprint, booster, people."""
+    """What a recording was made with (typebench writes <label>.meta.json): set, its fingerprint, booster."""
     try: return json.loads(Path(str(path)[: -len(".jsonl")] + ".meta.json").read_text())
     except Exception: return {}
 

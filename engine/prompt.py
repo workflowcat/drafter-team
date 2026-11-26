@@ -205,7 +205,7 @@ def tail(before, app="", title="", context="", mine="", clip="", notes="", after
     elif notes and NOTES_FORM == "paren": style = f"{style}; {notes}" if style else notes
     t += (f"[{where}]" + (f" ({style})" if style else "") + "\n") if where else (f"({notes})\n" if notes and NOTES_FORM == "paren" else "")
     if mine:
-        # the user's own older messages in this chat (people.People.earlier), above the screen and fixed per chat, so the cache keeps it
+        # the user's own older messages in this chat, when a caller passes them (the engine passes none now), above the screen
         t += "Мої раніші повідомлення в цьому чаті:\n" + mine.strip() + "\n"
     clip = clip_text(clip, before)
     if clip: t += f"{CLIP_LABEL} {clip}\n"

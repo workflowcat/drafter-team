@@ -8,7 +8,7 @@
 # Sources: bench/corpus.py (typed lines and voice takes by default; more in data/drafter.local.json, "corpus").
 # First layer: bench/make_train.py, then bench/train.py under the memory guard, into data/adapters.
 # A layer exists: bench/retrain.py --force trains a new one and keeps it only if it beats the old one on your
-# newest lines (that test needs chat and AI-app lines; without them, use --new).
+# newest lines (that test needs lines typed into AI apps since the last layer; without them, use --new).
 # It trains a layer for the default typing model only (Qwen3 1.7B, bench/train.py); it does not fit other models.
 # Quit Drafter first: training needs the memory the typing model uses. Restart Drafter after it to load the layer.
 set -euo pipefail
@@ -29,7 +29,7 @@ done
 mkdir -p data
 
 echo "Sources this Mac's config allows: $($PY -B bench/corpus.py --sources)"
-$PY -B bench/corpus.py --no-beeper >/dev/null
+$PY -B bench/corpus.py >/dev/null
 lines=$(wc -l < data/corpus.jsonl | tr -d ' ')
 echo "Your corpus: $lines lines (needs about $MIN_LINES). Training keeps a little fewer: it leaves out the test lines the"
 echo "benches use, lines under 8 letters and sources weighted 0 (bench/make_train.py)."

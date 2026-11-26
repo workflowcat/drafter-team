@@ -1,8 +1,7 @@
 // Entities in the app (14 November 2026, docs/reviews/2026-11-14-entities.md, steps 1 and 2).
 //
 // Step 1, the `;` card for any entity: `;лан` shows one tape row at the caret (kind glyph, name, what Tab puts in).
-// Tab puts the reference for this app (Obsidian: [[path|name]]; mail: the name, → for "Name <address>"; elsewhere the
-// name), ⇧Tab the plain name, ← → the other forms (address, Telegram, link), ↓ ↑ the next entity, a digit fixes the
+// Tab puts the reference for this app (mail: the name, → for "Name <address>"; elsewhere the name), ⇧Tab the plain name, ← → the other forms (address, Telegram, link), ↓ ↑ the next entity, a digit fixes the
 // kind (1 person · 2 org · 3 project · 4 tool · 5 doc · 6 place · 0 not a thing), Esc leaves what the user typed.
 // `;ctx lan`: the "context for" brief (the entity and its related ones). Snippet keys keep their prefixes.
 //
@@ -22,22 +21,9 @@ import Carbon
 enum Entities {
     // MARK: the store
 
-    private static let snap = LocalSnapshot<EntityStore>([Home.data.appendingPathComponent("entities.json"), Home.settings, Home.data.appendingPathComponent("sources.json")]) { files in
+    private static let snap = LocalSnapshot<EntityStore>([Home.data.appendingPathComponent("entities.json")]) { files in
         guard let d = files[0] else { return EntityStore() }
         var s = try JSONDecoder().decode(EntityStore.self, from: d)
-        let vault = files[1].flatMap(Settings.decode)?.obsidianVault ?? ""
-        let sources = files[2].flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] }
-        let vaultOn = (sources?["obsidian"] as? [String: Any])?["enabled"] as? Bool ?? true
-        s.records = s.records.map { record in
-            var record = record
-            if !vaultOn || vault.isEmpty || record.pack?.obsidianVault != vault {
-                record.pack?.pointers.removeAll { $0.value.hasPrefix("obsidian://") }
-                record.pack?.facts.removeAll { $0.source == "Obsidian" }
-                let newest = record.pack?.facts.map(\.date).max()
-                record.pack?.newest = newest
-            }
-            return record
-        }
         let fixed = kindFixes
         if !fixed.isEmpty { s.records = s.records.map { r in var r = r; if let k = fixed[r.id] { if k == "none" { r.cards_only = true } else { r.kind = k } }; return r } }
         return s
@@ -724,7 +710,7 @@ enum ContextDraw {
 
 enum EntityPreview {
     static func sample() -> EntityStore {
-        let v = "/Volumes/sample/Notes Vault/"
+        let v = "/Volumes/sample/Notes/"
         func e(_ id: String, _ kind: String, _ name: String, _ who: String, facts: [EntityFact], ptrs: [EntityPointer], targets: [String: String] = [:],
                handles: [String: [String]] = [:], related: [String] = [], newest: String = "2026-11-11", priv: Bool = false) -> Entity {
             Entity(id: id, kind: kind, name: name, aliases: [], who: who, targets: targets, handles: handles, related: related,
@@ -732,18 +718,18 @@ enum EntityPreview {
         }
         return EntityStore(records: [
             e("p:hanna", "person", "Ганна Ткач", "finance lead, at Lantern Labs",
-              facts: [EntityFact(text: "writes in Ukrainian, prefers short messages", source: "vault", date: "2026-11-02", quote: false),
-                      EntityFact(text: "works on Lantern", source: "vault", date: "2026-11-10", quote: false),
-                      EntityFact(text: "email hanna@example.com", source: "vault", date: "", quote: false)],
+              facts: [EntityFact(text: "writes in Ukrainian, prefers short messages", source: "notes", date: "2026-11-02", quote: false),
+                      EntityFact(text: "works on Lantern", source: "notes", date: "2026-11-10", quote: false),
+                      EntityFact(text: "email hanna@example.com", source: "notes", date: "", quote: false)],
               ptrs: [EntityPointer(label: "Note", value: v + "Entities/People/Hanna Tkach.md", path: true)],
-              targets: ["obsidian": "Entities/People/Hanna Tkach", "mail": "hanna@example.com"],
+              targets: ["mail": "hanna@example.com"],
               handles: ["email": ["hanna@example.com"], "tg": ["hanna_example"]], related: ["x:lantern"]),
             e("x:lantern", "project", "Lantern", "ordering tool for Lantern Labs",
-              facts: [EntityFact(text: "status: active", source: "vault", date: "2026-11-11", quote: false),
-                      EntityFact(text: "next: invoice export", source: "vault", date: "2026-11-11", quote: true)],
+              facts: [EntityFact(text: "status: active", source: "notes", date: "2026-11-11", quote: false),
+                      EntityFact(text: "next: invoice export", source: "notes", date: "2026-11-11", quote: true)],
               ptrs: [EntityPointer(label: "Repo", value: "/Volumes/sample/Codius/lantern", path: true),
                      EntityPointer(label: "Story", value: v + "Stories/Lantern.md", path: true)],
-              targets: ["obsidian": "Stories/Lantern"], related: ["p:hanna", "t:gate"]),
+              related: ["p:hanna", "t:gate"]),
             e("t:gate", "tool", "lantern-gate", "Cloudflare Worker that holds Lantern storage", facts: [],
               ptrs: [EntityPointer(label: "Code", value: "/Volumes/sample/Codius/lantern-gate", path: true),
                      EntityPointer(label: "URL", value: "https://lantern-gate.example.workers.dev", path: false)], related: ["x:lantern"], newest: ""),
@@ -760,9 +746,9 @@ enum EntityPreview {
         Entities.previewStore = sample()
         defer { Entities.previewStore = nil }
         let caret = CGRect(x: 600, y: -2600, width: 1, height: 20)
-        // the `;` card for a person, a project and a tool (an Obsidian note, a mail box, a terminal)
+        // the `;` card for a person, a project and a tool (a mail box, a plain field, a terminal)
         let card = EntityCard.shared
-        for (name, typed, i, dest) in [("person", ";ган", 0, "mail"), ("project", ";lant", 1, "obsidian"), ("tool", ";lantern-g", 2, "agent")] {
+        for (name, typed, i, dest) in [("person", ";ган", 0, "mail"), ("project", ";lant", 1, "plain"), ("tool", ";lantern-g", 2, "agent")] {
             card.preview(choices: i == 0 ? [0, 3] : [i], dest: dest, typed: typed)
             try UIShots.field(folder + "/card-\(name).png", typed: "see " + typed, caret: caret, panel: card.panel)
             card.hide()

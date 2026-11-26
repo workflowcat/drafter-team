@@ -1,4 +1,4 @@
-// A read-only sheet over Journal snapshots and the engine's local context/source indexes.
+// A read-only sheet over Journal snapshots and the engine's local context packs.
 import AppKit
 import SwiftUI
 
@@ -10,14 +10,11 @@ struct EntityWorkspaceSelection: Identifiable {
 private final class EntityWorkspaceStore: ObservableObject {
     @Published private(set) var model = EntityWorkspaceModel()
     @Published private(set) var building = false
-    @Published private(set) var loadingLinks = false
     @Published private(set) var loadingPromises = false
     @Published private(set) var loadingContext = false
     @Published private(set) var context = ""
     @Published private(set) var shareSummary = ""
-    @Published private(set) var vaultLinks: [LinkItem] = []
     @Published private(set) var contextError = ""
-    @Published private(set) var linksError = ""
     @Published private(set) var promisesError = ""
     @Published private(set) var level = EntityContextLevel.name
     private var entity = EntityWorkspaceIdentity()
@@ -25,7 +22,6 @@ private final class EntityWorkspaceStore: ObservableObject {
     private var active = false
     private var lifetime = UUID()
     private var contextToken = UUID()
-    private var linksToken = UUID()
     private var promisesToken = UUID()
     private var buildToken = UUID()
     private var debounceWork: DispatchWorkItem?
@@ -41,19 +37,18 @@ private final class EntityWorkspaceStore: ObservableObject {
         rebuild(rows)
         loadShareContext()
         loadContext(.name)
-        loadLinks()
         loadPromises()
     }
 
     func stop() {
         active = false
         lifetime = UUID()
-        contextToken = UUID(); linksToken = UUID(); promisesToken = UUID(); buildToken = UUID()
+        contextToken = UUID(); promisesToken = UUID(); buildToken = UUID()
         debounceWork?.cancel(); debounceWork = nil
         work?.cancel(); work = nil
         // Engine.get has no cancellation handle. Invalidating these tokens discards every late callback.
-        loadingContext = false; loadingLinks = false; loadingPromises = false; building = false
-        context = ""; shareSummary = ""; vaultLinks = []; remote = []; promises = []
+        loadingContext = false; loadingPromises = false; building = false
+        context = ""; shareSummary = ""; promises = []
         model = EntityWorkspaceModel(); local = EntityWorkspaceModel()
     }
 
@@ -89,12 +84,11 @@ private final class EntityWorkspaceStore: ObservableObject {
         }
     }
 
-    private var remote: [LinkItem] = []
     private var promises: [EntityPromise] = []
 
     private func combine() {
         var combined = local
-        combined.links = LinksRules.merge(local: local.links, remote: remote + vaultLinks)
+        combined.links = LinksRules.merge(local: local.links, remote: [])
         combined.promises = promises
         model = combined
     }
@@ -129,33 +123,6 @@ private final class EntityWorkspaceStore: ObservableObject {
             guard let self, self.active, self.lifetime == life, let response else { return }
             self.shareSummary = ([response["who"] as? String ?? ""] + (response["facts"] as? [[String: Any]] ?? [])
                 .compactMap { $0["text"] as? String }).filter { !$0.isEmpty }.joined(separator: "\n")
-            let pointers = response["pointers"] as? [[String: Any]] ?? []
-            self.vaultLinks = LinksRules.parseSources(pointers.compactMap { p in
-                guard let value = p["value"] as? String, value.hasPrefix("obsidian://") else { return nil }
-                return ["src": "obsidian", "url": value, "title": p["label"] as? String ?? "Vault note"]
-            })
-            self.combine()
-        }
-    }
-
-    func loadLinks() {
-        guard active else { return }
-        linksToken = UUID()
-        let token = linksToken, life = lifetime
-        remote = []; linksError = ""; loadingLinks = false; combine()
-        guard !entity.display.isEmpty else { return }
-        if preview {
-            remote = LinksRules.parseSources([["title": "Sample outline", "url": "https://example.test/outline", "src": "drive", "from": "Sample contact", "t": 1_800_000_000]])
-            combine(); return
-        }
-        loadingLinks = true
-        let who = (entity.emails + entity.names).joined(separator: ",")
-        Engine.shared.get(path("/sources/find", ["q": entity.display, "who": who, "n": "30"])) { [weak self] response in
-            guard let self, self.active, self.lifetime == life, self.linksToken == token else { return }
-            self.loadingLinks = false
-            guard let found = response?["found"] as? [[String: Any]] else { self.linksError = "Could not load sources."; return }
-            self.remote = LinksRules.parseSources(found)
-            self.combine()
         }
     }
 
@@ -267,7 +234,7 @@ struct EntityWorkspaceView: View {
                     .background(Capsule().fill(UIInk.well))
                 Spacer(minLength: 8)
                 Button("Share notes") {
-                    copy(ObsidianExportRules.formatShareBrief(title: entity.display, subtitle: entity.kind,
+                    copy(ShareBriefRules.formatShareBrief(title: entity.display, subtitle: entity.kind,
                         summary: s.shareSummary, todos: s.model.promises.map(\.what),
                         links: s.model.links.map(\.url)))
                 }.controlSize(.small).help("Copy role, facts, open items and links")
@@ -362,9 +329,7 @@ struct EntityWorkspaceView: View {
                 ForEach(content.journal) { timelineRow($0, details: tab == .calls) }
             }
         case .links:
-            if s.loadingLinks { status("Loading sources…") }
-            if !s.linksError.isEmpty { retry(s.linksError, action: s.loadLinks) }
-            if content.isEmpty, !s.loadingLinks, s.linksError.isEmpty { status(s.building ? "Loading links…" : "No matching links or files.") }
+            if content.isEmpty { status(s.building ? "Loading links…" : "No matching links or files.") }
             LazyVStack(alignment: .leading, spacing: 0) { ForEach(content.links) { linkRow($0) } }
         case .pictures:
             if content.isEmpty { status(s.building ? "Loading pictures…" : "No matching pictures.") }
@@ -437,7 +402,7 @@ struct EntityWorkspaceView: View {
             Glyph(link.url.isEmpty ? "file" : "link", size: 15).foregroundStyle(UIInk.muted)
             VStack(alignment: .leading, spacing: 4) {
                 Text(link.title).font(NativeFont.text(14, .medium)).lineLimit(1)
-                Text(link.source == .obsidian ? "Obsidian vault" : link.url.isEmpty ? link.filePath ?? "" : link.url).font(NativeFont.text(12)).foregroundStyle(UIInk.muted).lineLimit(1)
+                Text(link.url.isEmpty ? link.filePath ?? "" : link.url).font(NativeFont.text(12)).foregroundStyle(UIInk.muted).lineLimit(1)
                 HStack(spacing: 5) {
                     Glyph(link.source.glyph, size: 11)
                     Text([link.source.label, link.origin].filter { !$0.isEmpty }.joined(separator: " · "))

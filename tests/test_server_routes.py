@@ -34,14 +34,12 @@ class ServerRoutes(unittest.TestCase):
                          complete=self.complete,
                          actions=self.actions, notes=self.notes, claude_on=Mock(return_value=False), TYPED=[0], promise_typed=Mock(), claude_type=self.claude,
                          threading=types.SimpleNamespace(Timer=self.timer),
-                         earlier=Mock(return_value=''), people_mem=types.SimpleNamespace(chats={}, add=Mock()),
                          parts=lambda r: (r.get('before') or '', r.get('app', ''), r.get('title', ''), r.get('context') or '', ' · '),
                          dictionary=types.SimpleNamespace(add=Mock(return_value={'text': 'Synthetic'})),
                          fast_drop=lambda cancelled=None: {'fast': False}, WANT=[''], ahead_key=lambda req, pack=None: req.get('before', ''),
                          keep_running=Mock(), extras=lambda r: ('', ''))
         lift('H', into=namespace)
         self.ns = namespace
-        self.earlier = namespace['earlier']
         self.handler = namespace['H']
         self.handler.token = TOKEN
 
@@ -78,7 +76,6 @@ class ServerRoutes(unittest.TestCase):
         self.assertEqual(self.post('/prefill', {'before': 'Synthetic text'}), (200, {'fed': 3}))
         self.model.prefill.assert_called_once_with([1, 2, 3], screen=' · ', stable=2)
         self.assertFalse(self.runner.call_args.kwargs['newest'])
-        self.assertFalse(self.earlier.call_args.kwargs['remember'])
 
     def test_idle_sleep_has_no_wake_timer(self):
         # the app's idle sleep (textIdleMin): only its /wake ends it, so no timer and no 1 h cap

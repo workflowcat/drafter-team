@@ -22,6 +22,7 @@ import collections
 import hashlib
 import json
 import os
+import re
 import sqlite3
 import sys
 import threading
@@ -31,7 +32,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from data_dir import data_dir as _data_dir  # noqa: E402
-from local_search import _is_corruption, safe_fts_query  # noqa: E402
 
 SCHEMA_VERSION = "1"
 STORES = ("typed", "takes", "clipboard")
@@ -68,6 +68,30 @@ CREATE TABLE IF NOT EXISTS events(at REAL NOT NULL, store TEXT, what TEXT NOT NU
 
 class _SchemaMismatch(sqlite3.DatabaseError):
     pass
+
+
+_TOKEN = re.compile(r"[^\W_]+", re.UNICODE)
+_CORRUPT_CODES = {
+    sqlite3.SQLITE_CORRUPT,
+    sqlite3.SQLITE_NOTADB,
+    getattr(sqlite3, "SQLITE_FORMAT", 24),
+}
+
+
+def safe_fts_query(raw: str) -> str:
+    """Literal Unicode prefixes joined by OR; operators and punctuation are treated as plain tokens."""
+    words = dict.fromkeys(_TOKEN.findall(str(raw or "")[:4096]))
+    return " OR ".join('"' + word + '"*' for word in list(words)[:64])
+
+
+def _is_corruption(exc):
+    if isinstance(exc, _SchemaMismatch):
+        return True
+    code = getattr(exc, "sqlite_errorcode", 0) & 255
+    if code in _CORRUPT_CODES:
+        return True
+    msg = str(exc).lower()
+    return "malformed" in msg or "not a database" in msg
 
 
 class _Raw(str):

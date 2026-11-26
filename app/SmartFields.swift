@@ -1,6 +1,6 @@
 // Smart snippet fields (17 November 2026; Text Blaze, Folk): {name}, {first name}, {company}, {last link to them},
-// {date next week}, {my free slots}. They fill from the chat on screen (engine /fields: the names reference and the user's own
-// lines there, engine/whom.py Who.fields) and from the user's calendar (Actions.freeSlots, the same as ;free). A field with no
+// {date next week}, {my free slots}. They fill from the chat on screen (engine /fields: the name on the
+// screen's last line, engine/whom.py Who.fields) and from the user's calendar (Actions.freeSlots, your free slots from Calendar). A field with no
 // value stays as it was, so Snippets.fill makes it a place to fill (the word selected, typing replaces it). The filled
 // snippet shows as a preview card first; Tab puts it in (Snippets.previewSmart). Pure Foundation:
 // swiftc -parse-as-library app/SmartFields.swift tests/smart_fields.swift -o app/build/smart-fields-test && app/build/smart-fields-test

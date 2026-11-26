@@ -243,7 +243,6 @@ struct SettingsView: View {
         let s = m.settings
         let apps = SettingsView.callApps
         let cals = CalendarGroups.group(m.preview ? SettingsView.sampleCalendars : SettingsView.calendars())
-        let sources = m.preview ? SourceList.sample : SourceList.shared.rows
         var keys = [
             "Keep the microphone ready",
             "Right Option twice puts the last take in again",
@@ -255,44 +254,13 @@ struct SettingsView: View {
             "Cleanup in mail raw clean polished", "Cleanup in chats raw clean polished",
             "Cleanup in AI apps raw clean polished", "Cleanup everywhere else raw clean polished",
             "Mail: greeting, paragraphs, sign-off", "Chats: one sentence per line",
-            "Say a shortcut's cue to put it in", "Say what the clean-up removed",
-            "Update now sources refresh", "Obsidian vault folder choose clear sources"
+            "Say a shortcut's cue to put it in", "Say what the clean-up removed"
         ]
         keys += s.voiceStyleApps.keys.map { "\(NoteField.name($0)) cleanup voice style" }
         keys += s.voiceModes.map { "\($0.key) voice mode \($0.value)" }
         keys += apps.map(\.name)
         keys += cals.flatMap(\.rows).flatMap { [$0.name, "Meetings in " + $0.name] }
-        keys += sources.map { "\($0.label) \($0.name) sources \($0.note)" }
         return anyMatch(keys)
-    }
-
-    @ViewBuilder private var obsidianRow: some View {
-        if anyMatch(["Obsidian vault folder choose clear sources"]) {
-            HStack(spacing: 10) {
-                Glyph("folder", size: 14)
-                Text("Obsidian").font(NativeFont.text(13))
-                Text(m.settings.obsidianVault.isEmpty ? "Off" : URL(fileURLWithPath: m.settings.obsidianVault).lastPathComponent)
-                    .font(NativeFont.text(13)).foregroundStyle(UIInk.muted).lineLimit(1)
-                    .help(m.settings.obsidianVault)
-                Spacer()
-                Button("Choose folder…") {
-                    let panel = NSOpenPanel()
-                    panel.canChooseFiles = false; panel.canChooseDirectories = true
-                    panel.allowsMultipleSelection = false; panel.canCreateDirectories = false
-                    panel.prompt = "Choose vault"
-                    panel.begin { response in
-                        guard response == .OK, let url = panel.url else { return }
-                        guard ObsidianExportRules.targetURL(vaultPath: url.path, date: Date(), title: "note") != nil else {
-                            m.status = "Choose a vault folder without symlinks."; return
-                        }
-                        m.save { $0.obsidianVault = url.path }
-                        if !m.preview { Engine.shared.post("/sources/run", ["name": "obsidian"]) }
-                    }
-                }
-                Button("Clear") { m.save { $0.obsidianVault = "" } }
-                    .disabled(m.settings.obsidianVault.isEmpty)
-            }.controlSize(.small).padding(.vertical, 4)
-        }
     }
 
     private var advCaptureHasMatch: Bool {
@@ -513,8 +481,6 @@ struct SettingsView: View {
                     }
                 }
                 calendarRows
-                sourceRows
-                obsidianRow
                 }
                 if showCat(.capture) && advCaptureHasMatch {
                 sub("Keys and capture")

@@ -15,21 +15,21 @@ import know
 
 def entities():
     recs = [
-        {'id': 'vault:p1', 'kind': 'person', 'name': 'Ганна Квітка', 'aliases': ['Slava'],
+        {'id': 'notes:p1', 'kind': 'person', 'name': 'Ганна Квітка', 'aliases': ['Slava'],
          'names': {'uk': 'Ганна Квітка', 'en': ''}, 'handles': {'phone': ['+380 00 000 0001'], 'email': ['slava@example.test']},
-         'relations': [{'id': 'vault:pr1', 'why': 'works on', 'w': 0.8, 'src': 'vault'}], 'related': ['vault:pr1'],
-         'sources': [{'system': 'vault', 'id': 'p1'}], 'private': False},
-        {'id': 'vault:pr1', 'kind': 'project', 'name': 'Bramblix', 'aliases': [], 'names': {'uk': '', 'en': 'Bramblix'},
-         'handles': {}, 'relations': [], 'related': [], 'sources': [{'system': 'vault', 'id': 'pr1'}], 'private': False},
-        {'id': 'vault:pr1-repo', 'kind': 'tool', 'name': 'Bramblix', 'aliases': [], 'names': {'uk': '', 'en': 'Bramblix'},
-         'handles': {}, 'relations': [], 'related': [], 'sources': [{'system': 'vault', 'id': 'pr1-repo'}],
-         'private': False, 'twin_of': 'vault:pr1'},
-        {'id': 'vault:o1', 'kind': 'org', 'name': 'Larkspur Labs', 'aliases': [], 'names': {'uk': '', 'en': 'Larkspur Labs'},
-         'handles': {}, 'relations': [], 'related': [], 'sources': [{'system': 'vault', 'id': 'o1'}], 'private': False},
-        {'id': 'vault:secret', 'kind': 'person', 'name': 'Hidden Sentinel', 'aliases': [], 'names': {'uk': '', 'en': 'Hidden Sentinel'},
+         'relations': [{'id': 'notes:pr1', 'why': 'works on', 'w': 0.8, 'src': 'notes'}], 'related': ['notes:pr1'],
+         'sources': [{'system': 'notes', 'id': 'p1'}], 'private': False},
+        {'id': 'notes:pr1', 'kind': 'project', 'name': 'Bramblix', 'aliases': [], 'names': {'uk': '', 'en': 'Bramblix'},
+         'handles': {}, 'relations': [], 'related': [], 'sources': [{'system': 'notes', 'id': 'pr1'}], 'private': False},
+        {'id': 'notes:pr1-repo', 'kind': 'tool', 'name': 'Bramblix', 'aliases': [], 'names': {'uk': '', 'en': 'Bramblix'},
+         'handles': {}, 'relations': [], 'related': [], 'sources': [{'system': 'notes', 'id': 'pr1-repo'}],
+         'private': False, 'twin_of': 'notes:pr1'},
+        {'id': 'notes:o1', 'kind': 'org', 'name': 'Larkspur Labs', 'aliases': [], 'names': {'uk': '', 'en': 'Larkspur Labs'},
+         'handles': {}, 'relations': [], 'related': [], 'sources': [{'system': 'notes', 'id': 'o1'}], 'private': False},
+        {'id': 'notes:secret', 'kind': 'person', 'name': 'Hidden Sentinel', 'aliases': [], 'names': {'uk': '', 'en': 'Hidden Sentinel'},
          'handles': {}, 'relations': [], 'related': [], 'sources': [], 'private': True},
-        {'id': 'google:people/c9', 'kind': 'person', 'name': 'Quill Contact', 'aliases': [], 'names': {'uk': '', 'en': 'Quill Contact'},
-         'handles': {'email': ['quill@example.test']}, 'relations': [], 'related': [], 'sources': [{'system': 'contacts', 'id': 'google:people/c9'}],
+        {'id': 'cards:c9', 'kind': 'person', 'name': 'Quill Contact', 'aliases': [], 'names': {'uk': '', 'en': 'Quill Contact'},
+         'handles': {'email': ['quill@example.test']}, 'relations': [], 'related': [], 'sources': [{'system': 'cards', 'id': 'c9'}],
          'private': False, 'cards_only': True},
     ]
     return {'records': recs, 'surfaces': {'ганні': [[0, 'form']], 'bramblix': [[1, 'name'], [2, 'name']]}}
@@ -51,7 +51,7 @@ def words():
 
 
 ROWS = [{'t': 1_760_000_000, 'app': 'Claude', 'text': 'спитай Ганну про Bramblix'},
-        {'t': 1_760_100_000, 'app': 'Beeper', 'text': 'Bramblix вже готовий'},
+        {'t': 1_760_100_000, 'app': 'Telegram', 'text': 'Bramblix вже готовий'},
         {'t': 1_760_200_000, 'app': 'Claude', 'text': 'test ⟦drafter-test⟧ Bramblix'}]
 CHATS = {'chat-a': ['Ганна, привіт', 'як Bramblix?'], 'chat-b': ['Bramblix знову']}
 
@@ -63,35 +63,35 @@ def build(edits=()):
 class Build(unittest.TestCase):
     def test_one_entry_per_thing(self):
         es = build()
-        self.assertNotIn('vault:secret', es)                       # private never enters
-        self.assertNotIn('vault:pr1-repo', es)                     # a twin folds into its main record
-        self.assertEqual(es['vault:pr1']['kind'], 'project')
-        self.assertEqual(es['vault:o1']['kind'], 'company')
+        self.assertNotIn('notes:secret', es)                       # private never enters
+        self.assertNotIn('notes:pr1-repo', es)                     # a twin folds into its main record
+        self.assertEqual(es['notes:pr1']['kind'], 'project')
+        self.assertEqual(es['notes:o1']['kind'], 'company')
         self.assertIn('know:Zephyrine'.replace('Zephyrine', 'zephyrine'), es)   # a dictionary leftover is a term
         self.assertIn('word:glimmerdocs', es)
         self.assertFalse(any(e['uk'] == 'snippet text here' or e['latin'] == 'snippet text here' for e in es.values()))
 
     def test_fields(self):
-        p = build()['vault:p1']
+        p = build()['notes:p1']
         self.assertEqual(p['uk'], 'Ганна Квітка')
         self.assertTrue(p['latin'].startswith('Hanna'))       # Latin filled from the Ukrainian
         self.assertIn('Ганні', p['forms'])                    # entity form, capital restored
         self.assertIn('Ганною', p['forms'])                   # know form
         self.assertIn('Slava', p['short'])
         self.assertEqual(p['phones'], ['+380 00 000 0001'])
-        self.assertEqual(p['links'], ['vault:pr1'])
-        self.assertEqual(build()['vault:pr1']['heard'], ['brambel'])
+        self.assertEqual(p['links'], ['notes:pr1'])
+        self.assertEqual(build()['notes:pr1']['heard'], ['brambel'])
 
     def test_context(self):
         es = build()
-        b, p = es['vault:pr1']['context'], es['vault:p1']['context']
+        b, p = es['notes:pr1']['context'], es['notes:p1']['context']
         self.assertEqual(b['lines'], 2)                            # the test line is never counted
-        self.assertEqual(b['apps'], {'Claude': 1, 'Beeper': 1})
+        self.assertEqual(b['apps'], {'Claude': 1, 'Telegram': 1})
         self.assertEqual(b['chats'], 2)
         self.assertEqual(p['lines'], 1); self.assertEqual(p['chats'], 1)   # a case form counts
         self.assertEqual(b['last_seen'], names.day(1_760_100_000))
-        self.assertEqual(es['google:people/c9']['context']['lines'], 0)
-        self.assertTrue(es['google:people/c9']['card'])
+        self.assertEqual(es['cards:c9']['context']['lines'], 0)
+        self.assertTrue(es['cards:c9']['card'])
 
     def test_shared_word_counts_for_none(self):
         es = names.build_entries(entities={'records': [
@@ -113,30 +113,30 @@ class Edits(unittest.TestCase):
             self.assertEqual(got, c['expect'], c['name'])
 
     def test_spell_hide_merge_in_build(self):
-        es = build([{'op': 'spell', 'id': 'vault:o1', 'latin': 'Larkspur Lab'},
+        es = build([{'op': 'spell', 'id': 'notes:o1', 'latin': 'Larkspur Lab'},
                     {'op': 'hide', 'id': 'word:glimmerdocs', 'on': True},
-                    {'op': 'merge', 'id': 'know:zephyrine', 'into': 'vault:pr1'},
-                    {'op': 'merge', 'id': 'gone', 'into': 'vault:pr1'}])
-        self.assertEqual(es['vault:o1']['latin'], 'Larkspur Lab')
-        self.assertIn('Larkspur Labs', es['vault:o1']['heard'])
+                    {'op': 'merge', 'id': 'know:zephyrine', 'into': 'notes:pr1'},
+                    {'op': 'merge', 'id': 'gone', 'into': 'notes:pr1'}])
+        self.assertEqual(es['notes:o1']['latin'], 'Larkspur Lab')
+        self.assertIn('Larkspur Labs', es['notes:o1']['heard'])
         self.assertTrue(es['word:glimmerdocs']['hidden'])
         self.assertNotIn('know:zephyrine', es)
-        self.assertIn('Zephyrine', es['vault:pr1']['short'])
+        self.assertIn('Zephyrine', es['notes:pr1']['short'])
 
     def test_spelled_person_gets_forms(self):
-        es = build([{'op': 'spell', 'id': 'vault:p1', 'uk': 'Ганна Квіткова'}])
-        self.assertIn('Ганна Квітка', es['vault:p1']['heard'])
-        self.assertTrue(any(f.startswith('Квітков') for f in es['vault:p1']['forms']))
+        es = build([{'op': 'spell', 'id': 'notes:p1', 'uk': 'Ганна Квіткова'}])
+        self.assertIn('Ганна Квітка', es['notes:p1']['heard'])
+        self.assertTrue(any(f.startswith('Квітков') for f in es['notes:p1']['forms']))
 
     def test_kind_edit_and_invalid_ignored(self):
         es = build([
-            {'op': 'kind', 'id': 'vault:o1', 'kind': 'project'},
-            {'op': 'kind', 'id': 'vault:p1', 'kind': 'not_a_kind'},
+            {'op': 'kind', 'id': 'notes:o1', 'kind': 'project'},
+            {'op': 'kind', 'id': 'notes:p1', 'kind': 'not_a_kind'},
             {'op': 'kind', 'id': 'missing_id', 'kind': 'place'},
         ])
-        self.assertEqual(es['vault:o1']['kind'], 'project')
-        self.assertTrue(es['vault:o1'].get('edited'))
-        self.assertEqual(es['vault:p1']['kind'], 'person')
+        self.assertEqual(es['notes:o1']['kind'], 'project')
+        self.assertTrue(es['notes:o1'].get('edited'))
+        self.assertEqual(es['notes:p1']['kind'], 'person')
 
     def test_kind_edit_apply_count(self):
         entries = {
@@ -162,15 +162,14 @@ class Derived(unittest.TestCase):
         (self.data / 'know.json').write_text(json.dumps(know_pack(), ensure_ascii=False))
         (self.data / 'words.json').write_text(json.dumps(words(), ensure_ascii=False))
         (self.data / 'corpus.jsonl').write_text('\n'.join(json.dumps(r, ensure_ascii=False) for r in ROWS) + '\n')
-        (self.data / 'people.json').write_text(json.dumps({'chats': {k: {'mine': v} for k, v in CHATS.items()}}, ensure_ascii=False))
 
     def test_build_writes_store_and_derived(self):
-        (self.data / 'names-edits.json').write_text(json.dumps([{'op': 'hide', 'id': 'know:zephyrine'}, {'op': 'spell', 'id': 'vault:o1', 'latin': 'Larkspur Lab'}]))
+        (self.data / 'names-edits.json').write_text(json.dumps([{'op': 'hide', 'id': 'know:zephyrine'}, {'op': 'spell', 'id': 'notes:o1', 'latin': 'Larkspur Lab'}]))
         store = names.build(self.data, now=1)
         self.assertEqual(json.loads((self.data / 'names.json').read_text())['built'], 1)
         kw = (self.data / 'known-words.txt').read_text().split()
         self.assertIn('Ганною', kw); self.assertIn('Bramblix', kw)
-        self.assertNotIn('Quill', kw)                               # a contact card is not a known word
+        self.assertNotIn('Quill', kw)                               # a card is not a known word
         self.assertNotIn('Zephyrine', kw)                           # hidden
         d = json.loads((self.data / 'words.json').read_text())
         self.assertEqual(set(d), {'about', 'updated', 'terms', 'heard', 'keep', 'words', 'loose_heard'})   # the voice engine's shape
@@ -194,7 +193,7 @@ class Derived(unittest.TestCase):
     def test_derive_after_app_edit(self):
         store = names.build(self.data)
         for e in store['entries']:
-            if e['id'] == 'vault:p1': e['uk'] = 'Ганна Квіткова'; e['edited'] = True
+            if e['id'] == 'notes:p1': e['uk'] = 'Ганна Квіткова'; e['edited'] = True
         (self.data / 'names.json').write_text(json.dumps(store, ensure_ascii=False))
         out = names.derive(self.data)
         self.assertGreater(out['known_words'], 0)

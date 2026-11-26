@@ -29,7 +29,7 @@ final class RecordWords: ObservableObject { @Published var text = "" }
 final class RecordNotes: ObservableObject {
     @Published var text = "" { didSet { if text != oldValue { RecordLive.shared.notesChanged() } } }
 }
-/// Pre-meeting "5-second brief" (Wave 8B), isolated in its own model so async /prep + /promises updates,
+/// Pre-meeting "5-second brief" (Wave 8B), isolated in its own model so async /promises updates,
 /// collapse/expand, and the 120 s / live-outline auto-collapse never rebuild the rest of RecordView.
 final class RecordBrief: ObservableObject {
     @Published var brief = PreMeetingBrief()
@@ -231,35 +231,13 @@ final class RecordLive: ObservableObject {
     private func fetchPreMeetingBrief(gen: Int, participants: [String], eventTitle: String) {
         let query = PreMeetingBriefRules.queryText(eventTitle: eventTitle, participants: participants)
         guard !query.isEmpty else { return }
-        DispatchQueue.global(qos: .utility).async { [weak self] in
-            let group = DispatchGroup()
-            let lock = NSLock()
-            var prepJSON: [String: Any]?
-            var promiseRows: [[String: Any]]?
-
-            group.enter()
-            Engine.shared.post("/prep", ["text": query], timeout: 4) { j in
-                lock.lock(); prepJSON = j; lock.unlock()
-                group.leave()
-            }
-
-            group.enter()
-            Engine.shared.get("/promises", timeout: 4) { j in
-                lock.lock(); promiseRows = j?["promises"] as? [[String: Any]]; lock.unlock()
-                group.leave()
-            }
-
-            group.notify(queue: DispatchQueue.global(qos: .utility)) {
-                lock.lock()
-                let prep = prepJSON
-                let rows = promiseRows
-                lock.unlock()
-                let parsed = PreMeetingBriefRules.parsePrepResponse(prep, promises: rows, participants: participants)
-                guard !parsed.isEmpty else { return }
-                DispatchQueue.main.async {
-                    guard let self, self.active, self.call, self.briefGen == gen else { return }
-                    self.brief.brief = parsed
-                }
+        Engine.shared.get("/promises", timeout: 4) { [weak self] j in
+            let rows = j?["promises"] as? [[String: Any]]
+            let parsed = PreMeetingBriefRules.parsePrepResponse(nil, promises: rows, participants: participants)
+            guard !parsed.isEmpty else { return }
+            DispatchQueue.main.async {
+                guard let self, self.active, self.call, self.briefGen == gen else { return }
+                self.brief.brief = parsed
             }
         }
     }

@@ -1,5 +1,5 @@
 """Promises (2026-11-17): promises in lines the user sent ("I'll send the deck tomorrow", "завтра скину договір"),
-kept locally in data/promises.json, offered back in that chat's empty box when they come due.
+kept locally in data/promises.json, listed in the window (/promises).
 
 - detect(text, now): pure rule, no model. A first-person promise verb (English: I'll / I will / I'm going to / a
   sentence starting with "will"; Ukrainian: a first-person future verb such as скину, надішлю, поділюсь) and what
@@ -7,8 +7,6 @@ kept locally in data/promises.json, offered back in that chat's empty box when t
   "не скину"), maybes, reported speech ("he will send": only I/we count) or lines signed "Claude:".
 - Book(path): the rows {id, t, due, what, phrase, chat, person, app, done, lang}; the same what in the same chat
   within 2 days is kept once; at most 200 open rows.
-- offer(row, data_dir): a saved link (snippets.json / replacements.json) or a recent clipboard link or file path
-  that shares a word with `what`, else a follow-up line in the promise's language.
 
 Local only: nothing here leaves the Mac.
 """
@@ -23,9 +21,6 @@ from pathlib import Path
 TEST = "⟦drafter-test⟧"
 DEDUPE = 2 * 86400
 MAX_OPEN = 200
-SOON = 12 * 3600         # /promises/due: due within this many seconds (or overdue) counts as due
-SETTLE = 30 * 60         # ... and only once it is this old (the box empties right after the user sends the promise)
-CLIP_ROWS = 500
 
 SIGNED = re.compile(r"^\s*(claude|клод)\s*:", re.I)
 
@@ -253,93 +248,3 @@ class Book:
             left = [r for r in rows if r["id"] != pid]
             if len(left) != len(rows): self._save(left)
             return len(left) != len(rows)
-
-    def due(self, chat, now=None):
-        """The open promise in this chat that has come due (or will within SOON), most overdue first; None."""
-        now = time.time() if now is None else now
-        if not chat: return None
-        rows = [r for r in self._load() if not r.get("done") and r.get("chat") == chat
-                and now - r.get("t", 0) >= SETTLE and r.get("due", 0) - now <= SOON]
-        return min(rows, key=lambda r: r.get("due", 0)) if rows else None
-
-
-# ---- the offer ---------------------------------------------------------------------------------------------------
-
-STOPWORDS = {"the", "a", "an", "my", "our", "your", "this", "that", "and", "for", "you", "with", "about",
-             "про", "для", "мій", "моє", "мою", "наш", "нашу", "твій"}
-
-
-def words(s):
-    return [w for w in re.findall(r"[^\W\d_]+", (s or "").casefold()) if len(w) >= 3 and w not in STOPWORDS]
-
-
-def _shares(a, b):
-    """Two word lists share a word: equal, or the same first 5 letters (case forms: договір / договору)."""
-    for x in a:
-        for y in b:
-            if x == y or (len(x) >= 5 and len(y) >= 5 and x[:5] == y[:5]): return True
-    return False
-
-
-def _public(v):
-    try:
-        import lookup
-        return lookup.public_url(v)
-    except Exception:
-        return v if re.match(r"https?://\S+$", v or "") else ""
-
-
-def saved_links(data_dir):
-    saved = {}
-    for name in ("replacements.json", "snippets.json"):
-        try:
-            values = json.loads((Path(data_dir) / name).read_text())
-            if isinstance(values, dict): saved.update(values)
-        except (OSError, ValueError):
-            pass
-    return [(k, v) for k, v in saved.items() if isinstance(v, str) and _public(v.strip())]
-
-
-def _tail(path, n):
-    try:
-        with open(path, "rb") as f:
-            f.seek(0, 2); size = f.tell(); f.seek(max(0, size - 400_000))
-            lines = f.read().decode("utf-8", "ignore").splitlines()[-n:]
-    except OSError:
-        return []
-    out = []
-    for l in lines:
-        try: out.append(json.loads(l))
-        except ValueError: pass
-    return out
-
-
-def clip_links(data_dir, n=CLIP_ROWS):
-    """Recent copied links and file paths, newest first (only those; other copies are never read on)."""
-    out = []
-    for r in reversed(_tail(Path(data_dir) / "clipboard.jsonl", n)):
-        t = r.get("text") if isinstance(r, dict) else None
-        if not isinstance(t, str) or TEST in t: continue
-        t = t.strip()
-        if "\n" in t or len(t) > 500: continue
-        if _public(t) or (r.get("kind") == "file" and t.startswith("/")) or re.match(r"^(/|~/)\S+$", t):
-            out.append(t)
-    return out
-
-
-def offer(row, data_dir):
-    """-> (text, kind): a link that shares a word with `what`, else the follow-up line."""
-    w = words(row.get("what"))
-    if w:
-        for k, v in saved_links(data_dir):
-            if _shares(w, words(k + " " + v)): return v.strip(), "link"
-        for t in clip_links(data_dir):
-            if _shares(w, words(t)): return t, "link"
-    return followup(row), "followup"
-
-
-def followup(row):
-    what = (row.get("what") or "").strip()
-    if (row.get("lang") or lang_of(row.get("phrase"))) == "uk":
-        return f"Повертаюсь щодо {what} - " if what else "Повертаюсь, як обіцяв - "
-    return f"Following up on {what} - " if what else "Following up, as promised - "

@@ -63,16 +63,14 @@ class DataDir(unittest.TestCase):
 
     def test_engine_modules_follow_the_env(self):
         os.environ["DRAFTER_DATA"] = str(self.t / "d")
-        import memory, words, people, provider, dictionary, local, journal_db, local_search
-        for m in (memory, words, people, provider, dictionary): importlib.reload(m)
+        import memory, words, provider, dictionary, local, journal_db
+        for m in (memory, words, provider, dictionary): importlib.reload(m)
         self.assertEqual(memory.DATA, self.t / "d")
         self.assertEqual(words.DATA, self.t / "d")
-        self.assertEqual(people.PATH, self.t / "d" / "people.json")
         self.assertEqual(provider.SETTINGS, self.t / "d" / "settings.json")
         self.assertEqual(dictionary.FILE, self.t / "d" / "words.json")
         self.assertEqual(local.path(), self.t / "d" / "drafter.local.json")
         self.assertEqual(journal_db.JournalDB().data_dir, self.t / "d")
-        self.assertEqual(local_search.LocalSearchIndex().data_dir, self.t / "d")
 
     def test_more_engine_modules_follow_the_env(self):
         """The rest of the engine the server and the CLIs load, in a fresh process so module constants are read anew."""
@@ -134,7 +132,7 @@ print(json.dumps(out))
         (self.t / "d").mkdir()
         (self.t / "d" / "words.json").write_text('{"words": [{"text": "Zorblat", "kind": "project"}]}')
         (self.t / "d" / "snippets.json").write_text("{}")
-        pack = know.build(dictionary=None, snippets=None, contacts=[], now=1)
+        pack = know.build(dictionary=None, snippets=None, now=1)
         self.assertTrue((self.t / "d" / "know.json").exists())
         self.assertIn("zorblat", __import__("json").dumps(pack).lower())
         (self.t / "d" / "settings.json").write_text('{"voiceCareful": "local/c"}')

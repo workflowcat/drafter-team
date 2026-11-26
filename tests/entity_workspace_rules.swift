@@ -128,6 +128,12 @@ struct EntityWorkspaceRulesTests {
         check(EntityWorkspaceRules.build(entity: person, journal: [], promises: rows).counts.promises == 4, "promise summary count")
     }
 
+    /// A link given from outside the journal (the `remoteLinks` input), made up.
+    static func given(_ url: String, title: String, when: Double, file: String? = nil, origin: String = "") -> LinkItem {
+        LinkItem(id: "given", url: url, normalizedURL: LinksRules.normalize(url), host: LinksRules.host(of: url), title: title,
+                 source: .mentioned, origin: origin, when: when, mentions: 1, tags: [], journalId: nil, filePath: file)
+    }
+
     static func links() {
         var file = row("files", "/tmp/sample-one.pdf\n/tmp/sample-two.pdf", kind: "copied", clip: "file", tags: ["Hanna"])
         file.filePaths = ["/tmp/sample-one.pdf", "/tmp/sample-two.pdf"]
@@ -138,16 +144,16 @@ struct EntityWorkspaceRulesTests {
             row("two", "https://example.test/outline https://example.test/outline", kind: "copied", clip: "link", when: 100, tags: ["Hanna"]),
             row("ignore", "Other https://example.test/private-example"), file, call
         ]
-        let remote = LinksRules.parseSources([
-            ["title": "Sample outline", "url": "https://example.test/outline?fbclid=test", "src": "mail", "t": 150],
-            ["title": "Sample attachment", "file": "outline.pdf", "src": "mail", "t": 40, "from": "Sample Contact"]
-        ])
+        let remote = [
+            given("https://example.test/outline?fbclid=test", title: "Sample outline", when: 150),
+            given("", title: "Sample attachment", when: 40, file: "outline.pdf", origin: "Sample Contact")
+        ]
         let model = EntityWorkspaceRules.build(entity: person, journal: rows, remoteLinks: remote)
-        check(model.links.count == 5, "deduplicated link, 2 local files, call link and remote attachment")
+        check(model.links.count == 5, "deduplicated link, 2 local files, call link and given attachment")
         let link = model.links.first { $0.normalizedURL == "https://example.test/outline" }
         check(link?.mentions == 3, "one mention per row plus source")
         check(link?.journalId == "two", "local Journal jump survives remote merge")
-        check(link?.title == "Sample outline" && link?.source == .mail, "remote title and newest provenance")
+        check(link?.title == "Sample outline" && link?.source == .mentioned, "given title and newest provenance")
         check(model.links.filter { $0.filePath?.hasPrefix("/tmp/") == true }.count == 2, "multi-file clip splits into files")
         check(!model.links.contains { $0.url.contains("private-example") }, "unrelated journal links excluded")
         check(model.links.contains { $0.url == "https://example.test/brief" }, "extract call summary URLs")
@@ -164,7 +170,7 @@ struct EntityWorkspaceRulesTests {
             check(!tab.label.isEmpty && !tab.glyph.isEmpty, "tab label and glyph")
         }
         var model = EntityWorkspaceRules.build(entity: person, journal: sampleRows())
-        model.links = LinksRules.parseSources([["src": "drive", "url": "https://example.test/sample"]])
+        model.links = [given("https://example.test/sample", title: "Sample", when: 10)]
         check(EntityWorkspaceRules.build(entity: EntityWorkspaceIdentity(), journal: [], remoteLinks: model.links).counts.total == 0
               && EntityWorkspaceRules.build(entity: EntityWorkspaceIdentity(), journal: [], remoteLinks: model.links).links.isEmpty,
               "no identity never exposes unrelated source results")

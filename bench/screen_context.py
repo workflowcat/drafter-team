@@ -14,7 +14,7 @@ Variants (each one recording of the set; prompt knobs through env, engine/prompt
     tail-800/1600/3000    turns picked by engine/prompt.py pick_tail: the other side's last message whole, the user's last,
                           then older ones while N lasts, WITH who-said-what marks
     tail-plain-1600       the same pick, marks off
---marks runs the set whose screen text carries speaker marks (data/replay.json: 13 of 30 lines from Beeper history,
+--marks runs the set whose screen text carries speaker marks (data/replay.json: 13 of 30 lines from chat history,
 "Я:" / a first name); held-137 has none, so there tail == tail-plain == plain cut at line starts.
 
 Output: data/bench/models/screen-context-<model>.json and a table per variant and app kind: saved, right, wrong/1k,

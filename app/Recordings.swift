@@ -254,43 +254,6 @@ extension WindowModel {
         status = "On the clipboard for an agent: «\(d.title)»" + (d.shots.isEmpty ? "" : " with \(d.shots.count) screenshots") + " · ⌘V into Claude or Codex"
     }
 
-    func sendCallToObsidian(_ d: CallDoc) {
-        let vault = settings.obsidianVault
-        guard !vault.isEmpty else { status = "Set an Obsidian vault in Settings › Advanced"; return }
-        if preview { status = "Sample export to Obsidian"; return }
-        let notes = studioNotes(d).text
-        let summary = d.points.map { "- " + $0 }.joined(separator: "\n")
-        let entities = d.project.isEmpty ? [] : [d.project]
-        let md = ObsidianExportRules.formatCallNote(
-            title: d.title,
-            date: d.started,
-            people: d.people,
-            entities: entities,
-            summary: summary,
-            todos: d.todos,
-            notes: notes
-        )
-        let started = d.started, title = d.title
-        status = "Saving to Obsidian…"
-        DispatchQueue.global(qos: .userInitiated).async {
-            let result: Result<URL, Error>
-            if let target = ObsidianExportRules.targetURL(vaultPath: vault, date: started, title: title) {
-                result = ObsidianExportRules.writeAtomically(content: md, to: target)
-            } else {
-                result = .failure(ObsidianExportRules.ExportError.unsafePath)
-            }
-            DispatchQueue.main.async { [weak self] in
-                switch result {
-                case .success(let url):
-                    self?.status = "Saved to Obsidian · \(url.lastPathComponent)"
-                    Engine.shared.post("/sources/run", ["name": "obsidian"])
-                case .failure(let err):
-                    self?.status = "Obsidian export failed: \(err.localizedDescription)"
-                }
-            }
-        }
-    }
-
     func stopRecording() {
         guard !preview else { return }
         Talk.shared.stopRecording("the window")
@@ -901,8 +864,6 @@ struct DocView: View {
                 SwiftUI.Menu("Copy transcript as") {
                     ForEach(WindowModel.CopyForm.allCases, id: \.self) { f in Button(f.rawValue) { m.copyAs(d, f) } }
                 }.disabled(d.turns.isEmpty)
-                Button("Send to Obsidian") { m.sendCallToObsidian(d) }
-                    .disabled(m.settings.obsidianVault.isEmpty || d.live)
                 Divider()
                 if !d.live {
                     Button("Edit details…") { editing = true }

@@ -227,7 +227,7 @@ class Idle(unittest.TestCase):
         self.assertIn('idle = bool(req.get("idle"))', head)
         self.assertIn("not gatecore.idle_spot(before)", head)
         self.assertIn('if idle: low = gatecore.idle_bar(low, req.get("idle_bar"))', src)
-        self.assertIn("blk = who.block(app, context)", head)
+        self.assertNotIn("who.block", src)   # no per-chat person block
 
     def test_no_cloud_from_an_idle_request(self):
         # the Claude early lane and pause are gone (2026-11-17): /complete starts no Claude helper at all
@@ -277,7 +277,7 @@ class IdlePrompt(unittest.TestCase):
     def test_wired(self):
         src = (ROOT / "engine/server.py").read_text()
         self.assertIn('idle_form = idle_mod.form_for(req) if not before.strip() else "screen"', src)
-        self.assertIn('if idle_form in ("turns", "chat"): ids, heal, stable = idle_ids(idle_form, b, app, context, blk)', src)
+        self.assertIn('if idle_form in ("turns", "chat"): ids, heal, stable = idle_ids(idle_form, b, app, context)', src)
 
 
 class Bench(unittest.TestCase):

@@ -20,7 +20,7 @@ def load(name):
     return m
 
 
-calendar, reminder, vault = load("calendar_event"), load("reminder"), load("vault_note")
+calendar, reminder = load("calendar_event"), load("reminder")
 CYR = re.compile(r"[Ѐ-ӿ]")
 
 
@@ -132,22 +132,6 @@ class EnglishTests(unittest.TestCase):
         self.assertIsNone(r["fields"]["due"])
         self.assertTrue(r["chip"].endswith("no time set"))
 
-    def test_vault_note(self):
-        line = "save this to the vault: notes about project roadmap"
-        self.assertTrue(vault.TRIGGER.search(line))
-        fake = Fake('{"title": "Project roadmap", "text": "notes about project roadmap"}')
-        r = vault.extract(line, fake)
-        self.assertEnglish(fake)
-        self.assertEqual(r["fields"], {"title": "Project roadmap", "text": "notes about project roadmap"})
-        self.assertEqual(r["chip"], "Note in the vault «Project roadmap»")
-
-    def test_vault_note_prompt_for_any_english_line(self):
-        fake = Fake('{"title": "Roadmap", "text": "project roadmap')
-        r = vault.extract("save a note about project roadmap", fake)
-        self.assertEnglish(fake)
-        self.assertEqual(r["fields"], {"title": "Roadmap", "text": "project roadmap"})
-        self.assertIsNone(vault.extract("save a note about project roadmap", Fake('{"title": "x"}')))
-
 
 class UkrainianTests(unittest.TestCase):
     def assertUkrainian(self, fake, instruction):
@@ -184,23 +168,13 @@ class UkrainianTests(unittest.TestCase):
         r = reminder.extract(line, Fake(""))                       # no answer: the line without the trigger, as before
         self.assertEqual(r["fields"]["title"], "мені завтра о 10 подзвонити Мілі")
 
-    def test_vault_note(self):
-        line = "запиши в нотатки ідею про реліз"
-        self.assertTrue(vault.TRIGGER.search(line))
-        fake = Fake('{"title": "Реліз", "text": "ідея про реліз"}')
-        r = vault.extract(line, fake)
-        self.assertUkrainian(fake, vault.INSTRUCTION["uk"])
-        self.assertEqual(r["fields"], {"title": "Реліз", "text": "ідея про реліз"})
-
     def test_instructions_unchanged(self):
         self.assertEqual(calendar.INSTRUCTION["uk"],
                          "З команди створити подію в календарі витягни коротку назву події (як у календарі, мовою команди) "
                          "і хто буде (імена в називному відмінку, через кому; порожньо, якщо нікого).")
         self.assertEqual(reminder.INSTRUCTION["uk"],
                          "З команди-нагадування витягни, про що нагадати: коротко, з дієсловом, мовою команди, без дати й часу.")
-        self.assertEqual(vault.INSTRUCTION["uk"],
-                         "З команди зберегти нотатку витягни коротку назву нотатки і сам текст нотатки (слова автора, без команди).")
-        for m in (calendar, reminder, vault):
+        for m in (calendar, reminder):
             self.assertIsNone(CYR.search(m.INSTRUCTION["en"]))
 
 

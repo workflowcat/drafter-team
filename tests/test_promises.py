@@ -1,5 +1,5 @@
-"""Promises (engine/promises.py): spotting promises in made-up sent lines, their due times, the store and the
-offer. Made-up lines only; a temporary folder, never data/.
+"""Promises (engine/promises.py): spotting promises in made-up sent lines, their due times and the store.
+Made-up lines only; a temporary folder, never data/.
 
     .venv/bin/python -B tests/test_promises.py
 """
@@ -104,7 +104,7 @@ class Store(unittest.TestCase):
     def found(self, line, now=NOW): return P.detect(line, now)
 
     def test_add_dedupe_and_open(self):
-        r = self.book.add(self.found("will share the deck"), chat="c1", person="p1", app="Beeper", now=NOW)
+        r = self.book.add(self.found("will share the deck"), chat="c1", person="p1", app="Telegram", now=NOW)
         self.assertEqual(len(r), 1)
         self.assertEqual(self.book.add(self.found("I'll send the deck tomorrow"), chat="c1", now=NOW + 3600), [])
         self.assertEqual(len(self.book.add(self.found("I'll send the deck tomorrow"), chat="c2", now=NOW + 3600)), 1)
@@ -129,58 +129,6 @@ class Store(unittest.TestCase):
 
     def test_test_rows_never_kept(self):
         self.assertEqual(self.book.add([{"what": "deck", "due": NOW, "phrase": "deck ⟦drafter-test⟧"}], chat="c"), [])
-
-    def test_due_for_chat(self):
-        self.book.add(self.found("will share the deck tomorrow"), chat="c1", now=NOW)
-        self.assertIsNone(self.book.due("c1", NOW + 60))          # just sent: not offered yet
-        self.assertIsNone(self.book.due("c1", NOW + 3600))        # due in 19 h: not yet
-        self.assertIsNotNone(self.book.due("c1", at(1, 0)))       # 10 h before: due soon
-        self.assertIsNone(self.book.due("c2", at(1, 12)))         # another chat
-        self.assertIsNone(self.book.due(None, at(1, 12)))
-
-
-class Offer(unittest.TestCase):
-    def setUp(self):
-        self.d = tempfile.TemporaryDirectory(); self.dir = Path(self.d.name)
-
-    def tearDown(self): self.d.cleanup()
-
-    def test_saved_link_then_clipboard_then_followup(self):
-        row = {"what": "the deck", "lang": "en", "phrase": "will share the deck"}
-        self.assertEqual(P.offer(row, self.dir), ("Following up on the deck - ", "followup"))
-        clips = [{"t": 1, "text": "https://example.com/files/pitch-deck-v2", "kind": "link"},
-                 {"t": 2, "text": "some copied words about a deck"},
-                 {"t": 3, "text": "https://example.com/deck ⟦drafter-test⟧"}]
-        (self.dir / "clipboard.jsonl").write_text("\n".join(json.dumps(c) for c in clips) + "\n")
-        self.assertEqual(P.offer(row, self.dir), ("https://example.com/files/pitch-deck-v2", "link"))
-        (self.dir / "snippets.json").write_text(json.dumps({";deck": "https://example.com/our-deck", ";mail": "a@example.com"}))
-        self.assertEqual(P.offer(row, self.dir), ("https://example.com/our-deck", "link"))
-
-    def test_ukrainian_followup_and_case_forms(self):
-        row = {"what": "договір", "lang": "uk", "phrase": "надішлю договір"}
-        self.assertEqual(P.offer(row, self.dir), ("Повертаюсь щодо договір - ", "followup"))
-        (self.dir / "replacements.json").write_text(json.dumps({";договору": "https://example.com/contract"}))
-        self.assertEqual(P.offer(row, self.dir), ("https://example.com/contract", "link"))
-        self.assertEqual(P.followup({"what": "", "lang": "uk"}), "Повертаюсь, як обіцяв - ")
-
-
-class Person(unittest.TestCase):
-    def test_chat_person_and_private(self):
-        import people, whom
-        with tempfile.TemporaryDirectory() as d:
-            names = Path(d) / "names.json"
-            names.write_text(json.dumps({"entries": [
-                {"id": "p-olena", "kind": "person", "uk": "Олена Коваль", "latin": "Olena Koval"},
-                {"id": "p-secret", "kind": "person", "uk": "Тарас Бондар", "private": True}]}))
-            pm = people.People(Path(d) / "people.json")
-            pm.chats = {"c1": {"mine": ["a"], "who": ["Olena Koval"]}, "c2": {"mine": ["a"], "who": ["Тарас Бондар"]},
-                        "c3": {"mine": ["a"], "who": ["Olena Koval", "Someone Else"], "group": True}}
-            w = whom.Who(pm, names)
-            self.assertEqual(w.person("c1"), "p-olena")
-            self.assertEqual(w.display("p-olena"), "Олена Коваль")
-            self.assertIsNone(w.person("c2"))
-            self.assertIsNone(w.person("c3"))
-            self.assertIsNone(w.person(None))
 
 
 if __name__ == "__main__":

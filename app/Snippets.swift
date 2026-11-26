@@ -232,7 +232,7 @@ enum Snippets {
         pendingSmart = nil
         Keys.shared.cancel()
         Focus.backspace(old.count)
-        // texts from the clipboard, the user's calendar or a lookup go in as they are
+        // texts from the clipboard or the user's calendar go in as they are
         var f = plain ? Filled(text: new, back: 0) : fill(smart.map { SmartFields.apply(new, values: $0) } ?? new)
         let up = adapt(f.text, typed: old, key: key)
         if up.count == f.text.count { f.text = up }
@@ -305,7 +305,6 @@ enum Snippets {
                 if debugLog { log("after space: \(spot == nil ? why : "another element")") }
                 return
             }
-            if LookupQuery.parse(s.before) != nil { return }
             // keys the user typed while the field was read wait in the event tap (this runs on its thread), so backspaces
             // posted now would land after them ("tommorow and" became "ttomorrow nd", 2026-11-01): let them through
             // first and act only if there were none

@@ -1,44 +1,40 @@
 // The one `;` picker (17 November 2026, docs/plans/2026-11-17-spec.md "Cut, merge, fix"), pure: no AppKit. Snippets,
-// quick starts, lookups, people and other cards in one list with a label on each row; Right ⌘ twice opens it with an
+// quick starts, people and other cards in one list with a label on each row; Right ⌘ twice opens it with an
 // empty query, `;` + 2 letters in a field opens it with what the user typed. The panel and its sources: app/Commands.swift.
 // Test: tests/command_rules.swift.
 import Foundation
 
 enum CommandKind: String, CaseIterable {
-    case snippet, preset, lookup, person, card
+    case snippet, preset, person, card
     case action              // something Drafter does itself: meeting notes (`;meet`, `;notes`, app/MeetingNotes.swift)
 }
 
 struct CommandItem: Equatable {
     let kind: CommandKind
-    let key: String          // the trigger (";sig", ";meet", ";docs") or, for people and cards, "" (found by name)
+    let key: String          // the trigger (";sig", ";meet") or, for people and cards, "" (found by name)
     let title: String        // what the row says first: the snippet's text, the quick start's title, the person's name
     var detail = ""          // the grey end of the row: a host, a company
-    var on = true            // off: shown with "off", picking it says how to turn it on
-    var ref = ""             // what the pick needs: a snippet key, a url, a lookup kind, a record index
+    var ref = ""             // what the pick needs: a snippet key, a url, a record index
 }
 
 enum CommandRules {
     /// Rows shown at most.
     static let most = 8
 
-    /// Hidden aliases: a typed key that means another one when nothing owns it exactly. `;doc` is the new-doc quick
-    /// start when one exists; otherwise it means the `;docs` lookup. `;e` means `;en`, `;u` `;uk` (translate, when a
-    /// translate item exists).
-    static let aliases: [String: String] = [";doc": ";docs", ";e": ";en", ";u": ";uk", ";notes": ";meet"]
+    /// Hidden aliases: a typed key that means another one when nothing owns it exactly. `;e` means `;en`, `;u` `;uk`
+    /// (translate, when a translate item exists), `;notes` `;meet`.
+    static let aliases: [String: String] = [";e": ";en", ";u": ";uk", ";notes": ";meet"]
 
     /// Row labels in the field's language: Ukrainian when the keyboard is Ukrainian or the line is in Cyrillic.
     static func label(_ k: CommandKind, uk: Bool) -> String {
         switch k {
         case .snippet: return uk ? "заготовка" : "snippet"
         case .preset: return uk ? "відкрити" : "open"
-        case .lookup: return uk ? "пошук" : "search"
         case .person: return uk ? "людина" : "person"
         case .card: return uk ? "картка" : "card"
         case .action: return uk ? "почати" : "start"
         }
     }
-    static func offWord(uk: Bool) -> String { uk ? "вимкнено" : "off" }
     static func emptyWord(uk: Bool) -> String { uk ? "нічого не знайдено" : "nothing found" }
 
     /// true when the line reads as Ukrainian: more Cyrillic letters than Latin ones in its last 40 characters.
@@ -61,7 +57,7 @@ enum CommandRules {
     private static let rx = try! NSRegularExpression(pattern: #"(?:^|[\s(\[«"'])(;([\p{L}][\p{L}\p{N}'’ʼ._-]{1,29}))$"#)
 
     /// The rows for a query, best first: an exact key (or its alias), then a key that starts with it, then a title
-    /// word that starts with it, then a title holding it. On rows before off rows of the same rank; else list order.
+    /// word that starts with it, then a title holding it; list order within a rank.
     /// An empty query: every row, list order, cut at `most`.
     static func filter(_ items: [CommandItem], _ query: String) -> [CommandItem] {
         let q = query.lowercased().trimmingCharacters(in: .whitespaces)
@@ -79,8 +75,8 @@ enum CommandRules {
             if t.contains(bare) || (!k.isEmpty && k.contains(bare)) { return 3 }
             return nil
         }
-        let scored = items.enumerated().compactMap { i, it in rank(it).map { (r: $0, off: it.on ? 0 : 1, i: i, it: it) } }
-        return scored.sorted { ($0.r, $0.off, $0.i) < ($1.r, $1.off, $1.i) }.prefix(most).map(\.it)
+        let scored = items.enumerated().compactMap { i, it in rank(it).map { (r: $0, i: i, it: it) } }
+        return scored.sorted { ($0.r, $0.i) < ($1.r, $1.i) }.prefix(most).map(\.it)
     }
 
     /// Voice mode rows (research item 3): `;mode` lists Raw, Clean, Polished and the user's named modes; a pick sets the voice
@@ -92,22 +88,6 @@ enum CommandRules {
             let detail = n.lowercased() == current.lowercased() ? (uk ? "зараз" : "now") : (["Raw", "Clean", "Polished"].contains(n) ? (uk ? "голос" : "voice") : (uk ? "мій режим" : "my mode"))
             return CommandItem(kind: .action, key: ";mode-" + slug, title: (uk ? "Режим голосу: " : "Voice mode: ") + n, detail: detail, ref: "voice-mode:" + n)
         }
-    }
-
-    /// Ready `;free` rows (availability round 2): `;fr`… also offers the lookup with a day and a length already set, in
-    /// the field's language; a pick types the key and the `;free` lookup runs as typed (engine/lookup.py reads
-    /// "30 tomorrow", "60 next week"). Nothing for other queries or an empty one.
-    static let freeVariants: [(key: String, uk: String, en: String)] = [
-        (";free 30 tomorrow", "Вільний час: завтра, 30 хв", "Free times: tomorrow, 30 min"),
-        (";free 30 this week", "Вільний час: цей тиждень, 30 хв", "Free times: this week, 30 min"),
-        (";free 30 next week", "Вільний час: наступний тиждень, 30 хв", "Free times: next week, 30 min"),
-        (";free 60 next week", "Вільний час: наступний тиждень, 1 год", "Free times: next week, 1 hour"),
-    ]
-    static func freeRows(_ query: String, uk: Bool, on: Bool) -> [CommandItem] {
-        let q = query.lowercased().trimmingCharacters(in: .whitespaces)
-        let bare = q.hasPrefix(";") ? String(q.dropFirst()) : q
-        guard bare.count >= 2, "free".hasPrefix(bare) || bare.hasPrefix("free") else { return [] }
-        return freeVariants.map { CommandItem(kind: .lookup, key: $0.key, title: uk ? $0.uk : $0.en, on: on, ref: ";free") }
     }
 
     /// One row's first line as it shows: no line breaks, at most 60 characters.

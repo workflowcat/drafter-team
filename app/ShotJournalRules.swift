@@ -71,7 +71,7 @@ enum ShotJournalRules {
     /// A shot row's actions in the reader's order (the open row and the right-click menu show the same). Its ⌘E is
     /// Mark up again (Pick parts stays for other pictures), its ⌘C copies the picture with the text an agent reads.
     static func actions(pinned: Bool) -> [Spec] {
-        [Spec(key: "⇥", word: "Send to…", tip: "the send-to list again: Clipboard, File, Claude, Codex, Claude Code, Ask, Person", act: .send),
+        [Spec(key: "⇥", word: "Send to…", tip: "the send-to list again: Clipboard, File, Claude, Codex, Claude Code, Ask", act: .send),
          Spec(key: "⌘↵", word: "Insert", tip: "into the app you came from", act: .insert),
          Spec(key: "⌘C", word: "Copy for agent", tip: "the picture and its text (note, marks with pixels, the path) on the clipboard", act: .copyAgent),
          Spec(key: "⌘E", word: "Mark up again", tip: "the marks again over the first picture; the shot is kept", act: .markUp),

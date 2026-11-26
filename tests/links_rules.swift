@@ -16,7 +16,7 @@ struct LinksRulesTests {
         LinkRowInput(id: id, kind: kind, clip: clip, text: text, title: title, app: app, when: when, tags: tags, filePath: file)
     }
 
-    static func item(_ url: String, title: String = "", source: LinkSource = .mail, when: Double = 100,
+    static func item(_ url: String, title: String = "", source: LinkSource = .mentioned, when: Double = 100,
                      mentions: Int = 1, tags: [String] = [], journal: String? = nil, file: String? = nil) -> LinkItem {
         LinkItem(id: "synthetic", url: url, normalizedURL: LinksRules.normalize(url), host: LinksRules.host(of: url),
                  title: title.isEmpty ? url : title, source: source, origin: "Sample Sender", when: when,
@@ -24,8 +24,8 @@ struct LinksRulesTests {
     }
 
     static func main() throws {
-        normalization(); extraction(); sources(); merging(); filtering(); summaries(); formatting()
-        check(LinkSource.allCases.map(\.label) == ["Copied", "Mentioned", "Mail", "Beeper", "Drive", "Obsidian"], "source labels")
+        normalization(); extraction(); merging(); filtering(); summaries(); formatting()
+        check(LinkSource.allCases.map(\.label) == ["Copied", "Mentioned"], "source labels")
         check(Set(LinkSource.allCases.map(\.glyph)).isSubset(of: ["globe", "link", "mail", "chat", "file", "folder", "book"]), "existing glyph names")
         let encoded = try JSONEncoder().encode(LinkSource.allCases)
         let decoded = try JSONDecoder().decode([LinkSource].self, from: encoded)
@@ -107,44 +107,12 @@ struct LinksRulesTests {
         check(LinksRules.extract(from: []).isEmpty, "empty extraction")
     }
 
-    static func sources() {
-        let vault = "obsidian://open?vault=Orchard%20Notes&file=Plans%2FStation%20%231.md"
-        let notes = LinksRules.parseSources([["src": "obsidian", "title": "Station", "url": vault]])
-        check(notes.count == 1 && notes[0].source == .obsidian, "vault source parsed")
-        check(notes[0].normalizedURL == vault, "vault deep link preserved")
-        check(LinksRules.filter(notes, query: "Station", source: .obsidian, host: nil).count == 1, "vault filter")
-        check(LinksRules.normalize("obsidian://delete?vault=Orchard&file=Station").isEmpty, "only open deep links")
-        check(LinksRules.normalize("obsidian://open?file=Station").isEmpty, "vault required")
-        let raw: [[String: Any]] = [
-            ["title": "Sample mail guide", "url": "https://example.test/guide?gclid=sample", "file": "", "src": "mail", "t": 500, "from": "Sample Sender"],
-            ["title": "Sample document", "url": "https://docs.example.test/file", "file": "/tmp/synthetic/guide.pdf", "src": "drive", "t": 400.5, "from": "Sample Team"],
-            ["title": "Sample attachment", "url": "", "file": "plan.pdf", "src": "beeper", "t": "300", "from": "Sample Chat"],
-            ["title": "", "url": "https://example.test/empty-title", "src": "MAIL", "t": NSNull()],
-            ["url": "https://example.test/reject", "src": "unknown"],
-            ["url": "https://example.test/reject", "src": "copied"],
-            ["url": "javascript:alert(1)", "src": "mail"],
-            ["title": "No target", "src": "drive"], ["url": 42, "src": "drive"], [:]
-        ]
-        let items = LinksRules.parseSources(raw)
-        check(items.count == 4, "source parser ignores malformed and unsupported rows")
-        check(items[0].source == .mail && items[0].url == "https://example.test/guide", "mail with tracking removed")
-        check(items[0].origin == "Sample Sender" && items[0].when == 500, "sender and numeric timestamp")
-        check(items[1].source == .drive && items[1].filePath == "/tmp/synthetic/guide.pdf", "Drive URL and file retained")
-        check(items[2].source == .beeper && items[2].url.isEmpty && items[2].filePath == "plan.pdf", "Beeper attachment name kept without inventing a path")
-        check(items[2].when == 300 && items[2].host.isEmpty, "string timestamp and no host for file")
-        check(items[3].title == items[3].url && items[3].when == 0, "missing title and timestamp")
-        check(items.allSatisfy { $0.journalId == nil && $0.mentions == 1 }, "remote items have no journal jump")
-        check(Set(items.map(\.id)).count == 4, "remote IDs are distinct")
-        check(LinksRules.parseSources([raw[0], raw[0]]).first?.mentions == 2, "source duplicates combine")
-        check(LinksRules.parseSources([]).isEmpty, "empty source response")
-    }
-
     static func merging() {
         let local = item("https://example.test/guide?utm_source=local", title: "Sample guide with details", source: .copied, when: 100, mentions: 2, tags: ["Research"], journal: "journal-1")
         let remote = item("HTTPS://EXAMPLE.TEST/guide?fbclid=sample", when: 500, mentions: 3, tags: ["research", "Team"])
         let merged = LinksRules.merge(local: [local], remote: [remote])
         check(merged.count == 1 && merged[0].mentions == 5, "merge combines mention counts across sources")
-        check(merged[0].when == 500 && merged[0].source == .mail, "newest remote provenance")
+        check(merged[0].when == 500 && merged[0].source == .mentioned, "newest provenance")
         check(merged[0].title == "Sample guide with details" && merged[0].journalId == "journal-1", "remote merge preserves useful local title and journal jump")
         check(merged[0].tags == ["research", "Team"], "merge combines tags uniquely")
         check(merged[0].id == "url:https://example.test/guide", "canonical ID survives merge")
@@ -153,12 +121,10 @@ struct LinksRulesTests {
             item("", when: 20, file: "/tmp/synthetic/plan.pdf"), item("", when: 30, file: "/tmp/synthetic/other.pdf")])
         check(files.count == 2 && files[1].mentions == 2, "file-only dedup uses path")
         check(files[1].journalId == "file-row" && files[1].title == "Sample plan", "file dedup preserves journal jump and title")
-        // Non-path attachment names from different emails/subjects must NOT collapse into one row
-        let attachments = LinksRules.parseSources([
-            ["title": "January Invoice", "url": "", "file": "invoice.pdf", "src": "mail", "t": 100, "from": "Billing A"],
-            ["title": "February Invoice", "url": "", "file": "invoice.pdf", "src": "mail", "t": 200, "from": "Billing B"],
-        ])
-        check(attachments.count == 2, "distinct remote attachments with same filename stay separate")
+        // Bare file names with different titles must NOT collapse into one row
+        let attachments = LinksRules.merge(local: [item("", title: "January Invoice", when: 100, file: "invoice.pdf"),
+                                                   item("", title: "February Invoice", when: 200, file: "invoice.pdf")], remote: [])
+        check(attachments.count == 2, "distinct bare file names with the same name stay separate")
         let sorted = LinksRules.merge(local: [item("https://z.example.test", when: 5), item("https://a.example.test", when: 5)], remote: [item("https://new.example.test", when: 20)])
         check(sorted.map(\.host) == ["new.example.test", "a.example.test", "z.example.test"], "newest first, deterministic ties")
         check(LinksRules.merge(local: [item("https://example.test", when: .nan)], remote: []).first?.when == 0, "invalid timestamp cannot break sorting")
@@ -169,29 +135,29 @@ struct LinksRulesTests {
     static func filtering() {
         let items = LinksRules.merge(local: [
             item("https://example.test/guide", title: "Sample Café Guide", source: .copied, tags: ["Research"]),
-            item("https://docs.example.test/notes", title: "Sample Notes", source: .drive),
-            item("", title: "Sample Plan", source: .beeper, file: "/tmp/synthetic/plan.pdf")], remote: [])
+            item("https://docs.example.test/notes", title: "Sample Notes", source: .mentioned),
+            item("", title: "Sample Plan", source: .copied, file: "/tmp/synthetic/plan.pdf")], remote: [])
         func matches(_ q: String = "", _ s: LinkSource? = nil, _ h: String? = nil) -> [LinkItem] {
             LinksRules.filter(items, query: q, source: s, host: h)
         }
         check(matches() == items, "empty filters preserve order")
         check(matches("  CAFE research ").count == 1, "case and accent insensitive multiword query matches tags")
-        check(matches("sender", .drive).count == 1, "origin searchable with source intersection")
+        check(matches("sender", .mentioned).count == 1, "origin searchable with source intersection")
         check(matches("notes", .copied).isEmpty, "query and source both required")
         check(matches("", nil, "WWW.EXAMPLE.TEST").count == 1, "host filter normalizes www and case")
         check(matches("", nil, "https://example.test/").count == 1, "host filter accepts a web address")
-        check(matches("", .drive, "example.test").isEmpty, "host filter is exact, not subdomain substring")
-        check(matches("synthetic plan.pdf", .beeper).count == 1, "file path searchable")
+        check(matches("", .mentioned, "example.test").isEmpty, "host filter is exact, not subdomain substring")
+        check(matches("synthetic plan.pdf", .copied).count == 1, "file path searchable")
         check(matches("example.test/guide").count == 1, "URL searchable")
-        check(matches("mail").isEmpty, "absent source word does not match")
+        check(matches("drive").isEmpty, "absent word does not match")
         check(matches("sample missing").isEmpty, "all query words required")
         check(LinksRules.filter([], query: "sample", source: nil, host: nil).isEmpty, "empty filtering")
     }
 
     static func summaries() {
         let items = [item("https://example.test/a", source: .copied, mentions: 10), item("https://example.test/b", source: .mentioned),
-                     item("https://z.example.test", source: .mail), item("https://a.example.test", source: .drive),
-                     item("", source: .beeper, file: "sample.pdf")]
+                     item("https://z.example.test", source: .mentioned), item("https://a.example.test", source: .copied),
+                     item("", source: .copied, file: "sample.pdf")]
         let hosts = LinksRules.topHosts(items)
         check(hosts.map(\.host) == ["example.test", "a.example.test", "z.example.test"], "hosts sorted by count, ties alphabetically")
         check(hosts.map(\.count) == [2, 1, 1], "host counts items rather than mentions; excludes files")
@@ -199,8 +165,8 @@ struct LinksRulesTests {
         check(LinksRules.topHosts(items, limit: 0).isEmpty && LinksRules.topHosts(items, limit: -1).isEmpty, "nonpositive host limit")
         check(LinksRules.topHosts([]).isEmpty, "empty hosts")
         check(LinksRules.topHosts((0..<12).map { item("https://site\($0).example.test") }).count == 10, "default host limit")
-        let counts = LinksRules.sourceCounts(items + [item("obsidian://open?vault=Orchard&file=Station", source: .obsidian)])
-        check(LinkSource.allCases.allSatisfy { counts[$0] == 1 }, "every source counted")
+        let counts = LinksRules.sourceCounts(items)
+        check(counts[.copied] == 3 && counts[.mentioned] == 2, "every source counted")
         check(LinksRules.sourceCounts([]).values.allSatisfy { $0 == 0 }, "empty counts include zeros")
     }
 

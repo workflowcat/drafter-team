@@ -65,7 +65,7 @@ enum KeyMap {
         KeyDef(id: "voiceLong", keys: "⇧ Right Option", job: "voice", surface: .global, setting: "voice", on: false,
                help: "start / finish a recording, or record the call the strip offers", section: "calls"),
         KeyDef(id: "commands", keys: "Right ⌘ twice", job: "commands", surface: .global, setting: "commandsKey",
-               help: "the one ; picker: snippets, quick starts, lookups, people (also in the menu); ↑ ↓, ↵ puts in, esc", section: "typing"),
+               help: "the one ; picker: snippets, quick starts, people (also in the menu); ↑ ↓, ↵ puts in, esc", section: "typing"),
         KeyDef(id: "againKey", keys: "⌃⌥R", job: "voice", surface: .global, setting: "againKey", on: false),
 
         // the strip

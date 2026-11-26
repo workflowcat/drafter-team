@@ -1,57 +1,8 @@
 import AppKit
 import SwiftUI
 
-/// Promises (2026-11-17, engine/promises.py): promises the user made in a chat ("I'll send the deck tomorrow",
-/// "завтра скину договір") come back in that chat's empty box when due: a matching saved or copied link, else a
-/// follow-up line. Tab fills the box (never sends) and marks the promise done. The window's Shortcuts page lists the
-/// open ones with Done and Drop.
-enum PromiseHooks {
-    /// The field asked last: one ask per field.
-    static var askedEl: AXUIElement?
-    /// The due promise for the box on screen, for the instant-replies card to put first (the lead's
-    /// `Keys.promiseFirst` reads this on merge). Cleared when another field asks.
-    static var first: (el: AXUIElement, opt: [String: String])?
-
-    /// A next-message option was taken with Tab: a promise option is marked done.
-    static func taken(_ o: [String: String]?) {
-        guard let id = o?["promise"], !id.isEmpty else { return }
-        Engine.shared.post("/promises/done", ["id": id])
-        log("promise taken")
-    }
-}
-
-extension Keys {
-    /// The due promise for this box as a draft option (first in the list), or nil. `ctx`: the screen text above the box.
-    func promiseOption(for s: Spot, ctx: String, done: @escaping ([String: String]?) -> Void) {
-        guard !ctx.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { done(nil); return }
-        Engine.shared.post("/promises/due", ["app": s.app.localizedName ?? "", "context": String(ctx.suffix(1500))], timeout: 3) { j in
-            guard let id = j?["id"] as? String, let offer = j?["offer"] as? String, !offer.isEmpty else { done(nil); return }
-            let what = j?["what"] as? String ?? ""
-            done(["text": offer, "label": "promise · " + what, "promise": id, "kind": j?["kind"] as? String ?? ""])
-        }
-    }
-
-    /// An empty chat box (checkEmpty): ask once per field; a due promise shows as a next-message card.
-    func askPromise(_ s: Spot) {
-        if let was = PromiseHooks.askedEl, CFEqual(was, s.el) { return }
-        PromiseHooks.askedEl = s.el
-        PromiseHooks.first = nil
-        let el = s.el, pid = s.app.processIdentifier, rect = s.rect ?? Focus.fieldStart(s.el)
-        contextQueue.async {
-            let ctx = Keys.readContext(el, pid: pid, caret: rect)
-            DispatchQueue.main.async {
-                self.promiseOption(for: s, ctx: ctx) { o in
-                    if let o { PromiseHooks.first = (el, ["text": o["text"] ?? "", "label": o["label"] ?? "", "promise": o["promise"] ?? ""]) }
-                    guard let o, !Ghost.shared.isDraft, let now = Focus.spot(skip: Drafter.shared.settings.skip).0, CFEqual(now.el, el),
-                          Keys.boxKind(now) != nil, !KeyHooks.paused(now), let r = now.rect ?? Focus.fieldStart(now.el) else { return }
-                    self.spot = now
-                    Ghost.shared.showDraft([o], field: Focus.frame(now.el), caret: r)
-                    log("promise offered (\(o["kind"] ?? ""))")
-                }
-            }
-        }
-    }
-}
+/// Promises (2026-11-17, engine/promises.py): promises the user made while typing ("I'll send the deck tomorrow",
+/// "завтра скину договір"). The window's Shortcuts page lists the open ones with Done and Drop.
 
 /// The window's "Open promises" list (Shortcuts page): what · who or app · due, Done and Drop.
 struct PromisesSection: View {

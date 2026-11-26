@@ -11,24 +11,20 @@ POST /note     {text, audio?}             -> long note: title, people and projec
 POST /rewrite  {text, instruction}         -> {text}: the selection rewritten (speak over a selection)
 POST /voice/claude {text, level, mode, note, app, context, kb, names} -> {text}: Claude's cleanup of a voice take, or "" (voiceClaude)
 POST /free     {from, to, minutes, title?, earliest?, latest?, count?} -> {slots: [{start, end, chip}]} from the user's calendars
-POST /lookup   {kind,query}               -> read-only documents, links, meetings and free times
 POST /command  {text}                     -> up to 3 runnable options for a typed direction (⌃⌥Space)
 POST /snippet  {key, text}                -> save a snippet (data/snippets.json)
 POST /ask      {text}                     -> answer from the user's notes and takes (Claude Haiku), for the strip
-POST /prep     {text}                     -> {lines, people, vault_notes}: call prep from the vault cache for a call window's title
 POST /instant  {app, context}             -> {options}: three local one-line replies (yes, no, later) to their last message
-POST /fields   {app, context}             -> {name, first name, company, last link to them}: smart snippet fields, local
+POST /fields   {app, context}             -> {name, first name, company, last link to them}: from the name on the screen's last line, local
 POST /chip     {before}                   -> {action?} for the line being typed (the app asks after a pause)
 POST /prefill  {before, app, title, context}  -> reads it into the cache (on focus), no suggestion
-POST /typed    {text, app, context?}      -> a line the user sent; kept in data/typed.jsonl (with the chat above) for the phrase memory and benches; in Beeper it joins that chat's lines (people.py)
+POST /typed    {text, app, context?}      -> a line the user sent; kept in data/typed.jsonl (with the chat above) for the phrase memory and benches
 POST /act      {id, fields}               -> runs an action; app-side ones (EventKit) go to the app via /pending
 GET  /settings, POST /settings {paused?, skip?, actions_off?, model?, callNotes?, ...}   -> for local tools
 POST /words/remove {text}
 GET  /edits, POST /edits {heard, fixed, accept}   -> words the user changed after dictating; accepted ones join the dictionary
 POST /sleep {secs}, POST /wake  -> text model off / on while a long call is read again (memory budget)
 GET  /health                -> {ok, instance, model, ...}: the one route open without the token
-GET  /sources, POST /sources {name, enabled}, POST /sources/run {name?}  -> working sources (engine/sources.py): switch, count, last update
-GET  /sources/find?q=&who=  -> [{title, url, file, src, t, from}]: links and files from mail, Docs and chats
 GET  /models -> {models: [catalog entry + downloaded, download {state, pct}, speed, quality], current, recommended, why,
                  machine {total_gb, free_gb, budget_gb}, switching}   (model catalog, 2026-11-15)
 POST /model {id}            -> {ok, current, error?, seconds}: unload the current model, load this one (live on a failure)
@@ -66,13 +62,11 @@ import snippets
 import notes
 import claude_worker
 import cloud
-import prep
 import router
 import words as words_mod
 import idle_prompt as idle_mod
 import instant as instant_mod
 import know as know_mod
-import people
 import gatecore
 import fim
 import claude_type
@@ -113,14 +107,7 @@ finisher = words_mod.Words()
 print(f"drafter engine: word finisher from {finisher.load()} lines, {finisher.export(DATA / 'mywords.txt')} known words", flush=True)
 GATE_LOCK = threading.Lock()
 GATE = {"g": gatecore.load(), "mtime": 0}
-# per-person memory (engine/people.py): the user's older messages in the Beeper chat on screen go above it in the prompt;
-# read from the Beeper CLI in the background (off with DRAFTER_PEOPLE=0)
-people_mem = people.People()
-# integrations.available finds `beeper` outside launchd's PATH too (shutil.which alone did not: data/people.json stood still from 1 November)
-if os.environ.get("DRAFTER_PEOPLE", "1") == "1" and integrations.available("beeper"): people_mem.start()
-import sources as sources_mod
-source_index = sources_mod.Index(state=sources_mod.STATE)   # mail, chats, Docs (engine/sources.py), light view
-who = whom.Who(people_mem, DATA / "names.json", topics=source_index)   # keyboard line + the chat's person, for Claude (engine/whom.py)
+who = whom.Who(DATA / "names.json")   # the keyboard line for Claude and the screen-name smart fields (engine/whom.py)
 promise_book = promises_mod.Book(DATA / "promises.json")   # promises in lines the user sent (engine/promises.py), local only
 import journal_db
 # typed, takes and clipboard JSONL copied row by row into data/journal.sqlite (engine/journal_db.py, phase 1 of the
@@ -134,16 +121,7 @@ def promise_typed(req, text):
     if not settings_load().get("learn", True) or promises_mod.TEST in text or promises_mod.TEST in ctx: return
     found = promises_mod.detect(text)
     if not found: return
-    chat = people_mem.chat_for(ctx) if ctx.strip() else None
-    promise_book.add(found, chat=chat, person=who.person(chat), app=req.get("app", ""))
-
-
-def earlier(app, context, remember=True):
-    """The user's older messages in the Beeper chat on screen (people.People.block), or ''; every local prompt of a screen
-    takes the same, so /prefill and /complete share one warm cache."""
-    if not (app or "").lower().startswith("beeper") or not context: return ""
-    try: return people_mem.block(context, remember=remember)
-    except Exception as e: print("people:", e, flush=True); return ""
+    promise_book.add(found, app=req.get("app", ""))
 
 
 DEFAULTS = Path(__file__).resolve().parent / "defaults"
@@ -604,10 +582,7 @@ def instant(req):
     if key in INSTANT_CACHE: return {**INSTANT_CACHE[key], "cached": True}
     if model.asleep or model.loading: return {"options": [], "why": "model"}
     app = str(req.get("app") or "")[:40]
-    try: blk = who.block(app, ctx)
-    except Exception: blk = ""
-    mine = earlier(app, ctx, remember=False)
-    ids = chat_ids(model, instant_mod.messages(ctx, app, blk, mine, local.short_name()))
+    ids = chat_ids(model, instant_mod.messages(ctx, app, "", "", local.short_name()))
     t = time.perf_counter()
     start = TYPED[0]
     stop = lambda: TYPED[0] != start
@@ -891,7 +866,6 @@ def complete(req, low=False, seq=None, on_part=None, keep=None):
     if low: return _complete(req, low=True, seq=seq, **({"keep": keep} if keep else {}))
     if seq is None: seq = request_seq()  # before any cache, snippet or word-only return
     globals().get("fast_tend", lambda r: None)(req)
-    earlier(req.get("app", ""), req.get("context") or "", remember=req.get("context_fresh", True))
     pack = knowledge.snapshot()
     if req.get("ahead", True):
         note_gap()
@@ -949,14 +923,13 @@ YIELD_STEP = int(os.environ.get("DRAFTER_YIELD_STEP", "64"))
 IDLE_SCREEN = "· idle chat ·"     # one cache slot for every screen's idle chat prompt
 
 
-def idle_ids(form, b, app, context, blk):
+def idle_ids(form, b, app, context):
     """(ids, heal, stable) for the idle ghost in an empty box (engine/idle_prompt.py): "turns" after the typing head, "chat" in
     the model's chat template. Nothing the user types is in it, so all but the last token stays put per screen."""
-    mine = earlier(app, context, remember=False)
     if form == "chat":
-        ids, heal = chat_ids(model, idle_mod.chat_messages(context, app, blk, mine, local.short_name())), ""
+        ids, heal = chat_ids(model, idle_mod.chat_messages(context, app, "", "", local.short_name())), ""
     else:
-        t = idle_mod.turns_tail(context, app, blk, mine)
+        t = idle_mod.turns_tail(context, app, "", "")
         heal = re.search(r"[ \t]*$", t).group(0)
         ids = b.head_ids + model.encode(t[: len(t) - len(heal)])
     return ids, heal, max(0, len(ids) - 1)
@@ -967,14 +940,10 @@ def _complete(req, low=False, seq=None, pack=None, on_part=None, keep=None):
     # the idle ghost (step 7): the caret rests in a chat box, empty or after a finished sentence; local model only
     idle = bool(req.get("idle"))
     if idle and (req.get("mid") or not gatecore.idle_spot(before)): return {"text": "", "src": "idle", "skipped": True, "ms": 0}
-    idle_form, blk = None, ""
+    idle_form = None
     if idle:
-        # who the chat is with (engine/whom.py, the names reference): local prompt only
-        try: blk = who.block(app, context)
-        except Exception: blk = ""
         # step 7b: an empty box gets a reply-shaped prompt (engine/idle_prompt.py); after a sentence, the typing prompt
         idle_form = idle_mod.form_for(req) if not before.strip() else "screen"
-        if blk and idle_form == "screen": context = blk.strip() + "\n\n" + context
         # the chat form shares no start with the typing prompt: its own parked cache, so the user's first key after it does
         # not read the typing head again (bench/idle.py: 1.7-2.1 s once, on the shared cache)
         if idle_form == "chat": screen = IDLE_SCREEN
@@ -1064,8 +1033,8 @@ def _complete(req, low=False, seq=None, pack=None, on_part=None, keep=None):
                 return {"text": "", "action": found, "ms": round((time.perf_counter() - t) * 1000)}
         # /complete may carry Keys.contextFor's previous screen while a fresh read runs.
         # complete() tracks fresh context before any fast return; this job never moves it.
-        if idle_form in ("turns", "chat"): ids, heal, stable = idle_ids(idle_form, b, app, context, blk)
-        else: ids, heal, stable = bb.ids_stable(before, app, title, context, earlier(app, context, remember=False), *extras(req), after)
+        if idle_form in ("turns", "chat"): ids, heal, stable = idle_ids(idle_form, b, app, context)
+        else: ids, heal, stable = bb.ids_stable(before, app, title, context, "", *extras(req), after)
         prep = round((time.perf_counter() - t) * 1000, 1)
         n = max(1, min(int(req.get("max_tokens") or MAX_TOKENS), 16))
         if gg:
@@ -1432,15 +1401,6 @@ class H(BaseHTTPRequestHandler):
             try: level = int(qs.get("level", ["2"])[0])
             except ValueError: level = 2
             return self.send(entity_store().context(q, level))
-        if self.path == "/sources": return self.send(sources_mod.status())
-        if self.path.split("?", 1)[0] == "/sources/find":
-            # links and files from the user's mail, Docs and chats for "attach what they asked for" and smart fields; local only
-            from urllib.parse import urlsplit, parse_qs
-            qs = parse_qs(urlsplit(self.path).query)
-            who_ = [w for w in qs.get("who", [""])[0].split(",") if w.strip()]
-            try: n = min(max(int(qs.get("n", ["8"])[0]), 1), 30)
-            except ValueError: n = 8
-            return self.send({"found": source_index.find(qs.get("q", [""])[0], who_, n)})
         if self.path == "/settings":
             st = settings_load()
             return self.send({"paused": st.get("paused", False), "voice": st.get("voice", False), "skip": st.get("skip", []), "model": st.get("model") or model.repo,
@@ -1462,7 +1422,7 @@ class H(BaseHTTPRequestHandler):
             return self.send({"ok": True, "instance": INSTANCE, "model": model.repo, "catalog": (CURRENT["entry"] or {}).get("id"), "adapter": model.adapter, "lora_merged": len(getattr(model, "fused", []) or []), "strength": round(getattr(model, "strength", 1.0) * 100), "fmt": FMT, "pid": os.getpid(), "head_tokens": len(builder.head_ids), "head_file": getattr(model, "head_file", None), "mark_hits": getattr(model, "mark_hits", 0), "rss_gb": round(guard.rss_gb(), 2),
                               "mlx_active_gb": round(act, 2), "mlx_peak_gb": round(peak, 2), "cap_gb": guard._cap[0],
                               "kv_gb": {"big": model.kv_gb(), "fast": FAST["m"].kv_gb() if FAST["m"] is not None else {}},
-                              "asleep": model.asleep, "sleeps": model.sleeps, "dist_used": getattr(model, "dist_used", 0), "word_gate": bool(wordgate()), "combo": {"fast": FAST["m"] is not None, "used": FAST["used"], "loads": FAST["loads"], "refused": FAST["refused"]}, "boost": (gate() or {}).get("boost", 0), "people": len(people_mem.chats), "ahead": ahead_stats(), "know": knowledge.stats(), "whom": who.stats, "sources": source_index.stats(),
+                              "asleep": model.asleep, "sleeps": model.sleeps, "dist_used": getattr(model, "dist_used", 0), "word_gate": bool(wordgate()), "combo": {"fast": FAST["m"] is not None, "used": FAST["used"], "loads": FAST["loads"], "refused": FAST["refused"]}, "boost": (gate() or {}).get("boost", 0), "ahead": ahead_stats(), "know": knowledge.stats(), "whom": who.stats,
                               "words": len(dictionary.load()["words"]), "actions": [a.ID for a in actions.ALL],
                               "model_link": {"provider": provider.kind(), "connected": provider.connected(), "error": provider.state["last_error"]},
                               "reader": sys.modules["reader"].stats() if "reader" in sys.modules else {},
@@ -1484,15 +1444,6 @@ class H(BaseHTTPRequestHandler):
         try: req = json.loads(self.rfile.read(n) or b"{}")
         except Exception: return self.send({"error": "bad json"}, 400)
         if self.path == "/futures": return self.send(futures(req))
-        if self.path == "/sources":
-            name = str(req.get("name") or "")
-            if name not in sources_mod.SOURCES: return self.send({"error": "unknown source"}, 400)
-            sources_mod.STATE.update(name, enabled=bool(req.get("enabled")))
-            return self.send(sources_mod.status())
-        if self.path == "/sources/run":
-            name = req.get("name")
-            if name is not None and name not in sources_mod.SOURCES: return self.send({"error": "unknown source"}, 400)
-            return self.send(sources_mod.run_in_background([name] if name else None))
         if self.path == "/complete":
             try: WANT[0] = ahead_key(req)   # long round: a look-ahead for exactly this text keeps running
             except Exception: WANT[0] = ""
@@ -1523,18 +1474,12 @@ class H(BaseHTTPRequestHandler):
         if self.path == "/command":
             import command
             return self.send(command.plan(str(req.get("text") or ""), lambda p, max_tokens=90: ask(p, max_tokens)))
-        if self.path == "/lookup":
-            import lookup
-            return self.send(lookup.search(req))
         if self.path == "/snippet":
             import command
             return self.send({"done": command.save_snippet(str(req.get("key") or ""), str(req.get("text") or ""))})
         if self.path == "/ask":
             import ask as notes_ask
             return self.send(notes_ask.answer(str(req.get("text") or "")))
-        if self.path == "/prep":
-            try: return self.send(prep.about(req.get("text") or ""))
-            except Exception as e: return self.send({"lines": [], "error": str(e)[:200]})
         if self.path == "/rewrite": return self.send(rewrite(req))
         if self.path == "/voice/claude": return self.send(voice_claude(req))
         if self.path == "/outline": return self.send(outline(req))
@@ -1589,7 +1534,7 @@ class H(BaseHTTPRequestHandler):
             return self.send({"ok": True, **DOWNLOADS.start(target)})
         if self.path == "/prefill":
             before, app, title, context, screen = parts(req)
-            ids, _, stable = builder.ids_stable(before, app, title, context, earlier(app, context, remember=False), *extras(req))   # builder_for(FMT) is this one
+            ids, _, stable = builder.ids_stable(before, app, title, context, "", *extras(req))   # builder_for(FMT) is this one
             r = run(lambda c: {"fed": model.prefill(ids, screen=screen, stable=stable)}, newest=False, timeout=5)
             return self.send(r)
         if self.path == "/typed":
@@ -1603,7 +1548,6 @@ class H(BaseHTTPRequestHandler):
                 if globals().get("JOURNAL") is not None: JOURNAL.poke()   # the new line goes into data/journal.sqlite now
                 phrases.add(text)
                 finisher.add(text)
-                if (req.get("app") or "").lower().startswith("beeper"): people_mem.add(req.get("context") or "", text)
                 with GATE_LOCK:
                     export_words = time.time() - GATE.get("exported", 0) > 600
                     if export_words: GATE["exported"] = time.time()
@@ -1670,13 +1614,6 @@ class H(BaseHTTPRequestHandler):
             return self.send(actions.run_python(req.get("id"), req.get("fields") or {}))
         if self.path == "/promises/done": return self.send({"ok": promise_book.done(str(req.get("id") or ""))})
         if self.path == "/promises/drop": return self.send({"ok": promise_book.drop(str(req.get("id") or ""))})
-        if self.path == "/promises/due":
-            # an empty box: the open promise for the chat on screen that has come due, with a link or a follow-up line
-            ctx = req.get("context") or ""
-            row = promise_book.due(people_mem.chat_for(ctx)) if ctx.strip() and promises_mod.TEST not in ctx else None
-            if row is None: return self.send({})
-            offer, kind = promises_mod.offer(row, DATA)
-            return self.send({"id": row["id"], "what": row.get("what") or "", "offer": offer, "kind": kind})
         self.send({"error": "not found"}, 404)
 
 

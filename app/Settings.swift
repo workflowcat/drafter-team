@@ -170,7 +170,6 @@ struct Settings: Codable {
     var journalView = "gallery"   // "gallery": cards; "list": rows
     var journalLook = "soft"      // the list's rows: "soft" (three zones) or "grid" (the old columns)
     var cardSize = 1              // 0 small, 1 medium, 2 large (⌘- ⌘+)
-    var obsidianVault = ""        // opt-in local Markdown source and export folder
     /// The journal window reads typed, takes and clipboard rows from data/journal.sqlite (journal in SQLite, phase 1,
     /// 23 November 2026, app/JournalDB.swift, engine/journal_db.py; engine/ask.py's takes too); off = the JSONL files.
     var journalDB = true

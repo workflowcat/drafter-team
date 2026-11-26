@@ -72,9 +72,6 @@ prints what is in effect.
 | Name | What it adds |
 |---|---|
 | `claude` | A signed-in `claude` CLI for actions of your own (`actions/_claude.py`) |
-| `gam` | `;docs`, `;meetings`, `;free` Google lookups through the GAM CLI |
-| `beeper` | Your older lines per chat from the Beeper app |
-| `vault` | A notes folder (an Obsidian vault): a note action that writes a Markdown file there, and your own notes for training |
 
 ## 3. The code
 

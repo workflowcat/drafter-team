@@ -106,8 +106,8 @@ class HeldSet(unittest.TestCase):
         rows = [{"t": 5, "app": "Claude", "text": "old line one two three"},
                 {"t": 20, "app": "Claude", "text": "please check the deploy now", "context": "screen"},
                 {"t": 21, "app": "Claude", "text": "please check the deploy now"},          # the same line again
-                {"t": 22, "app": "Beeper", "text": "ok see you at five then"},
-                {"t": 23, "app": "Beeper", "text": "too short"},
+                {"t": 22, "app": "Telegram", "text": "ok see you at five then"},
+                {"t": 23, "app": "Telegram", "text": "too short"},
                 {"t": 24, "app": "Notes", "text": "not a chat or an AI app here"}]
         out = make_held.pick(rows, cut=10, ai_n=5, chat_n=5)
         self.assertEqual(sorted(o["text"] for o in out), ["ok see you at five then", "please check the deploy now"])
@@ -186,28 +186,8 @@ class TwoStepGhost(unittest.TestCase):
         self.assertTrue(me.close_connection)
 
 
-class BeeperUnderLaunchd(unittest.TestCase):
-    """The nightly runs with launchd's PATH; the 8 November retrain drew no Beeper lines and people_fresh.py died."""
-    def test_found_outside_path(self):
-        import os, tempfile
-        sys.modules.pop("people", None)
-        import people
-        with tempfile.TemporaryDirectory() as home:
-            bin_dir = Path(home) / ".npm-global/bin"; bin_dir.mkdir(parents=True)
-            exe = bin_dir / "beeper"; exe.write_text("#!/bin/sh\n"); exe.chmod(0o755)
-            old = os.environ.get("HOME"); os.environ["HOME"] = home
-            try:
-                self.assertEqual(people.beeper_bin("/usr/bin:/bin:/usr/sbin:/sbin"), str(exe))
-            finally:
-                os.environ["HOME"] = old
-        with tempfile.TemporaryDirectory() as empty:
-            old = os.environ.get("HOME"); os.environ["HOME"] = empty
-            try:
-                found = people.beeper_bin(empty)
-                self.assertTrue(found == "beeper" or not found.startswith(empty))
-            finally:
-                os.environ["HOME"] = old
-
+class NightlyPath(unittest.TestCase):
+    """The nightly runs with launchd's PATH; tools like claude live outside it."""
     def test_nightly_sets_path(self):
         self.assertIn(".npm-global/bin", (ROOT / "bench/nightly.sh").read_text())
 

@@ -153,7 +153,7 @@ struct KeyRuleChecks {
         check(o(19) == .none && o(20) == .none, "row 8: digits 2 and 3 are the app's")
         check(KeyRules.callOfferKey(voice: true) == "⇧ right ⌥" && KeyRules.callOfferKey(voice: false) == "", "row 3: the call offer never says tab")
 
-        check(KeyRules.tabRunsChip(kind: "expand") && KeyRules.tabRunsChip(kind: "proofread") && KeyRules.tabRunsChip(kind: "lookup.insert"), "row 4: text chips take Tab")
+        check(KeyRules.tabRunsChip(kind: "expand") && KeyRules.tabRunsChip(kind: "proofread") && KeyRules.tabRunsChip(kind: "copy") && !KeyRules.tabRunsChip(kind: "lookup.insert"), "row 4: text chips take Tab")
         for k in ["eventkit.event", "eventkit.reminder", "open", "python", "snippet.save", "draft", "something new"] {
             check(!KeyRules.tabRunsChip(kind: k), "row 4: Tab never runs \(k)")
         }

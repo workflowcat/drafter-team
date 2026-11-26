@@ -1,5 +1,5 @@
 // Pre-meeting "5-second brief" rules for RecordWindow (Wave 8B): pure Foundation, zero AppKit/SwiftUI.
-// Parses /prep context and open /promises for the call's participants, deduplicates and caps text length,
+// Reads the calendar event and open /promises for the call's participants, deduplicates and caps text length,
 // and governs auto-hide once live outline notes arrive or 120 s elapse. Test: tests/pre_meeting_brief_rules.swift.
 import Foundation
 
@@ -76,7 +76,7 @@ enum PreMeetingBriefRules {
         return .collapsed
     }
 
-    /// Query string sent to POST /prep from the calendar event title and participants.
+    /// The calendar event title and participants as one line (empty: no event to brief on).
     static func queryText(eventTitle: String, participants: [String]) -> String {
         let parts = ([eventTitle] + participants).map(clean).filter { !$0.isEmpty }
         return parts.joined(separator: " ")
@@ -91,7 +91,7 @@ enum PreMeetingBriefRules {
         return "Before this call · " + brief.participants.prefix(2).joined(separator: ", ") + " +\(brief.participants.count - 2)"
     }
 
-    /// Parses POST /prep response and GET /promises rows into a compact, scannable brief.
+    /// Parses optional event context and GET /promises rows into a compact, scannable brief (the app passes nil context).
     static func parsePrepResponse(
         _ json: [String: Any]?,
         promises: [[String: Any]]?,

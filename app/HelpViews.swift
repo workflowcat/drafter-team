@@ -196,9 +196,6 @@ struct ShortcutsView: View {
     @State private var snippets: [String: String] = [:]
     @State private var trigger = ""
     @State private var replacement = ""
-    @State private var accountStatus = "Not checked this session"
-    @State private var checkingAccount = false
-    @State private var workspaceAccount = ""
     @State private var status = ""
     @State private var ideas: [Snippets.Idea] = []
 
@@ -237,35 +234,7 @@ struct ShortcutsView: View {
                 // 2. Open Promises
                 PromisesSection(preview: m.preview)
 
-                // 3. Google Search & Insert
-                if m.preview || LocalConfig.available("gam") {
-                    PageCard {
-                        VStack(alignment: .leading, spacing: 10) {
-                            PageSectionHead(title: "Google Search & Insert", glyph: "search")
-                            Text("Type a shortcut in your text, then Tab to search. Choose a result with ↑↓ and Return to replace the shortcut. If the field changed, the result is copied instead.")
-                                .font(NativeFont.text(12)).foregroundStyle(UIInk.muted).fixedSize(horizontal: false, vertical: true)
-                            Text(";docs project notes · ;links cal · ;meetings tomorrow · ;free 30 tomorrow")
-                                .font(NativeFont.mono(12)).foregroundStyle(UIInk.ink).textSelection(.enabled)
-                                .padding(.horizontal, 10).padding(.vertical, 7)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .background(RoundedRectangle(cornerRadius: Native.corner(2)).fill(UIInk.well))
-                            ShortcutEditor(label: "Google account", hint: "Uses the existing Google connection on this Mac. Drive searches include files shared with you. Meeting and free-time searches use this account's primary calendar only, in Europe/Kyiv. Availability: weekdays, 09:00–18:00.", key: "account", file: "workspace.json", initial: workspaceAccount, preview: m.preview)
-                                .id("workspace-" + workspaceAccount)
-                            HStack(spacing: 10) {
-                                PagePillButton(title: checkingAccount ? "Checking…" : "Check connection", glyph: "refresh", enabled: !checkingAccount && !m.preview) {
-                                    checkingAccount = true
-                                    Engine.shared.post("/lookup", ["kind": "accounts"], timeout: 60) { reply in
-                                        checkingAccount = false
-                                        accountStatus = (reply?["error"] as? String) ?? (reply?["status"] as? String) ?? "Search service is unavailable"
-                                    }
-                                }
-                                Text(accountStatus).font(NativeFont.text(12)).foregroundStyle(UIInk.muted).fixedSize(horizontal: false, vertical: true)
-                            }
-                        }
-                    }
-                }
-
-                // 4. Custom Replacements
+                // 3. Custom Replacements
                 PageCard {
                     VStack(alignment: .leading, spacing: 10) {
                         PageSectionHead(title: "Custom Replacements", glyph: "bookmark")
@@ -291,7 +260,7 @@ struct ShortcutsView: View {
                             PageField(placeholder: "Replace with", text: $replacement)
                             PagePillButton(title: "Add", glyph: "plus", primary: true, enabled: !trigger.isEmpty && !replacement.isEmpty && !m.preview) {
                                 let key = trigger.trimmingCharacters(in: .whitespacesAndNewlines)
-                                guard !key.isEmpty, !key.contains(where: { $0.isWhitespace }), key != SnippetRules.initials, !LookupQuery.reserved.contains(key), !snippets.keys.contains(key) else { status = "Use one word, without spaces, that is not a built-in shortcut."; return }
+                                guard !key.isEmpty, !key.contains(where: { $0.isWhitespace }), key != SnippetRules.initials, !MentionRules.reservedWords.contains(key), !snippets.keys.contains(key) else { status = "Use one word, without spaces, that is not a built-in shortcut."; return }
                                 do {
                                     try Snippets.save(key, replacement, file: "replacements.json")
                                     rows = Snippets.replacements; trigger = ""; replacement = ""; status = "Saved"
@@ -304,7 +273,7 @@ struct ShortcutsView: View {
                     }
                 }
 
-                // 5. Frequent Phrase Ideas
+                // 4. Frequent Phrase Ideas
                 if !ideas.isEmpty {
                     PageCard {
                         VStack(alignment: .leading, spacing: 10) {
@@ -340,7 +309,6 @@ struct ShortcutsView: View {
         .onAppear {
             snippets = m.preview ? [";mail": "alex@example.com", ";cal": "https://example.com/meet/alex"] : Snippets.all
             rows = m.preview ? [";дякую": "Дякую, отримав."] : Snippets.replacements
-            workspaceAccount = m.preview ? "alex@example.com" : Snippets.read("workspace.json")["account"] ?? ""
             if m.preview { ideas = [Snippets.Idea(text: "Thanks, got it. I will look today and come back.", count: 4)] }
             else if Drafter.shared.settings.learn { DispatchQueue.global(qos: .utility).async { let i = Snippets.ideas(); DispatchQueue.main.async { ideas = i } } }
         }

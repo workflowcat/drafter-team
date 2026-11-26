@@ -33,7 +33,7 @@ assert repr(float(T7)) != T7
 # as raw lines so the exact tokens are kept. Made-up text only.
 TYPED = [
     '{"t": 1763900000.123456, "app": "Notes", "text": "a made-up line he sent"}',
-    '{"t": 1763900001.5, "app": "Beeper", "text": "made-up reply, привіт 👋", "context": "made-up chat above"}',
+    '{"t": 1763900001.5, "app": "Telegram", "text": "made-up reply, привіт 👋", "context": "made-up chat above"}',
     '{"t": ' + T7 + ', "app": "Mail", "text": "made-up line with a \\"quote\\" and a \\\\ slash"}',
 ]
 TAKES = [
@@ -356,6 +356,24 @@ import Foundation
     print(String(data: try! JSONSerialization.data(withJSONObject: out, options: [.sortedKeys]), encoding: .utf8)!)
 }}
 '''
+
+
+class SafeFts(unittest.TestCase):
+    """safe_fts_query: literal Unicode prefixes; FTS operators and punctuation never reach MATCH as syntax."""
+    def test_multilingual_literals_and_fts_syntax(self):
+        q = journal_db.safe_fts_query
+        for query in ("", "!!!", '"', "_-(){}:+*", "\x00", "🪴"):
+            self.assertEqual(q(query), "")
+        self.assertEqual(q('OR "NOT'), '"OR"* OR "NOT"*')
+        self.assertEqual(q("Київ café"), '"Київ"* OR "café"*')
+        db = sqlite3.connect(":memory:")
+        db.execute("CREATE VIRTUAL TABLE docs_fts USING fts5(text)")
+        db.execute("INSERT INTO docs_fts(text) VALUES ('English orchard Український проєкт Київ')")
+        self.assertEqual(len(db.execute("SELECT rowid FROM docs_fts WHERE docs_fts MATCH ?", (q("україн"),)).fetchall()), 1)
+        for query in ('"* OR title:(test) NOT -foo ^bar', "a " * 10000, "a\x00b", "क़", "\u0345"):
+            match = q(query)
+            if match:
+                db.execute("SELECT rowid FROM docs_fts WHERE docs_fts MATCH ?", (match,)).fetchall()
 
 
 class SwiftReader(Base):

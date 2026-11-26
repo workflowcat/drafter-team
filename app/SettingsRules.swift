@@ -44,7 +44,7 @@ enum SettingsPlan {
         "clipContext", "alternatives", "readerCheck", "instantReplies", "autocorrectMode", "autocorrectUk", "fixWord", "tabBack", "escPause",
         "pickOffer", "screenContext", "keepMic", "againTap", "commandsKey", "recordWindow", "callOff", "calendarsOff", "quickKey", "switchSwap",
         "captureCmdShiftS", "captureFallbackKey", "captureTalk", "clipTotalMB", "stripStyle", "journalView", "journalLook",
-        "cardSize", "tapeDensity", "journalFold", "obsidianVault",
+        "cardSize", "tapeDensity", "journalFold",
         // added on main during the round: voice style, auto-record (same rows, now in Advanced)
         "voiceStyle", "voiceStyleApps", "voiceLevel", "voiceLevelApps", "voiceModes", "voiceShape", "voiceChatLines", "voiceSnippets", "cleanNote", "autoRecordApps",
         "autoRecordCalendars", "switchQuickForm", "editMarks", "duckAudio",
@@ -66,8 +66,9 @@ enum SettingsPlan {
         "voiceFast", "voiceIdleMin", "journalDB",
     ]
     /// No code read them: gone from Settings. `screen` is still read once, as the old name of screenContext.
-    /// The night batch, server training and the MCP adapter left the core on 26 November 2026: an old file's keys are ignored.
-    static let removed = ["lookVariant", "voiceLive", "screen", "backOffice", "retrainRemote", "mcp"]
+    /// The night batch, server training, the MCP adapter and the Obsidian folder left the core on 26 November 2026: an old
+    /// file's keys are ignored.
+    static let removed = ["lookVariant", "voiceLive", "screen", "backOffice", "retrainRemote", "mcp", "obsidianVault"]
     /// Removed on 17 November 2026: Claude no longer works while the user types.
     static let removedTyping = ["claudeTyping", "claudePause", "proofread", "proofreadOff", "sentenceProof", "facts",
                                     "translate", "nextMessage"]

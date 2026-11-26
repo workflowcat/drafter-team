@@ -16,7 +16,6 @@ from test_ahead import load as ahead_load
 import test_retrain
 retrain = test_retrain.retrain
 from retrain_state import last_retrain
-import people
 from server_src import lift
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -24,37 +23,6 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def extract(path, names, ns, cls=None):
     return lift(*names, path=ROOT / path, cls=cls, into=ns)
-
-
-class Sticky(unittest.TestCase):
-    def test_real_keys_and_ahead_hits_track_chat_but_cached_screen_and_speculation_do_not(self):
-        with tempfile.TemporaryDirectory() as folder:
-            p = people.People(Path(folder) / 'people.json')
-            contexts = {}
-            for chat in ('old', 'new'):
-                lines = [f'{chat} synthetic message {i}' for i in range(4)]
-                p.chats[chat] = {'mine': lines}
-                for line in lines: p._mark(people.mark(line), chat)
-                contexts[chat] = '\n'.join(lines[:2])
-            ns = ahead_load(lambda *a, **kw: {'text': ''}, [0])
-            extract('engine/server.py', {'earlier'}, ns)
-            ns['people_mem'] = p
-            def req(chat, **kw):
-                return dict(app='Beeper', context=contexts[chat], before='hello', **kw)
-            ns['complete'](req('old'))
-            self.assertEqual(p.last, 'old')
-            self.assertEqual(p.chat_for(contexts['old'].splitlines()[0]), 'old')
-            # A fast ahead hit still represents a real key in the new chat.
-            r = req('new')
-            ns['AHEAD'][ns['ahead_key'](r)] = (time.time(), {'text': ''})
-            self.assertTrue(ns['complete'](r)['ahead'])
-            self.assertEqual(p.last, 'new')
-            ns['complete'](req('old', context_fresh=False))
-            ns['complete'](req('old'), low=True, seq=ns['latest'][0])
-            self.assertEqual(p.last, 'new')
-            self.assertEqual(p.chat_for(contexts['new'].splitlines()[0]), 'new')
-            self.assertEqual(p.add(contexts['old'], 'a freshly sent message'), 'old')
-            self.assertEqual(p.last, 'old')
 
 
 class Sleep(unittest.TestCase):
