@@ -46,7 +46,7 @@ struct Settings: Codable {
     /// Instant replies (17 November 2026, engine/instant.py): an empty chat or mail box whose last message is theirs shows
     /// three one-line replies (yes, no, later or a question) from the local model; Tab puts one in (⌥1-3 are given back to apps, KeyMap.givenBack). Nothing leaves the Mac.
     var instantReplies = true
-    var shots = true           // screenshots while a long note or call records, for brief.md (Screen Recording, local only)
+    var shots = false          // off by default (26 November 2026): screenshots while a long note or call records, for brief.md (Screen Recording, local only)
     var callScreenVideo = false // opt-in local screen.mp4 for Call Studio; absent keys keep false through Settings.decode
     var recordWindow = true    // a long note or call opens the recording window (app/RecordWindow.swift) and the notch shrinks to a dot and the time (17 November 2026)
     /// The daily Claude cap, USD a day, for the voice cleanup and the pause rewrite (one ledger,
@@ -80,7 +80,7 @@ struct Settings: Codable {
     var editMarks = true
     var rework = false         // ⌥Tab on a selection: shorter, fix, clearer, warmer, formal, list, translate or the user's own words (app/Rework.swift)
     var fixWord = true         // the word being typed is no word the user writes but one is a letter or a layout away: "→ word" at the caret, Tab swaps it (app/Fixer.swift)
-    let typoHold = true  /* fixed, SettingsPlan.fixed */        // no grey text while the word just typed is a suspected typo, until it is fixed or the user types past the next word (TypoHold, 15 November 2026)
+    var typoHold: Bool { true }  /* fixed, SettingsPlan.fixed */        // no grey text while the word just typed is a suspected typo, until it is fixed or the user types past the next word (TypoHold, 15 November 2026)
     // parity round (15 November 2026, app/ParityRules.swift)
     var clipContext = true     // a copy from the last 2 minutes goes into the ghost's prompt (never secrets, password managers, skipped apps)
     var writingNote = ""       // the user's writing instruction for every app (engine prompt "notes"); "" = none
@@ -100,24 +100,24 @@ struct Settings: Codable {
     /// Earlier round (2026-11-16, the user: "lets do 3-5 words and lessen the confidence"): outside "word" length the
     /// ghost shows at least `ghostMinWords` words when the model has them and at most `ghostMaxWords`; only a sentence
     /// end or a line break ends it sooner (engine gatecore "words" run). Off = `ghostLength` as before.
-    let ghostWords = true   // fixed (settings round, SettingsPlan.fixed)
+    var ghostWords: Bool { true }   // fixed (settings round, SettingsPlan.fixed)
     var ghostMinWords = 3, ghostMaxWords = 5
     /// The lower gate (earlier round): a first word the gate scores a little under its bar still shows, as a guess;
     /// `guessShade` draws the whole guess lighter. Tab takes either. The bar per model is in engine/server.py GUESS.
-    let guessGhosts = true   // fixed (settings round, SettingsPlan.fixed)
-    let guessShade = true   // fixed (settings round, SettingsPlan.fixed)
+    var guessGhosts: Bool { true }   // fixed (settings round, SettingsPlan.fixed)
+    var guessShade: Bool { true }   // fixed (settings round, SettingsPlan.fixed)
     /// Earlier round step 2: ghosts of `minGhostShort` letters or more (in place of `minGhost`, which the user's settings
     /// file holds at 5), and a request still running when the user types a few more letters runs on (engine keep_on).
     /// Earlier round step 6: the guesses' bar one notch lower (0.25) and lower still right after a space (0.2),
     /// engine gatecore.early_bar. Only with guessGhosts.
-    let earlyStart = true   // fixed (settings round, SettingsPlan.fixed)
+    var earlyStart: Bool { true }   // fixed (settings round, SettingsPlan.fixed)
     /// Step 7, the idle ghost (the user: "start predicting and suggesting the next message even when the cursor is just
     /// blinking"): the caret rests in a chat or AI box, empty or after a finished sentence, and the local model drafts
     /// the user's next message from the screen above the field and their earlier lines there. Nothing leaves the Mac.
     var idleGhost = true
-    let shortGhosts = true   // fixed (settings round, SettingsPlan.fixed)
+    var shortGhosts: Bool { true }   // fixed (settings round, SettingsPlan.fixed)
     var minGhostShort = 3
-    let keepTyping = true   // fixed (settings round, SettingsPlan.fixed)
+    var keepTyping: Bool { true }   // fixed (settings round, SettingsPlan.fixed)
     /// Cadence round (2026-11-17, docs/rounds/2026-11-17-cadence.md): with a bigger typing model picked, the live 1.7B
     /// stays loaded beside it and answers while the user types fast (a gap under 120 ms), the bigger one in longer gaps.
     var comboModels = false
@@ -142,8 +142,8 @@ struct Settings: Codable {
     var captureTalk = true                    // the capture deck: the mic starts with each shot, what the user says is that card's caption
     var deckAt = ""                           // the capture deck's place after the user dragged it ("x,y" of its bottom-left, AppKit points); "" = bottom centre
     // keys round (14 November 2026, app/KeyRules.swift)
-    let midLine = true  /* fixed, SettingsPlan.fixed */         // a ghost with text after the caret on its line, on a small card under the line (2026-11-15; on since the fim round measured it)
-    let fallbackAnchor = true  /* fixed, SettingsPlan.fixed */  // a field with no caret rect (web editors): the ghost at an estimated place, else on a chip near the field (2026-11-17)
+    var midLine: Bool { true }  /* fixed, SettingsPlan.fixed */         // a ghost with text after the caret on its line, on a small card under the line (2026-11-15; on since the fim round measured it)
+    var fallbackAnchor: Bool { true }  /* fixed, SettingsPlan.fixed */  // a field with no caret rect (web editors): the ghost at an estimated place, else on a chip near the field (2026-11-17)
     var tabBack = true         // Backspace right after Tab takes that Tab's words out and shows the grey text again
     var pickOffer = true       // after a long copy, the strip offers "Pick parts"
     var pickKey = "⌃⌥P"        // Pick parts on the clipboard from anywhere (KeyMap "pick"); "" = off; never another of Drafter's global chords

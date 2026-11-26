@@ -420,7 +420,7 @@ enum History {
 
     /// The pixel size of an image on the clipboard, read from its header (nothing is decoded or kept).
     private static func imageSize(_ pb: NSPasteboard) -> (Int, Int)? {
-        for t in [NSPasteboard.PasteboardType.png, .tiff] + ["public.jpeg", "public.heic", "com.compuserve.gif", "org.webmproject.webp"].map { NSPasteboard.PasteboardType($0) } {
+        for t in [NSPasteboard.PasteboardType.png, .tiff] + ["public.jpeg", "public.heic", "com.compuserve.gif", "org.webmproject.webp"].map({ NSPasteboard.PasteboardType($0) }) {
             guard let d = pb.data(forType: t), let src = CGImageSourceCreateWithData(d as CFData, nil),
                   let p = CGImageSourceCopyPropertiesAtIndex(src, 0, nil) as? [CFString: Any],
                   let w = p[kCGImagePropertyPixelWidth] as? Int, let h = p[kCGImagePropertyPixelHeight] as? Int else { continue }

@@ -812,10 +812,10 @@ final class CaptureNote {
                             Pill.shared.flash("\(t.word) did not come up · picture and text on the clipboard"); return
                         }
                         let app = Capture.keyApp(), before = PutBack.before(app)
-                        ShotSend.paste(steps: DeckRules.steps(captions: p.captions, agent: true, agentText: p.agentText(path: nil)), pngs: pngs, urls: urls) {
+                        ShotSend.paste(steps: DeckRules.steps(captions: p.captions, agent: true, agentText: p.agentText(path: nil)), pngs: pngs, urls: urls, done: {
                             PutBack.check(app, windowsBefore: before, who: "shot", after: 0,
-                                          clip: { ShotSend.clipboard(pngs, urls: urls, text: p.agentText(path: path, screenText: false)) }) { ShotStore.sent(id, t) }
-                        }
+                                          clip: { ShotSend.clipboard(pngs, urls: urls, text: p.agentText(path: path, screenText: false)) }, ok: { ShotStore.sent(id, t) })
+                        })
                     }
                 case .claudeCode:
                     let front = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
@@ -827,7 +827,7 @@ final class CaptureNote {
                         let app = Capture.keyApp(), before = PutBack.before(app)
                         ShotSend.paste(picture: nil, text: text)
                         PutBack.check(app, windowsBefore: before, who: "shot", field: { Capture.terminalTarget(app) || Capture.targetWhyNot(app) == nil },
-                                      clip: { History.copy(text) }) { ShotStore.sent(id, t) }
+                                      clip: { History.copy(text) }, ok: { ShotStore.sent(id, t) })
                     }
                 case .ask:
                     // shot.md holds the read text once the queue wrote it

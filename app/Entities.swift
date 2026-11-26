@@ -392,14 +392,16 @@ final class EntityCard {
     /// A key while the card shows (on the tap). true = swallowed.
     func key(_ code: Int64, _ mods: CGEventFlags, _ typed: String) -> Bool {
         guard isOpen, !choices.isEmpty else { return false }
+        if let d = PickerKeys.step(code, on: mods.isEmpty) {
+            sel = EntityRules.wrap(sel + d, choices.count); form = 0; view.needsDisplay = true; refit(); return true
+        }
+        if let d = PickerKeys.side(code, on: mods.isEmpty) {
+            form = EntityRules.wrap(form + d, max(1, forms.count)); view.needsDisplay = true; refit(); return true
+        }
         switch code {
         case 48 where mods.isEmpty || mods == .maskShift:
             let plain = mods == .maskShift
             DispatchQueue.main.async { self.take(plain: plain) }; return true
-        case 125, 126 where mods.isEmpty:
-            sel = EntityRules.wrap(sel + (code == 125 ? 1 : -1), choices.count); form = 0; view.needsDisplay = true; refit(); return true
-        case 123, 124 where mods.isEmpty:
-            form = EntityRules.wrap(form + (code == 124 ? 1 : -1), max(1, forms.count)); view.needsDisplay = true; refit(); return true
         case 53 where mods.isEmpty:
             DispatchQueue.main.async { self.hide() }; return true
         default:
@@ -581,14 +583,16 @@ final class ContextPanel {
     private func handle(_ code: Int64, cmd: Bool, typed: String) {
         let st = Entities.store, ids = st.byId
         let n = mode == .tray ? Entities.tray.count : options.count
+        if let d = PickerKeys.side(code, on: mode == .tray && sel < Entities.tray.count) {
+            let l = min(3, max(1, Entities.tray[sel].level + d))
+            Entities.tray[sel].level = l
+            Entities.remember(level: l, for: Entities.tray[sel].id)
+            place(); return
+        }
         switch code {
         case 53: close(); return
         case 126: sel = EntityRules.wrap(sel - 1, n)
         case 125: sel = EntityRules.wrap(sel + 1, n)
-        case 123, 124 where mode == .tray && sel < Entities.tray.count:
-            let l = min(3, max(1, Entities.tray[sel].level + (code == 124 ? 1 : -1)))
-            Entities.tray[sel].level = l
-            Entities.remember(level: l, for: Entities.tray[sel].id)
         case 51 where mode == .tray && sel < Entities.tray.count:
             Entities.tray.remove(at: sel); sel = min(sel, max(0, Entities.tray.count - 1))
             log("context: entity removed in preview")

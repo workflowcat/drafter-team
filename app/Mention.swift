@@ -54,11 +54,12 @@ final class MentionCard {
     /// A key while the list shows (on the tap). true = swallowed.
     func key(_ code: Int64, _ mods: CGEventFlags, _ ch: String) -> Bool {
         guard isOpen, !people.isEmpty else { return false }
+        if let d = PickerKeys.step(code, on: mods.isEmpty) {
+            sel = EntityRules.wrap(sel + d, people.count); view.needsDisplay = true; return true
+        }
         switch code {
         case 48 where mods.isEmpty:
             DispatchQueue.main.async { self.put(1) }; return true
-        case 125, 126 where mods.isEmpty:
-            sel = EntityRules.wrap(sel + (code == 125 ? 1 : -1), people.count); view.needsDisplay = true; return true
         case 53 where mods.isEmpty:
             DispatchQueue.main.async { self.hide() }; return true
         default:

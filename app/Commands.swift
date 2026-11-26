@@ -129,17 +129,19 @@ final class CommandCard {
     func key(_ code: Int64, _ mods: CGEventFlags, _ ch: String) -> Bool {
         guard isOpen else { return false }
         let plain = mods.isEmpty || mods == .maskNumericPad
-        switch code {
-        case 125, 126 where plain:
-            if !rows.isEmpty { sel = EntityRules.wrap(sel + (code == 125 ? 1 : -1), rows.count); view.needsDisplay = true }
+        if let d = PickerKeys.step(code, on: plain) {
+            if !rows.isEmpty { sel = EntityRules.wrap(sel + d, rows.count); view.needsDisplay = true }
             return true
+        }
+        if PickerKeys.enter(code, on: plain) {
+            // in a field ↵ stays the app's (a chat sends): only ⇥ picks there; the picker's own query takes ↵
+            guard own else { DispatchQueue.main.async { self.hide() }; return false }
+            DispatchQueue.main.async { self.pick(field: nil) }; return true
+        }
+        switch code {
         case 53 where mods.isEmpty:
             DispatchQueue.main.async { self.hide() }; return true
         case 48 where mods.isEmpty:
-            DispatchQueue.main.async { self.pick(field: nil) }; return true
-        case 36, 76 where mods.isEmpty || mods == .maskNumericPad:
-            // in a field ↵ stays the app's (a chat sends): only ⇥ picks there; the picker's own query takes ↵
-            guard own else { DispatchQueue.main.async { self.hide() }; return false }
             DispatchQueue.main.async { self.pick(field: nil) }; return true
         case 51 where own && mods.isEmpty:
             DispatchQueue.main.async { if self.query.isEmpty { self.hide() } else { self.query.removeLast(); self.refilter() } }
