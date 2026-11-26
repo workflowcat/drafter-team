@@ -478,3 +478,22 @@ enum EntityRules {
         return found.map { $0.index }.filter { seen.insert($0).inserted }
     }
 }
+
+/// The list keys of the small pickers (the `;` picker, the entity card, the @ list and the context tray), pure so a test
+/// holds them (tests/picker_key_guards.swift). Each key counts only when `on` (no ⌘⌃⌥⇧ held, or the picker's own
+/// condition) for both keycodes of its pair: a `case 125, 126 where x` guarded only ↑, so ⌘↓ or ⌥↓ moved the list and
+/// was swallowed (26 November 2026). nil / false: the key is not the picker's, it goes on.
+enum PickerKeys {
+    /// ↓ +1, ↑ -1.
+    static func step(_ code: Int64, on: Bool) -> Int? {
+        guard on else { return nil }
+        return code == 125 ? 1 : code == 126 ? -1 : nil
+    }
+    /// → +1, ← -1.
+    static func side(_ code: Int64, on: Bool) -> Int? {
+        guard on else { return nil }
+        return code == 124 ? 1 : code == 123 ? -1 : nil
+    }
+    /// ↵ or the keypad's enter.
+    static func enter(_ code: Int64, on: Bool) -> Bool { on && (code == 36 || code == 76) }
+}

@@ -191,7 +191,8 @@ struct SettingsLoadChecks {
         // removed keys are gone when the app saves again; the rest are all still written
         let out = (try? JSONSerialization.jsonObject(with: JSONEncoder().encode(s))) as? [String: Any] ?? [:]
         for k in SettingsPlan.removed + SettingsPlan.removedTyping { check(out[k] == nil, "removed key \(k) is not written") }
-        let lost = Set(raw.keys).subtracting(out.keys).subtracting(["voiceCareful"] + SettingsPlan.removed + SettingsPlan.removedTyping)
+        for k in SettingsPlan.fixed { check(out[k] == nil, "fixed key \(k) is not written (computed, 26 November 2026)") }
+        let lost = Set(raw.keys).subtracting(out.keys).subtracting(["voiceCareful"] + SettingsPlan.removed + SettingsPlan.removedTyping + SettingsPlan.fixed)
         check(lost.isEmpty, "every other key is written back (keys added later may be written too): \(lost.sorted())")
         // screen, the old name: read when screenContext is missing
         let legacy = Settings.decode(Data(#"{"screen": false}"#.utf8))
@@ -219,6 +220,8 @@ struct SettingsLoadChecks {
         let empty = Settings.decode(Data("{}".utf8))!
         check(empty.autocorrectMode == "offer" && empty.voiceFast == nil && empty.voiceCareful == nil, "defaults")
         let emptyOut = (try? JSONSerialization.jsonObject(with: JSONEncoder().encode(empty))) as? [String: Any] ?? [:]
+        check(!empty.shots && emptyOut["shots"] as? Bool == false && !Settings().shots, "screenshots while recording are off by default")
+        check(Settings.decode(Data(#"{"shots":true}"#.utf8))?.shots == true, "a file that turned screenshots on keeps them")
         check(Settings.cloudKeys.allSatisfy { emptyOut[$0] as? Bool == false }, "an empty file has every Claude switch off (engine/cloud.py DEFAULTS)")
         var s = Settings.decode(Data(#"{"autocorrectMode":"replace","rework":true,"voiceFast":"~/models/fast","voiceCareful":"repo/q4","voice":true}"#.utf8))!
         s.paused = true

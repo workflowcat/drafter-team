@@ -76,7 +76,6 @@ final class Rework {
     /// ⌥Tab, off the tap: open on a selection. false = nothing selected here, the key goes on to the app.
     func start() -> Bool {
         if isOpen { close("⌥tab"); return true }
-        let st = Drafter.shared.settings
         guard mayStart(), let front = NSWorkspace.shared.frontmostApplication, let el = Focus.focused() else { return false }
         AXUIElementSetMessagingTimeout(el, 0.15)
         let role: String = Focus.attr(el, kAXRoleAttribute) ?? "", sub: String = Focus.attr(el, kAXSubroleAttribute) ?? ""
