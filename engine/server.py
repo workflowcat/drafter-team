@@ -26,7 +26,7 @@ GET  /settings, POST /settings {paused?, skip?, actions_off?, model?, callNotes?
 POST /words/remove {text}
 GET  /edits, POST /edits {heard, fixed, accept}   -> words the user changed after dictating; accepted ones join the dictionary
 POST /sleep {secs}, POST /wake  -> text model off / on while a long call is read again (memory budget)
-GET  /health
+GET  /health                -> {ok, instance, model, ...}: the one route open without the token
 GET  /sources, POST /sources {name, enabled}, POST /sources/run {name?}  -> working sources (engine/sources.py): switch, count, last update
 GET  /sources/find?q=&who=  -> [{title, url, file, src, t, from}]: links and files from mail, Docs and chats
 GET  /models -> {models: [catalog entry + downloaded, download {state, pct}, speed, quality], current, recommended, why,
@@ -36,8 +36,12 @@ POST /models/download {id}  -> {state, pct}: the weights the user asked for, in 
 
 Only local programs (the app, local scripts) may call it, never a web page: a request with Origin or Sec-Fetch-*
 headers, a Host other than 127.0.0.1/localhost, or a POST that is not application/json gets 403.
+Every route but GET /health also needs the header X-Drafter-Token: the app makes a fresh token at each engine start
+and passes it in DRAFTER_ENGINE_TOKEN (never argv, never logged); a run by hand makes its own. The active token is
+kept in data/engine.token (0600) for local scripts. /health answers DRAFTER_ENGINE_INSTANCE so the app can tell its
+own engine from another process on the port before it hands over an API key.
 """
-import json, math, os, queue, re, shutil, subprocess, sys, threading, time, urllib.request
+import hmac, json, math, os, queue, re, secrets, shutil, subprocess, sys, threading, time, urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from collections import OrderedDict
 from pathlib import Path
@@ -86,7 +90,10 @@ PORT = int(os.environ.get("DRAFTER_PORT", "8798"))
 MAX_TOKENS = int(os.environ.get("DRAFTER_MAX_TOKENS", "8"))
 MIN_P = float(os.environ.get("DRAFTER_MIN_P", "0.6"))
 MAX_WORDS = int(os.environ.get("DRAFTER_MAX_WORDS", "3"))
-DATA = ROOT / "data"; DATA.mkdir(exist_ok=True)
+DATA = Path(os.environ.get("DRAFTER_DATA") or ROOT / "data").resolve(); DATA.mkdir(parents=True, exist_ok=True)
+# the shared secret every route but /health needs; popped so helper processes started from here never inherit it
+TOKEN = os.environ.pop("DRAFTER_ENGINE_TOKEN", "") or secrets.token_hex(32)
+INSTANCE = os.environ.get("DRAFTER_ENGINE_INSTANCE") or secrets.token_hex(16)
 dictionary.ensure()   # the live dictionary lives in data/ since 2026-11-14 (moved once from dictionary/)
 local.seed_snippets(DATA / "snippets.json")   # a new install only: never touches an existing file
 cloud.migrate(DATA / "settings.json")        # once: an existing file keeps its Claude switches before the defaults went off
@@ -1335,8 +1342,20 @@ def pause_rewrite(req):
 LOCAL_HOSTS = {f"127.0.0.1:{PORT}", f"localhost:{PORT}", f"[::1]:{PORT}"}
 
 
+def write_token(path, token):
+    """The active token for local scripts, 0600 from the first byte, swapped in whole (no half-written file)."""
+    path = Path(path); tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC | getattr(os, "O_NOFOLLOW", 0), 0o600)
+    try:
+        os.fchmod(fd, 0o600)
+        os.write(fd, token.encode()); os.fsync(fd)
+    finally: os.close(fd)
+    os.replace(tmp, path)
+
+
 class H(BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
+    token = None   # set to TOKEN below the class; a handler without one lets nothing but /health through
     timeout = 3600  # longer than the app keeps an idle connection, so the app never sends on a closed one
 
     def log_message(self, *a): pass
@@ -1387,8 +1406,15 @@ class H(BaseHTTPRequestHandler):
         if (h.get("Host") or "").lower() not in LOCAL_HOSTS: return True
         return post and (h.get("Content-Type") or "").split(";")[0].strip().lower() != "application/json"
 
+    def authorized(self):
+        """X-Drafter-Token equals this run's token (constant time). No token set: nothing is authorized."""
+        want, got = self.token, self.headers.get("X-Drafter-Token") or ""
+        return bool(want) and hmac.compare_digest(got.encode(), want.encode())
+
     def do_GET(self):
         if self.foreign(): self.close_connection = True; return self.send({"error": "forbidden"}, 403)
+        if self.path != "/health" and not self.authorized():
+            self.close_connection = True; return self.send({"error": "forbidden"}, 403)
         if self.path.split("?", 1)[0] == "/people":
             from urllib.parse import urlsplit, parse_qs
             q = parse_qs(urlsplit(self.path).query).get("q", [""])[0]
@@ -1433,7 +1459,7 @@ class H(BaseHTTPRequestHandler):
         if self.path == "/models": return self.send(models_view())
         if self.path == "/health":
             act, peak = model.memory_gb()
-            return self.send({"ok": True, "model": model.repo, "catalog": (CURRENT["entry"] or {}).get("id"), "adapter": model.adapter, "lora_merged": len(getattr(model, "fused", []) or []), "strength": round(getattr(model, "strength", 1.0) * 100), "fmt": FMT, "pid": os.getpid(), "head_tokens": len(builder.head_ids), "head_file": getattr(model, "head_file", None), "mark_hits": getattr(model, "mark_hits", 0), "rss_gb": round(guard.rss_gb(), 2),
+            return self.send({"ok": True, "instance": INSTANCE, "model": model.repo, "catalog": (CURRENT["entry"] or {}).get("id"), "adapter": model.adapter, "lora_merged": len(getattr(model, "fused", []) or []), "strength": round(getattr(model, "strength", 1.0) * 100), "fmt": FMT, "pid": os.getpid(), "head_tokens": len(builder.head_ids), "head_file": getattr(model, "head_file", None), "mark_hits": getattr(model, "mark_hits", 0), "rss_gb": round(guard.rss_gb(), 2),
                               "mlx_active_gb": round(act, 2), "mlx_peak_gb": round(peak, 2), "cap_gb": guard._cap[0],
                               "kv_gb": {"big": model.kv_gb(), "fast": FAST["m"].kv_gb() if FAST["m"] is not None else {}},
                               "asleep": model.asleep, "sleeps": model.sleeps, "dist_used": getattr(model, "dist_used", 0), "word_gate": bool(wordgate()), "combo": {"fast": FAST["m"] is not None, "used": FAST["used"], "loads": FAST["loads"], "refused": FAST["refused"]}, "boost": (gate() or {}).get("boost", 0), "people": len(people_mem.chats), "ahead": ahead_stats(), "know": knowledge.stats(), "whom": who.stats, "sources": source_index.stats(),
@@ -1447,7 +1473,7 @@ class H(BaseHTTPRequestHandler):
         self.send({"error": "not found"}, 404)
 
     def do_POST(self):
-        if self.foreign(post=True):
+        if self.foreign(post=True) or not self.authorized():
             # Close the keep-alive socket so an unread foreign POST body cannot bleed into a later request.
             self.close_connection = True
             return self.send({"error": "forbidden"}, 403)
@@ -1654,6 +1680,11 @@ class H(BaseHTTPRequestHandler):
         self.send({"error": "not found"}, 404)
 
 
+H.token = TOKEN
+
+
 if __name__ == "__main__":
     JOURNAL = journal_db.Follower(DATA).start()
-    ThreadingHTTPServer(("127.0.0.1", PORT), H).serve_forever()
+    httpd = ThreadingHTTPServer(("127.0.0.1", PORT), H)
+    write_token(DATA / "engine.token", TOKEN)   # only once the port is ours: a run that lost the port keeps the old file
+    httpd.serve_forever()

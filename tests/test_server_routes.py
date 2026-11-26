@@ -11,6 +11,8 @@ from http.server import BaseHTTPRequestHandler
 from unittest.mock import Mock, patch
 from server_src import lift
 
+TOKEN = 'synthetic-token-for-tests'
+
 
 class ServerRoutes(unittest.TestCase):
     def setUp(self):
@@ -41,6 +43,7 @@ class ServerRoutes(unittest.TestCase):
         self.ns = namespace
         self.earlier = namespace['earlier']
         self.handler = namespace['H']
+        self.handler.token = TOKEN
 
     def post(self, route, body, **headers):
         # Call the real handler with in-memory streams; no sockets or server startup.
@@ -49,8 +52,8 @@ class ServerRoutes(unittest.TestCase):
         payload = json.dumps(body).encode()
         h.headers = Message()
         for key, value in {'Host': '127.0.0.1', 'Content-Type': 'application/json',
-                           'Content-Length': str(len(payload)), **headers}.items():
-            h.headers[key] = value
+                           'Content-Length': str(len(payload)), 'X-Drafter-Token': TOKEN, **headers}.items():
+            if value is not None: h.headers[key] = value
         h.rfile = io.BytesIO(payload)
         h.send = Mock()
         h.do_POST()
@@ -133,6 +136,11 @@ class ServerRoutes(unittest.TestCase):
 
     def test_browser_requests_still_blocked(self):
         self.assertEqual(self.post('/prefill', {}, Origin='https://example.com')[0], 403)
+        self.runner.assert_not_called()
+
+    def test_post_without_or_with_wrong_token_is_refused(self):
+        self.assertEqual(self.post('/prefill', {}, **{'X-Drafter-Token': None}), (403, {'error': 'forbidden'}))
+        self.assertEqual(self.post('/prefill', {}, **{'X-Drafter-Token': 'wrong'}), (403, {'error': 'forbidden'}))
         self.runner.assert_not_called()
 
     def test_complete_cancels_then_completes(self):

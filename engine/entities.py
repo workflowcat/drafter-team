@@ -1477,12 +1477,21 @@ def ask_claude(name):
 ask_claude.by = 'claude'
 
 
+def engine_headers():
+    """JSON headers plus the engine's token from data/engine.token (DRAFTER_DATA when set), when there is one."""
+    h = {'Content-Type': 'application/json'}
+    try: t = (Path(os.environ.get('DRAFTER_DATA') or ROOT / 'data') / 'engine.token').read_text().strip()
+    except OSError: t = ''
+    if t: h['X-Drafter-Token'] = t
+    return h
+
+
 def ask_local(name):
     """The warm local model through the engine's /classify route, under its guard. The route is not built yet
     (step 4): until then this returns None and nothing is classified."""
     import urllib.request
     try:
-        req = urllib.request.Request('http://127.0.0.1:8798/classify', json.dumps({'name': name}).encode(), {'Content-Type': 'application/json'})
+        req = urllib.request.Request('http://127.0.0.1:8798/classify', json.dumps({'name': name}).encode(), engine_headers())
         return json.loads(urllib.request.urlopen(req, timeout=5).read()).get('kind')
     except Exception:
         return None

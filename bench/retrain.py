@@ -47,9 +47,17 @@ def on_power():
     return "AC Power" in subprocess.run(["pmset", "-g", "batt"], capture_output=True, text=True).stdout
 
 
+def engine_headers():
+    """JSON headers plus the engine's token from data/engine.token (DRAFTER_DATA when set), when there is one."""
+    h = {"Content-Type": "application/json"}
+    try: t = (Path(os.environ.get("DRAFTER_DATA") or ROOT / "data") / "engine.token").read_text().strip()
+    except OSError: t = ""
+    if t: h["X-Drafter-Token"] = t
+    return h
+
+
 def engine_post(route, **body):
-    request = Request("http://127.0.0.1:8798/" + route,
-                      data=json.dumps(body).encode(), headers={"Content-Type": "application/json"})
+    request = Request("http://127.0.0.1:8798/" + route, data=json.dumps(body).encode(), headers=engine_headers())
     with urlopen(request, timeout=45) as response:
         result = json.load(response)
     if result.get("error") or result.get("stale"):

@@ -17,6 +17,8 @@ from unittest.mock import Mock
 ROOT = Path(__file__).resolve().parents[1]
 from server_src import lift
 
+TOKEN = "synthetic-token-for-tests"
+
 
 class SettingsLoadCache(unittest.TestCase):
     def test_caches_by_stat_returns_copy_and_invalidates_on_atomic_replace(self):
@@ -79,6 +81,8 @@ class KeepAliveAndChunkedStream(unittest.TestCase):
         ports = self.ports
 
         class RecordingH(base_H):
+            token = TOKEN
+
             def do_POST(self):
                 ports.append(self.client_address[1])
                 return super().do_POST()
@@ -99,7 +103,7 @@ class KeepAliveAndChunkedStream(unittest.TestCase):
     def test_http11_reuses_socket_across_stream_and_json_posts(self):
         conn = http.client.HTTPConnection("127.0.0.1", self.port, timeout=5)
         try:
-            headers = {"Content-Type": "application/json"}
+            headers = {"Content-Type": "application/json", "X-Drafter-Token": TOKEN}
             # 1) Streamed /complete over HTTP/1.1 (chunked NDJSON)
             conn.request("POST", "/complete", json.dumps({"before": "hi", "stream": True}), headers)
             r1 = conn.getresponse()
@@ -135,6 +139,7 @@ class KeepAliveAndChunkedStream(unittest.TestCase):
             f"POST /complete HTTP/1.0\r\n"
             f"Host: 127.0.0.1:{self.port}\r\n"
             f"Content-Type: application/json\r\n"
+            f"X-Drafter-Token: {TOKEN}\r\n"
             f"Content-Length: {len(body)}\r\n\r\n"
         ).encode() + body
         with socket.create_connection(("127.0.0.1", self.port), timeout=5) as s:
@@ -173,12 +178,32 @@ class KeepAliveAndChunkedStream(unittest.TestCase):
         self.assertEqual(raw.count("HTTP/1."), 1)     # one reply only: the hidden request never ran
         self.assertEqual(len(self.ports), 1)
 
+    def test_post_without_token_closes_so_its_body_is_never_a_second_request(self):
+        # a local process without the token sends a whole tokened-looking request as its body: one 403, then closed
+        hidden = json.dumps({"before": "smuggled"}).encode()
+        inner = (f"POST /complete HTTP/1.1\r\nHost: 127.0.0.1:{self.port}\r\nContent-Type: application/json\r\n"
+                 f"Content-Length: {len(hidden)}\r\n\r\n").encode() + hidden
+        outer = (f"POST /complete HTTP/1.1\r\nHost: 127.0.0.1:{self.port}\r\nContent-Type: application/json\r\n"
+                 f"Content-Length: {len(inner)}\r\n\r\n").encode() + inner
+        with socket.create_connection(("127.0.0.1", self.port), timeout=5) as s:
+            s.sendall(outer)
+            chunks = []
+            while True:
+                data = s.recv(4096)
+                if not data:
+                    break
+                chunks.append(data)
+        raw = b"".join(chunks).decode()
+        self.assertIn(" 403 ", raw.split("\r\n", 1)[0])
+        self.assertEqual(raw.count("HTTP/1."), 1)
+        self.assertNotIn(TOKEN, raw)
+
     def test_reconnect_succeeds_after_server_idle_close(self):
         """When the server closes an idle keep-alive socket, a fresh HTTP/1.1 connection succeeds cleanly."""
         self.ns["H"].timeout = 0.25
         conn = http.client.HTTPConnection("127.0.0.1", self.port, timeout=5)
         try:
-            headers = {"Content-Type": "application/json"}
+            headers = {"Content-Type": "application/json", "X-Drafter-Token": TOKEN}
             conn.request("POST", "/complete", json.dumps({"before": "first"}), headers)
             r1 = conn.getresponse()
             self.assertEqual(r1.status, 200)

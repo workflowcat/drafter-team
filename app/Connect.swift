@@ -51,7 +51,10 @@ enum Connect {
     // MARK: engine
 
     /// After each engine start and after connecting: the connected way (and its key, for an API) into the engine.
+    /// Only into the engine this app started and checked (Engine.verified: its /health gave our instance id); any
+    /// other process holding the port gets nothing.
     static func handOver() {
+        guard Engine.shared.verified else { log("connect: engine not verified, key kept back"); return }
         let c = Drafter.shared.settings.connect
         guard let way = Way(rawValue: c.provider) else { return }
         var body: [String: Any] = ["provider": way.rawValue]

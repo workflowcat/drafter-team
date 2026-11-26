@@ -45,6 +45,23 @@ struct EngineTransportRulesChecks {
         check(!EngineTransportRules.shouldRetry(method: "GET", path: "/health", errorDomain: NSCocoaErrorDomain, errorCode: NSURLErrorNetworkConnectionLost, attempt: 0, receivedAnyData: false),
               "requires NSURLErrorDomain")
 
+        // 4. Engine token and instance: the API key goes only to the engine this app started
+        check(EngineTransportRules.health(ok: true, instance: "abc123", expected: "abc123") == .ours, "matching instance is ours")
+        check(EngineTransportRules.health(ok: true, instance: "other", expected: "abc123") == .foreign, "another instance on the port is foreign")
+        check(EngineTransportRules.health(ok: true, instance: nil, expected: "abc123") == .foreign, "an engine without an instance is foreign")
+        check(EngineTransportRules.health(ok: true, instance: "", expected: "") == .foreign, "no expected instance never counts as ours")
+        check(EngineTransportRules.health(ok: true, instance: "abc123", expected: "") == .foreign, "no expected instance: foreign even with one reported")
+        check(EngineTransportRules.health(ok: false, instance: "abc123", expected: "abc123") == .notYet, "not ok yet: wait")
+        check(EngineTransportRules.health(ok: true, instance: "ABC123", expected: "abc123") == .foreign, "instance match is exact")
+        check(EngineTransportRules.busyInfo(port: 8798) == "port 8798 busy, retrying", "busy status names the port")
+        check(!EngineTransportRules.sendsToken(path: "/health"), "the token never goes to /health")
+        check(EngineTransportRules.sendsToken(path: "/health/x"), "only /health itself is open")
+        check(EngineTransportRules.sendsToken(path: "/pending?wait=25"), "the token goes with /pending")
+        check(EngineTransportRules.sendsToken(path: "/model-key"), "the token goes with /model-key")
+        check(EngineTransportRules.hex([0x00, 0x0f, 0xa0, 0xff]) == "000fa0ff", "hex is lowercase, two digits a byte")
+        check(EngineTransportRules.hex([UInt8](repeating: 7, count: 32)).count == 64, "32 bytes make 64 hex digits")
+        check(EngineTransportRules.tokenHeader == "X-Drafter-Token", "header name matches engine/server.py")
+
         print("engine transport rules: all checks passed")
     }
 }

@@ -1,5 +1,6 @@
 // The text engine process (engine/server.py) and the app's HTTP calls to it.
 import AppKit
+import Security
 
 // MARK: engine process
 
@@ -11,6 +12,35 @@ final class Engine {
     var info = "starting"
     var restarts: [Date] = []
     var clearedLeftovers = false
+    /// True only while the engine on the port reported the instance id of the process this app started; an API key
+    /// goes to the engine (Connect.handOver) only then.
+    private(set) var verified = false
+    private var portBusy = false
+
+    /// A fresh token and instance id for each engine start, handed to the child in its environment only (never argv,
+    /// never a log). The lock: requests are built on any thread.
+    private let authLock = NSLock()
+    private var token = ""
+    private var instanceID = ""
+
+    private static func randomHex(_ count: Int) -> String? {
+        var b = [UInt8](repeating: 0, count: count)
+        guard SecRandomCopyBytes(kSecRandomDefault, count, &b) == errSecSuccess else { return nil }
+        return EngineTransportRules.hex(b)
+    }
+
+    /// The token for a request: this run's, else (an engine this app did not start, a dev run) data/engine.token.
+    private func authToken() -> String {
+        authLock.lock(); let t = token; authLock.unlock()
+        if !t.isEmpty { return t }
+        let f = Home.data.appendingPathComponent("engine.token")
+        return ((try? String(contentsOf: f, encoding: .utf8)) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func expectedInstance() -> String {
+        authLock.lock(); defer { authLock.unlock() }
+        return instanceID
+    }
 
     func start() {
         wanted = true
@@ -20,10 +50,18 @@ final class Engine {
             let k = Process(); k.executableURL = URL(fileURLWithPath: "/usr/bin/pkill"); k.arguments = ["-f", Home.server.path]
             try? k.run(); k.waitUntilExit()
         }
+        guard let newToken = Self.randomHex(32), let newInstance = Self.randomHex(16) else {
+            info = "cannot start engine: no random bytes for its token"; Menu.shared.refresh(); return
+        }
+        authLock.lock(); token = newToken; instanceID = newInstance; authLock.unlock()
+        verified = false; portBusy = false
         let p = Process()
         p.executableURL = Home.python
         p.arguments = [Home.server.path]
         var env = ProcessInfo.processInfo.environment
+        env["DRAFTER_ENGINE_TOKEN"] = newToken
+        env["DRAFTER_ENGINE_INSTANCE"] = newInstance
+        env["DRAFTER_DATA"] = Home.data.path
         env["DRAFTER_CAP_GB"] = env["DRAFTER_CAP_GB"] ?? "3.6"
         let st = Settings.load()
         if let m = st.model { env["DRAFTER_MODEL"] = m }
@@ -35,11 +73,15 @@ final class Engine {
             DispatchQueue.main.async {
                 // only the engine running now counts: an old one ending after a model switch must not touch the new
                 guard let self, self.proc === t else { return }
-                self.proc = nil; self.ready = false
+                self.proc = nil; self.ready = false; self.verified = false
                 log("engine exited \(t.terminationStatus)")
                 guard self.wanted else { self.info = "stopped"; Menu.shared.refresh(); return }
                 self.restarts = self.restarts.filter { $0.timeIntervalSinceNow > -300 } + [Date()]
-                if self.restarts.count > 4 { self.info = "engine keeps stopping, see data/engine.log"; self.wanted = false; Menu.shared.refresh(); return }
+                if self.restarts.count > 4 {
+                    self.info = self.portBusy ? EngineTransportRules.busyInfo(port: Home.port) + " later: quit what holds it"
+                                              : "engine keeps stopping, see data/engine.log"
+                    self.wanted = false; Menu.shared.refresh(); return
+                }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 2) { if self.wanted { self.start() } }
             }
         }
@@ -48,7 +90,7 @@ final class Engine {
     }
 
     func stop() {
-        wanted = false; ready = false
+        wanted = false; ready = false; verified = false
         cancelStreams()
         proc?.terminate(); proc = nil
         info = "stopped"
@@ -57,9 +99,24 @@ final class Engine {
     private var startedAt: Date?
     func poll(_ tries: Int = 0) {
         get("/health") { j in
-            if let j, j["ok"] as? Bool == true {
+            let ok = j?["ok"] as? Bool == true
+            let verdict = EngineTransportRules.health(ok: ok, instance: j?["instance"] as? String, expected: self.expectedInstance())
+            if self.proc != nil, verdict == .foreign {
+                // another process answers on the port: never ready, never an API key; wait for ours (or its exit)
+                self.ready = false; self.verified = false
+                if !self.portBusy { log("engine: port \(Home.port) answers with another instance, no key handed over") }
+                self.portBusy = true
+                self.info = EngineTransportRules.busyInfo(port: Home.port)
+                Menu.shared.refresh()
+                if tries < 120 { DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { self.poll(tries + 1) } }
+                return
+            }
+            if let j, ok {
                 self.ready = true
-                Connect.handOver()   // an API key from the Keychain into the engine's memory (never a file or argv)
+                self.portBusy = false
+                self.verified = self.proc != nil && verdict == .ours
+                // an API key from the Keychain into the engine's memory (never a file or argv), only to our own engine
+                if self.verified { Connect.handOver() }
                 // launch to ready, for the efficiency notes (polled every 0.5 s, so up to 0.5 s late)
                 if let t = self.startedAt { log(String(format: "engine: ready %.1f s after start", Date().timeIntervalSince(t))); self.startedAt = nil }
                 let m = (j["model"] as? String ?? "").split(separator: "/").last.map(String.init) ?? ""
@@ -169,6 +226,10 @@ final class Engine {
     private func request(_ path: String, _ body: [String: Any]?, timeout: Double) -> URLRequest {
         var r = URLRequest(url: URL(string: "http://127.0.0.1:\(Home.port)\(path)")!)
         r.timeoutInterval = timeout
+        if EngineTransportRules.sendsToken(path: path) {
+            let t = authToken()
+            if !t.isEmpty { r.setValue(t, forHTTPHeaderField: EngineTransportRules.tokenHeader) }
+        }
         if let body {
             r.httpMethod = "POST"
             r.setValue("application/json", forHTTPHeaderField: "Content-Type")

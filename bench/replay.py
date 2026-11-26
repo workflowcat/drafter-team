@@ -8,7 +8,7 @@ and speed. Phrase memory is off (these lines are in it).
 
     .venv/bin/python bench/replay.py '<json of /complete overrides>' [label]
 """
-import json, re, statistics, sys, time, urllib.request
+import json, os, re, statistics, sys, time, urllib.request
 from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 items = json.loads((ROOT / "data/replay.json").read_text())
@@ -16,12 +16,21 @@ over = json.loads(sys.argv[1]) if len(sys.argv) > 1 else {}
 label = sys.argv[2] if len(sys.argv) > 2 else json.dumps(over)
 
 
+def engine_headers():
+    """JSON headers plus the engine's token from data/engine.token (DRAFTER_DATA when set), when there is one."""
+    h = {"Content-Type": "application/json"}
+    try: t = (Path(os.environ.get("DRAFTER_DATA") or ROOT / "data") / "engine.token").read_text().strip()
+    except OSError: t = ""
+    if t: h["X-Drafter-Token"] = t
+    return h
+
+
 def ask(before, it):
     body = {"before": before, "app": it["app"], "context": it["context"], "chips": False, "memory": False, "max_tokens": 6, **over}
     t = time.perf_counter()
     for attempt in range(30):   # the engine may be restarting: wait for it instead of failing the whole run
         try:
-            r = json.loads(urllib.request.urlopen(urllib.request.Request("http://127.0.0.1:8798/complete", data=json.dumps(body).encode(), headers={"Content-Type": "application/json"}), timeout=20).read())
+            r = json.loads(urllib.request.urlopen(urllib.request.Request("http://127.0.0.1:8798/complete", data=json.dumps(body).encode(), headers=engine_headers()), timeout=20).read())
             break
         except Exception:
             time.sleep(2); t = time.perf_counter()

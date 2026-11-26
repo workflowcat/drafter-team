@@ -1,5 +1,6 @@
 // Pure HTTP transport rules for Engine.swift: stream concurrency cap (preserving keep_on streams during
-// predicted+scheduled keystroke bursts) and single-retry policy when an idle HTTP/1.1 keep-alive socket closes (-1005).
+// predicted+scheduled keystroke bursts), single-retry policy when an idle HTTP/1.1 keep-alive socket closes (-1005), and
+// the engine token and instance check that keeps an API key away from any other process on the port.
 import Foundation
 
 enum EngineTransportRules {
@@ -49,4 +50,32 @@ enum EngineTransportRules {
             && errorDomain == NSURLErrorDomain
             && errorCode == NSURLErrorNetworkConnectionLost
     }
+
+    // MARK: engine token and instance (2026-11-26)
+
+    /// The header every engine route but GET /health needs.
+    static let tokenHeader = "X-Drafter-Token"
+
+    /// GET /health is the one open route; the token is never sent there, so whatever holds the port learns nothing.
+    static func sendsToken(path: String) -> Bool {
+        (path.split(separator: "?", maxSplits: 1).first.map(String.init) ?? path) != "/health"
+    }
+
+    /// Lowercase hex of random bytes (the token, the instance id).
+    static func hex(_ bytes: [UInt8]) -> String {
+        bytes.map { String(format: "%02x", $0) }.joined()
+    }
+
+    /// What one /health answer means. `ours` only when the engine there reports the instance id this app gave the
+    /// process it started; anything else holding the port is `foreign` and never gets an API key.
+    enum Health: Equatable { case ours, foreign, notYet }
+
+    static func health(ok: Bool, instance: String?, expected: String) -> Health {
+        guard ok else { return .notYet }
+        guard !expected.isEmpty, let instance, instance == expected else { return .foreign }
+        return .ours
+    }
+
+    /// The status line while another process holds the engine's port.
+    static func busyInfo(port: Int) -> String { "port \(port) busy, retrying" }
 }
