@@ -241,8 +241,9 @@ class Cast(unittest.TestCase):
         st = entities.Store(self.data / 'entities.json')
         on = {'contextPacks': True}
         ns = lift('H', LOCAL_HOSTS={'127.0.0.1'}, entity_store=lambda: st, settings_load=lambda: on)
+        ns['H'].token = 'test-token'
         h = ns['H'].__new__(ns['H']); h.client_address = ('127.0.0.1', 1234)
-        h.headers = Message(); h.headers['Host'] = '127.0.0.1'; h.send = Mock()
+        h.headers = Message(); h.headers['Host'] = '127.0.0.1'; h.headers['X-Drafter-Token'] = 'test-token'; h.send = Mock()
         def get(path): h.path = path; h.do_GET(); return h.send.call_args.args
         r = get('/context?q=%D0%93%D0%B0%D0%BD%D0%BD%D1%96&level=3')[0]
         self.assertEqual((r['name'], r['level']), ('Ганна Ткач', 3))

@@ -18,9 +18,9 @@ class Routes(unittest.TestCase):
     def test_people_decodes_query_and_excludes_private(self):
         e=entry('Hanna'); e['handles']={'email':['hanna@example.test']}
         p=pack(e)
-        ns=lift('H',LOCAL_HOSTS={'127.0.0.1'},knowledge=p)
+        ns=lift('H',LOCAL_HOSTS={'127.0.0.1'},knowledge=p); ns['H'].token='test-token'
         h=ns['H'].__new__(ns['H']); h.path='/people?q=%3Bhan'; h.client_address=('127.0.0.1',1234)
-        h.headers=Message(); h.headers['Host']='127.0.0.1'; h.send=Mock()
+        h.headers=Message(); h.headers['Host']='127.0.0.1'; h.headers['X-Drafter-Token']='test-token'; h.send=Mock()
         h.do_GET()
         self.assertEqual(h.send.call_args.args[0]['people'][0]['name'],'Hanna')
         h.headers['Origin']='https://example.test'; h.do_GET()
