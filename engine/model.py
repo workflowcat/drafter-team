@@ -48,7 +48,11 @@ TWEAKS = os.environ.get("DRAFTER_TWEAKS", "")
 # bench/weights/speed.py: 335 ms of prefill became a 4 ms read, the next-token logits identical). The file is made
 # when the head (or the model, layer or tweaks) changes; a stale, broken or missing file falls back to the prefill.
 # It holds the user's example messages, so it lives under data/. Empty DRAFTER_HEAD_CACHE = off.
-HEAD_CACHE = os.environ.get("DRAFTER_HEAD_CACHE", str(Path(__file__).resolve().parent.parent / "data" / "cache"))
+HEAD_CACHE = os.environ.get("DRAFTER_HEAD_CACHE")
+if HEAD_CACHE is None:
+    import sys; sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from data_dir import data_dir
+    HEAD_CACHE = str(data_dir() / "cache")
 # copies kept after the screen text, for caches that cannot be cut back (big-model round): one per screen, at most
 # SPARE + 1 (the active screen and the parked ones)
 MARKS = SPARE + 1

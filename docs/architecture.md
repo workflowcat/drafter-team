@@ -17,6 +17,8 @@ The app starts both Python processes and restarts them when they stop. They exit
   the text engine. `app/Voice.swift` runs the voice process.
 - The text engine is an HTTP server on `127.0.0.1:8798`. It answers local programs only. A request with an
   `Origin` or `Sec-Fetch-*` header, another `Host`, or a POST that is not JSON gets 403, so a web page cannot use it.
+  Every route but `/health` also needs the per-launch token: the app writes it to `data/engine.token` (mode 0600)
+  and sends it as `X-Drafter-Token`.
 - The voice process has no port. The app writes audio frames to its stdin and reads JSON lines from its stdout.
   The frame kinds are listed at the top of `engine/voice.py`.
 - Both models sleep when unused, so an idle Drafter holds little memory. The text model unloads after
@@ -61,7 +63,11 @@ Pure rules sit in their own files with no AppKit, so a test can check them alone
 
 ## Where state lives
 
-All state lives in `data/` in the repo folder. It is never tracked by git.
+All state lives in `data/` in the repo folder. It is never tracked by git. `DRAFTER_DATA` moves it elsewhere:
+the app reads it (or `DrafterData` in its `Info.plist`, from `build.data_dir` in the local config) and passes it to
+the engine and the voice process; `engine/data_dir.py` gives the engine and the scripts the same answer. With no
+`DRAFTER_DATA` and no `data/` in a clone the app cannot write to, it uses `~/Library/Application Support/Drafter`.
+Paths below are written as `data/`.
 
 - `data/drafter.local.json` is your local config: your name for the prompts, your languages and which
   optional integrations are on. `drafter.local.example.json` shows every key. `engine/local.py` reads it for the
@@ -75,6 +81,16 @@ All state lives in `data/` in the repo folder. It is never tracked by git.
 - `data/words.json` is your dictionary: names, projects and words the model and the voice reader should know.
   `engine/dictionary.py` creates it from `dictionary/words.example.json` on a new install.
 - Typed lines, takes, recordings, notes and logs are listed in [Privacy](privacy.md).
+
+## Building and packaging
+
+- `app/build.sh` builds `~/Applications/Drafter.app` and never opens it. `DRAFTER_APP_OUT` builds elsewhere.
+  It signs ad-hoc with a fixed requirement, so macOS keeps the permissions across rebuilds; a Developer ID in
+  `DRAFTER_CODESIGN_IDENTITY` (or `build.codesign_identity`) signs with the hardened runtime instead.
+- `scripts/package_app.sh` builds Drafter.app and Drafter-macos-arm64.zip in build/dist (not in git) for teammates
+  without Command Line Tools, and notarizes it when `DRAFTER_NOTARY_PROFILE` names a notarytool profile.
+- `scripts/setup.sh` installs `requirements-lock.txt` as it is. `scripts/check_lock.sh` is for maintainers: it
+  resolves `requirements.txt` again and says when the lock is out of date.
 
 ## The nightly job
 

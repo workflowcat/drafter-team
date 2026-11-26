@@ -389,9 +389,11 @@ if __name__ == "__main__":
     import argparse, guard
     ap = argparse.ArgumentParser()
     ap.add_argument("folder")
-    ap.add_argument("--print", dest="print_path", default=str(ROOT / "data" / "voiceprint.json"))
-    ap.add_argument("--audio", default=str(ROOT / "data" / "audio"))
-    ap.add_argument("--calls", default=str(ROOT / "data" / "calls"))
+    from data_dir import data_dir
+    data = data_dir()
+    ap.add_argument("--print", dest="print_path", default=str(data / "voiceprint.json"))
+    ap.add_argument("--audio", default=str(data / "audio"))
+    ap.add_argument("--calls", default=str(data / "calls"))
     ap.add_argument("--dry", action="store_true")
     a = ap.parse_args()
     guard.start(CAP_GB)

@@ -5,10 +5,13 @@
 Examples feed the fixed prompt head; cases (held out) feed bench/bench.py.
 """
 import html, json, random, re, subprocess
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-DATA = ROOT / "data"
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from data_dir import data_dir  # noqa: E402
+DATA = data_dir()
 
 
 def clean(t):

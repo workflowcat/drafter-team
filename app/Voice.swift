@@ -37,6 +37,7 @@ final class VoiceEngine {
         p.arguments = [Home.root.appendingPathComponent("engine/voice.py").path]
         var env = ProcessInfo.processInfo.environment
         env["DRAFTER_WORDS"] = Home.words.path
+        env["DRAFTER_DATA"] = Home.data.path
         env["DRAFTER_VOICE_IDLE"] = String(max(1, Drafter.shared.settings.voiceIdleMin) * 60)
         p.environment = env
         let inPipe = Pipe(), outPipe = Pipe()

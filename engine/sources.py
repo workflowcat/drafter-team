@@ -36,7 +36,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-DATA = ROOT / "data"
+from data_dir import data_dir  # noqa: E402
+DATA = data_dir()
 csv.field_size_limit(1 << 26)   # GAM puts whole mail bodies in one CSV field; long HTML mails passed the 128 KB default
 
 SOURCES = {   # name: (label, note, integration it needs)

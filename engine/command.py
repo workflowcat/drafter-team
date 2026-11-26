@@ -6,9 +6,10 @@ import json, re, time
 from datetime import datetime
 from pathlib import Path
 import actions, router, claude_worker, local
+from data_dir import data_dir
 
 ROOT = Path(__file__).resolve().parent.parent
-SNIPPETS = ROOT / "data/snippets.json"
+SNIPPETS = data_dir() / "snippets.json"
 
 
 def snippets():

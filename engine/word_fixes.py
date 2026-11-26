@@ -4,10 +4,12 @@ word, a few letters apart or the same word typed in the other keyboard layout, o
 punctuation, case and missing full stops stay. Words the user took back before (data/autocorrect-keep.*) and their own words
 (`keep_words`) are never fixed. Local only, nothing leaves the Mac.
 """
-import difflib, json, re
+import difflib, json, re, sys
 from pathlib import Path
 
-DATA = Path(__file__).resolve().parent.parent / "data"
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from data_dir import data_dir  # noqa: E402
+DATA = data_dir()
 RUSSIAN = re.compile(r"[ыэъёЫЭЪЁ]")
 EDGE = "\"'«»“”„()[]{}<>.,:;!?…-–—*_~`"
 EN = "`qwertyuiop[]asdfghjkl;'zxcvbnm,./"

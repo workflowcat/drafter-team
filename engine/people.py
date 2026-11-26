@@ -15,12 +15,14 @@ Built from the Beeper CLI (read only, BEEPER_READONLY=1) in the background: at s
 REFRESH, then every REFRESH; lines the user sends while Drafter runs are added at once (/typed). Messages signed
 "Claude:" are Claude's, not the user's, and stay out.
 """
-import calendar, hashlib, json, os, re, subprocess, threading, time
+import calendar, hashlib, json, os, re, subprocess, sys, threading, time
 from collections import Counter
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-DATA = ROOT / "data"
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from data_dir import data_dir  # noqa: E402
+DATA = data_dir()
 PATH = DATA / "people.json"
 ENV = {**os.environ, "BEEPER_READONLY": "1"}
 # launchd starts the nightly with PATH=/usr/bin:/bin:/usr/sbin:/sbin, where the npm-installed `beeper` is missing:

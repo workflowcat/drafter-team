@@ -30,6 +30,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from data_dir import data_dir as _data_dir  # noqa: E402
 from local_search import _is_corruption, safe_fts_query  # noqa: E402
 
 SCHEMA_VERSION = "1"
@@ -142,7 +143,7 @@ def _stat(path: Path):
 def enabled(data_dir=None) -> bool:
     """The app's `journalDB` setting (data/settings.json, default on): the journal reads come from the database."""
     try:
-        st = json.loads((Path(data_dir or ROOT / "data") / "settings.json").read_text())
+        st = json.loads((Path(data_dir or _data_dir()) / "settings.json").read_text())
         return st.get("journalDB", True) is not False
     except (OSError, ValueError, AttributeError):
         return True
@@ -150,7 +151,7 @@ def enabled(data_dir=None) -> bool:
 
 class JournalDB:
     def __init__(self, data_dir=None, db_path=None):
-        self.data_dir = Path(data_dir or ROOT / "data").absolute()
+        self.data_dir = Path(data_dir or _data_dir()).absolute()
         self.db_path = Path(db_path or self.data_dir / "journal.sqlite").absolute()
         if self.db_path.suffix.lower() in (".jsonl", ".json"):
             raise ValueError("The journal database must not be a JSONL or JSON file")
@@ -547,7 +548,7 @@ class Follower:
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("cmd", choices=["sync", "status"])
-    ap.add_argument("--data", default=str(ROOT / "data"))
+    ap.add_argument("--data", default=str(_data_dir()))
     ap.add_argument("--db", default=None)
     a = ap.parse_args(argv)
     jdb = JournalDB(a.data, a.db)

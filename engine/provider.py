@@ -14,11 +14,14 @@ asks connected() first. One place makes the call: ask() for one-off prompts, Api
 worker (claude_type.Worker returns one when an API is connected).
 """
 import json, os, socket, threading, time, urllib.error, urllib.request
+import sys
 from pathlib import Path
 from urllib.parse import urlparse
 
 ROOT = Path(__file__).resolve().parent.parent
-SETTINGS = ROOT / "data" / "settings.json"
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from data_dir import data_dir  # noqa: E402
+SETTINGS = data_dir() / "settings.json"
 KINDS = ("cli", "anthropic", "openai")
 DEFAULTS = {"provider": "", "fastModel": "claude-haiku-5-5", "carefulModel": "claude-sonnet-5-5", "baseURL": "", "apiModel": ""}
 ANTHROPIC = "https://api.anthropic.com"

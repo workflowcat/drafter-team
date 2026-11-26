@@ -6,13 +6,15 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "actions"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import local
-NOTES = ROOT / "data/notes"
+from data_dir import data_dir
+DATA = data_dir()
+NOTES = DATA / "notes"
 FOLLOW = re.compile(r"(?i)\b(треба|потрібно|нагадай|фоловап|follow[- ]?up|не забути|написати|подзвонити|need to|have to|remind|call|send)\b")
 
 
 def names():
     """(name, is a person) from the shared dictionary."""
-    try: d = json.loads((ROOT / "data/words.json").read_text())
+    try: d = json.loads((DATA / "words.json").read_text())
     except Exception: return []
     import dictionary   # tiny words are never names ("The" as someone's short name)
     return [(w["text"], w.get("kind") == "name") for w in d.get("words", [])
@@ -165,5 +167,5 @@ def make(text, ask, audio="", call=False, dry=False, event=None, cloud=False):
     f.write_text(f"# {'Дзвінок: ' if call else ''}{title}\n\n" + (f"Про: {', '.join(l['name'] for l in ln)}\n\n" if ln else "")
                  + ("## Головне\n" + "\n".join("- " + p for p in points) + "\n\n## Розшифровка\n" if call else "") + text + "\n"
                  + ("\n## Фоловапи\n" + "\n".join("- " + x for x in fu) + "\n" if fu else "") + (f"\nЗапис: {audio}\n" if audio else ""))
-    saved.append(str(f.relative_to(ROOT)))
+    saved.append(str(f.relative_to(ROOT)) if f.is_relative_to(ROOT) else str(f))
     return {"title": title, "links": ln, "followups": fu, "points": points, "saved": saved}

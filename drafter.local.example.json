@@ -59,9 +59,11 @@
   }
  },
  "build": {
-  "_note": "Build-time ids (app/build.sh). Empty = the public defaults. Changing them on an installed Mac resets its macOS permissions.",
+  "_note": "Build-time ids (app/build.sh). Empty = the public defaults. Changing them on an installed Mac resets its macOS permissions. codesign_identity: a Developer ID Application identity to sign with (empty = ad-hoc). data_dir: a data folder outside this clone, baked into the app (empty = data/ here).",
   "bundle_id": "",
   "launchd_label": "",
-  "nightly_label": ""
+  "nightly_label": "",
+  "codesign_identity": "",
+  "data_dir": ""
  }
 }

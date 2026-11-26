@@ -20,7 +20,9 @@ import json, math, os, re, sys, threading, time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-DATA = ROOT / "data"
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from data_dir import data_dir  # noqa: E402
+DATA = data_dir()
 THES = Path(os.environ.get("DRAFTER_THESAURUS", ROOT / "models" / "thesaurus"))
 FILES = {"en": "th_en_US_v2.dat", "uk": "th_uk_UA.dat"}
 MAX = 6

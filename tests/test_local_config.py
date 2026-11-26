@@ -76,6 +76,34 @@ class Config(unittest.TestCase):
         self.assertEqual(ex["user"]["name"], "")
         self.assertTrue(all(v.get("enabled") is False for v in ex["integrations"].values()))
 
+    def test_build_keys_default_empty_and_follow_the_file(self):
+        import local, subprocess
+        self.assertEqual(local.codesign_identity(), "")
+        self.assertEqual(local.build_data_dir(), "")
+        self.file.write_text(json.dumps({"build": {"codesign_identity": " Developer ID Application: Made Up (TEAM123) ",
+                                                   "data_dir": "~/DrafterData"}})); local._cache["key"] = None
+        self.assertEqual(local.codesign_identity(), "Developer ID Application: Made Up (TEAM123)")
+        self.assertEqual(local.build_data_dir(), str(Path.home() / "DrafterData"))
+        ex = json.loads((ROOT / "drafter.local.example.json").read_text())["build"]
+        self.assertEqual((ex["codesign_identity"], ex["data_dir"]), ("", ""))
+        run = lambda *a: subprocess.run([sys.executable, str(ROOT / "engine/local.py"), "--get", *a],
+                                        capture_output=True, text=True, env=dict(os.environ))
+        self.assertEqual(run("codesign_identity").stdout.strip(), "Developer ID Application: Made Up (TEAM123)")
+        self.assertEqual(run("data_dir").stdout.strip(), str(Path.home() / "DrafterData"))
+        self.assertEqual(run("bundle_id").stdout.strip(), local.PUBLIC_BUNDLE_ID)
+        self.assertEqual(run("no_such_key").returncode, 2)
+
+    def test_config_file_follows_drafter_data(self):
+        import local
+        os.environ.pop("DRAFTER_LOCAL", None)
+        saved = os.environ.get("DRAFTER_DATA")
+        os.environ["DRAFTER_DATA"] = self.tmp.name
+        try:
+            self.assertEqual(local.path(), Path(self.tmp.name).resolve() / "drafter.local.json")
+        finally:
+            if saved is None: os.environ.pop("DRAFTER_DATA", None)
+            else: os.environ["DRAFTER_DATA"] = saved
+
 
 if __name__ == "__main__":
     unittest.main()

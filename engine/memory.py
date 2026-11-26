@@ -13,7 +13,9 @@ from collections import Counter
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-DATA = ROOT / "data"
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from data_dir import data_dir  # noqa: E402
+DATA = data_dir()
 OUT = DATA / "phrases.jsonl"
 END = re.compile(r"[.!?…\n)]")
 WORD = re.compile(r"[\w'’-]+", re.U)

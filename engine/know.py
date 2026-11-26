@@ -9,10 +9,13 @@ import json
 import os
 from pathlib import Path
 import re
+import sys
 import tempfile
 import time
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from data_dir import data_dir  # noqa: E402
 KINDS = {'person', 'project', 'org', 'team', 'tool', 'repo'}
 NAME_SHARE_FLOOR = 0.03
 WORD = re.compile(r"[^\W\d_]+(?:['’ʼ-][^\W\d_]+)*", re.UNICODE)
@@ -144,9 +147,10 @@ def usage(entries, lines):
     return counts, lower
 
 
-def build(out=ROOT / 'data/know.json', *, dictionary=None, snippets=None, lines=(), now=None, common=(), spell_known=None, contacts=None):
-    dictionary = Path(dictionary) if dictionary is not None else ROOT / 'data/words.json'
-    snippets = Path(snippets) if snippets is not None else ROOT / 'data/snippets.json'
+def build(out=None, *, dictionary=None, snippets=None, lines=(), now=None, common=(), spell_known=None, contacts=None):
+    out = Path(out) if out is not None else data_dir() / 'know.json'
+    dictionary = Path(dictionary) if dictionary is not None else data_dir() / 'words.json'
+    snippets = Path(snippets) if snippets is not None else data_dir() / 'snippets.json'
     now = time.time() if now is None else now
     entries = []
     if contacts is not None:
@@ -292,17 +296,18 @@ class Pack:
 if __name__ == '__main__':
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('command', choices=['build'])
-    ap.add_argument('--out', type=Path, default=ROOT / 'data/know.json')
+    data = data_dir()
+    ap.add_argument('--out', type=Path, default=data / 'know.json')
     args = ap.parse_args()
     from contacts import refresh
     people = refresh()
-    pack = build(args.out, lines=sent_lines(ROOT / 'data/typed.jsonl'), contacts=people)
+    pack = build(args.out, lines=sent_lines(data / 'typed.jsonl'), contacts=people)
     print(f"knowledge: {len(pack['entries'])} entries -> {args.out}")
     # the entity store next to it (engine/entities.py): its own failure never fails this build
     try:
         import entities
-        store = entities.build(contacts=people or None, lines=entities.sent_rows(ROOT / 'data/typed.jsonl'),
-                               chats=entities.chat_lines(ROOT / 'data/people.json'))
+        store = entities.build(contacts=people or None, lines=entities.sent_rows(data / 'typed.jsonl'),
+                               chats=entities.chat_lines(data / 'people.json'))
         print(f"entities: {len(store['records'])} records" + (f", kept the last {', '.join(store['failed'])}" if store['failed'] else ''))
     except Exception as e:
         print(f"entities: not built ({type(e).__name__})")

@@ -3,6 +3,7 @@ import json, os, re, sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from data_dir import data_dir  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -21,12 +22,12 @@ def load_json(p, default):
 
 
 def words():
-    d = load_json(ROOT / "data" / "words.json", {})
+    d = load_json(data_dir() / "words.json", {})
     return [w["text"] if isinstance(w, dict) else w for w in d.get("words", [])]
 
 
 def head(n_examples=12, n_words=40):
-    style = load_json(ROOT / "data" / "style.json", {"examples": []})
+    style = load_json(data_dir() / "style.json", {"examples": []})
     ex = style["examples"][:n_examples]
     w = words()[:n_words]
     parts = [rules()]

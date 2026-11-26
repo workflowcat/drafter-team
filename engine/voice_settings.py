@@ -23,8 +23,15 @@ def model_names(settings):
 def load_models(path=None):
     # Same JSON / empty-on-failure convention as server.settings_load. The override
     # isolates manual benchmarks from personal settings; selection is per process.
-    path = Path(path if path is not None else os.environ.get(
-        "DRAFTER_VOICE_SETTINGS", Path(__file__).resolve().parents[1] / "data/settings.json"))
+    if path is None:
+        path = os.environ.get("DRAFTER_VOICE_SETTINGS")
+    if path is None:
+        # resolved at call time (DRAFTER_DATA, engine/data_dir.py), so importing this module reads nothing
+        import sys
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from data_dir import data_dir
+        path = data_dir() / "settings.json"
+    path = Path(path)
     try:
         settings = json.loads(path.read_text())
     except (OSError, ValueError):

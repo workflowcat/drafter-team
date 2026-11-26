@@ -4,6 +4,7 @@ where it came from; the app shows it in the strip, nothing is pasted."""
 import json, re, time
 from pathlib import Path
 import claude_worker, local
+from data_dir import data_dir
 import journal_db
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -23,13 +24,13 @@ def score(q, text):
 def gather(question):
     q = words(question)
     found = []
-    for f in sorted((ROOT / "data/notes").glob("*.md"), reverse=True)[:200]:
+    for f in sorted((data_dir() / "notes").glob("*.md"), reverse=True)[:200]:
         t = f.read_text(errors="ignore")
         s = score(q, t)
         if s: found.append((s + 0.5, f"нотатка {f.stem[:16]}", t[:1500]))
     try:
         # the newest 2000 takes; with `journalDB` on from data/journal.sqlite, hidden and removed takes left out
-        for r in journal_db.takes_rows(ROOT / "data", 2000):
+        for r in journal_db.takes_rows(data_dir(), 2000):
             t = r.get("text", "")
             if len(t) < 25: continue
             s = score(q, t)

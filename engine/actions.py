@@ -6,6 +6,7 @@ DIR = Path(__file__).resolve().parent.parent / "actions"
 sys.path.insert(0, str(DIR))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import integrations
+from data_dir import data_dir
 
 
 def _load():
@@ -48,7 +49,7 @@ def cached(found, before, ask):
     return _seen[k]
 
 
-SETTINGS = Path(__file__).resolve().parent.parent / "data" / "settings.json"
+SETTINGS = data_dir() / "settings.json"
 
 
 def off():
