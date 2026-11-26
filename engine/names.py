@@ -32,8 +32,9 @@ import tempfile
 import time
 
 ROOT = Path(__file__).resolve().parent.parent
-DATA = ROOT / 'data'
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from data_dir import data_dir  # noqa: E402
+DATA = data_dir()
 
 KINDS = ('person', 'project', 'company', 'place', 'term')
 KIND_OF = {'person': 'person', 'name': 'person', 'project': 'project', 'tool': 'project', 'repo': 'project',

@@ -9,7 +9,7 @@
 
     .venv/bin/python -B engine/typos.py [--data DIR] [--dry-run]
 """
-import argparse, json, math, os, re
+import argparse, json, math, os, re, sys
 from collections import Counter
 from pathlib import Path
 
@@ -130,7 +130,9 @@ def gate(rows):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--data", default=str(ROOT / "data"))
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from data_dir import data_dir
+    ap.add_argument("--data", default=str(data_dir()))
     ap.add_argument("--dry-run", action="store_true")
     a = ap.parse_args()
     data = Path(a.data)

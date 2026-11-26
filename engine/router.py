@@ -6,13 +6,14 @@ Haiku fails or is slow, the local model does it. Ghost text while typing always 
 import os, shutil, socket, time
 from pathlib import Path
 import integrations
+from data_dir import data_dir
 
 ROOT = Path(__file__).resolve().parent.parent
 _state = {"at": 0.0, "up": False}
 
 
 def online():
-    if os.environ.get("DRAFTER_OFFLINE") or (ROOT / "data/offline").exists(): return False
+    if os.environ.get("DRAFTER_OFFLINE") or (data_dir() / "offline").exists(): return False
     if time.time() - _state["at"] < 30: return _state["up"]
     up = False
     import provider

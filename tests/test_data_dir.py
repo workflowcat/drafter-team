@@ -74,6 +74,82 @@ class DataDir(unittest.TestCase):
         self.assertEqual(journal_db.JournalDB().data_dir, self.t / "d")
         self.assertEqual(local_search.LocalSearchIndex().data_dir, self.t / "d")
 
+    def test_more_engine_modules_follow_the_env(self):
+        """The rest of the engine the server and the CLIs load, in a fresh process so module constants are read anew."""
+        d = self.t / "d"; d.mkdir()
+        (d / "settings.json").write_text('{"voiceFast": "test/fast", "voiceCareful": "test/careful"}')
+        (d / "names.json").write_text('{"voice": ["Zorblat"]}')
+        (d / "gate.json").write_text('{"names": "not these"}')
+        (d / "offline").write_text("")
+        probe = r"""
+import json, os, sys, types
+from pathlib import Path
+from unittest.mock import Mock
+sys.path.insert(0, sys.argv[1])
+mx = types.ModuleType("mlx.core"); mx.set_cache_limit = Mock(); mlx = types.ModuleType("mlx"); mlx.core = mx
+fake = {"mlx": mlx, "mlx.core": mx, "stand_ins": types.SimpleNamespace(install=Mock()),
+        "parakeet_mlx": types.SimpleNamespace(from_pretrained=Mock()), "parakeet_mlx.audio": types.SimpleNamespace(get_logmel=Mock()),
+        "guard": types.SimpleNamespace(start=Mock())}
+saved = {k: sys.modules.get(k) for k in fake}
+sys.modules.update(fake)
+import voice
+for k, v in saved.items():
+    if v is None: sys.modules.pop(k, None)
+    else: sys.modules[k] = v
+import voice_settings, actions, snippets, command, edits, notes, word_fixes, router, model, names, know, gatecore, speakers, typos
+out = {
+    "voice": [voice.MODEL, voice.CAREFUL, voice.HINT],
+    "voice_settings": list(voice_settings.load_models()),
+    "actions": str(actions.SETTINGS), "snippets": str(snippets.FILE), "command": str(command.SNIPPETS),
+    "edits": [str(edits.TAKES), str(edits.EDITS)], "notes": str(notes.NOTES), "notes_names": notes.names(),
+    "word_fixes": str(word_fixes.DATA), "router": router.online(), "model": model.HEAD_CACHE,
+    "names": str(names.DATA), "gatecore": gatecore.load(),
+}
+print(json.dumps(out))
+"""
+        env = {k: v for k, v in os.environ.items() if k not in KEYS[:3] + ("DRAFTER_VOICE_SETTINGS", "DRAFTER_WORDS",
+                                                                          "DRAFTER_NAMES", "DRAFTER_HEAD_CACHE", "DRAFTER_OFFLINE")}
+        env["DRAFTER_DATA"] = str(d)
+        run = subprocess.run([sys.executable, "-B", "-c", probe, str(ROOT / "engine")], env=env, capture_output=True, text=True)
+        self.assertEqual(run.returncode, 0, run.stderr)
+        got = __import__("json").loads(run.stdout.strip().splitlines()[-1])
+        self.assertEqual(got["voice"], ["test/fast", "test/careful", "Glossary: Zorblat."])
+        self.assertEqual(got["voice_settings"], ["test/fast", "test/careful"])
+        self.assertEqual(got["actions"], str(d / "settings.json"))
+        self.assertEqual(got["snippets"], str(d / "snippets.json"))
+        self.assertEqual(got["command"], str(d / "snippets.json"))
+        self.assertEqual(got["edits"], [str(d / "takes.jsonl"), str(d / "edits.jsonl")])
+        self.assertEqual(got["notes"], str(d / "notes"))
+        self.assertEqual(got["notes_names"], [])
+        self.assertEqual(got["word_fixes"], str(d))
+        self.assertFalse(got["router"])                       # d/offline forces local
+        self.assertEqual(got["model"], str(d / "cache"))
+        self.assertEqual(got["names"], str(d))
+        self.assertIsNone(got["gatecore"])                    # read d/gate.json, whose names do not match
+
+    def test_cli_defaults_follow_the_env(self):
+        """know.build, speakers and typos take their default folders from DRAFTER_DATA at call time."""
+        os.environ["DRAFTER_DATA"] = str(self.t / "d")
+        import know, gatecore, voice_settings
+        (self.t / "d").mkdir()
+        (self.t / "d" / "words.json").write_text('{"words": [{"text": "Zorblat", "kind": "project"}]}')
+        (self.t / "d" / "snippets.json").write_text("{}")
+        pack = know.build(dictionary=None, snippets=None, contacts=[], now=1)
+        self.assertTrue((self.t / "d" / "know.json").exists())
+        self.assertIn("zorblat", __import__("json").dumps(pack).lower())
+        (self.t / "d" / "settings.json").write_text('{"voiceCareful": "local/c"}')
+        saved = os.environ.pop("DRAFTER_VOICE_SETTINGS", None)
+        try: self.assertEqual(voice_settings.load_models()[1], "local/c")
+        finally:
+            if saved is not None: os.environ["DRAFTER_VOICE_SETTINGS"] = saved
+        self.assertIsNone(gatecore.load())
+        for f, defaults in (("speakers.py", ('str(data / "voiceprint.json")', 'str(data / "audio")', 'str(data / "calls")')),
+                            ("typos.py", ('default=str(data_dir())',))):
+            src = (ROOT / "engine" / f).read_text()
+            self.assertIn("from data_dir import data_dir", src)
+            for x in defaults: self.assertIn(x, src)
+            self.assertNotIn('ROOT / "data"', src)
+
     def test_command_line_prints_it(self):
         env = {k: v for k, v in os.environ.items() if k not in KEYS[:3]}
         env["DRAFTER_DATA"] = str(self.t / "cli")

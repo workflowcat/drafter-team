@@ -219,7 +219,9 @@ def read(model, audio, gate=True):
 def glossary():
     """The user's own words, handed to Whisper as a hint so it spells them right: the 60 names the user uses most from the
     names reference (data/names.json `voice`, engine/names.py, 2026-11-15), else the dictionary's first 60 terms."""
-    data = os.path.join(os.path.dirname(__file__), "..", "data")
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from data_dir import data_dir
+    data = str(data_dir())
     if not os.environ.get("DRAFTER_WORDS") and os.environ.get("DRAFTER_NAMES") != "0":
         try:
             with open(os.path.join(data, "names.json")) as source:

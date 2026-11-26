@@ -12,13 +12,15 @@ under a millisecond.
 import json, re, sys, threading
 from pathlib import Path
 
-FILE = Path(__file__).resolve().parent.parent / "data/snippets.json"
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from data_dir import data_dir  # noqa: E402
+FILE = data_dir() / "snippets.json"
 _lock = threading.Lock()
 _cache = {"mtime": None, "data": {}}
 
 # which snippet a cue asks for; the first key that exists wins
 CUES = [(tuple(row["keys"]), re.compile(row["pattern"])) for row in
-        json.loads((FILE.parent.parent / "dictionary/snippet-cues.json").read_text())]
+        json.loads((Path(__file__).resolve().parent.parent / "dictionary/snippet-cues.json").read_text())]
 TRIGGER = re.compile(r"(?:^|(?<=\s))(;[\w\-]{1,20})$")
 
 

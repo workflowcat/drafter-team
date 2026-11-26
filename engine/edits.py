@@ -1,12 +1,15 @@
 """Learn from the user's edits (idea 6): when the user sends a line that came from a voice take, the words the user changed are
 "heard -> fixed" pairs. They wait in data/edits.jsonl until the user accepts one in the menu; an accepted pair goes into the
 shared dictionary (spelling fixes for Voice and Whisper's hint)."""
-import difflib, json, re, time
+import difflib, json, re, sys, time
 from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 import dictionary
+from data_dir import data_dir
 
 ROOT = Path(__file__).resolve().parent.parent
-TAKES, EDITS = ROOT / "data/takes.jsonl", ROOT / "data/edits.jsonl"
+DATA = data_dir()
+TAKES, EDITS = DATA / "takes.jsonl", DATA / "edits.jsonl"
 WORD = re.compile(r"[\w'’-]+", re.U)
 
 

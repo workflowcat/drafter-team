@@ -102,8 +102,12 @@ def score(weights, f):
     return 1 / (1 + math.exp(-max(-30, min(30, z))))
 
 
-def load(path=ROOT / "data/gate.json"):
+def load(path=None):
     try:
+        if path is None:
+            import sys; sys.path.insert(0, str(Path(__file__).resolve().parent))
+            from data_dir import data_dir
+            path = data_dir() / "gate.json"
         g = json.loads(Path(path).read_text())
         return g if g.get("names") == NAMES else None
     except Exception: return None
