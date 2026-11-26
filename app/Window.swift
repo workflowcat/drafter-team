@@ -405,6 +405,8 @@ struct WindowView: View {
     @State private var fileOver = false   // a file dragged over the window
     var body: some View {
         GeometryReader { g in
+          HStack(spacing: 0) {
+            WindowRail()   // Rebuild B: every page on the rail at the left
             VStack(spacing: 0) {
                 StreamBar(title: pageTitle)   // direction C: one bar, the pages in its menu (TopBar unused)
                 Group {
@@ -423,9 +425,10 @@ struct WindowView: View {
                     }
                 }.frame(maxWidth: .infinity, maxHeight: .infinity)
             }
+          }
             .frame(width: g.size.width, height: g.size.height)
-            .onAppear { m.width = g.size.width }
-            .onChange(of: g.size.width) { _, w in m.width = w }
+            .onAppear { m.width = g.size.width - WindowRail.width }
+            .onChange(of: g.size.width) { _, w in m.width = w - WindowRail.width }
         }
         .overlay(alignment: .topLeading) {
             if titlebar {
@@ -452,7 +455,13 @@ struct WindowView: View {
             }
         }
         .font(NativeFont.text(13)).foregroundStyle(UIInk.ink).tint(UIInk.blue)
-        .background(UIInk.paper)
+        .background {   // Rebuild B: the window's ground with a faint wash, so the glass reads as glass
+            ZStack {
+                UIInk.paper
+                LinearGradient(colors: [UIInk.blue.opacity(Native.dark ? 0.08 : 0.05), .clear, UIInk.violet.opacity(Native.dark ? 0.06 : 0.035)],
+                               startPoint: .topLeading, endPoint: .bottomTrailing)
+            }.ignoresSafeArea()
+        }
     }
     var pageTitle: String {
         switch m.page { case .doc: return m.doc?.title ?? ""; case .settings: return "Settings"; case .help: return "Help"; case .names: return "Names"; case .links: return "Links & Files"; case .screen: return "Screen"; case .dictionary: return "Dictionary"; case .shortcuts: return "Shortcuts"; case .tape: return "" }

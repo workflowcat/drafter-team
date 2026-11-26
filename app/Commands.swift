@@ -20,7 +20,7 @@ final class CommandCard {
     private var spot: Spot?
     var isOpen: Bool { panel.isVisible }
 
-    init() { panel.contentView = view; view.card = self }
+    init() { panel.contentView = GlassHost(view, inset: 0); panel.hasShadow = true; view.card = self }
 
     // MARK: sources
 
@@ -118,7 +118,8 @@ final class CommandCard {
         panel.setFrame(NSRect(origin: o, size: size), display: true)
         view.frame = NSRect(origin: .zero, size: size)
         view.needsDisplay = true
-        panel.orderFrontRegardless()
+        panel.invalidateShadow()
+        Panel.appear(panel)
     }
 
     func hide() { if panel.isVisible { panel.orderOut(nil) }; rows = []; query = ""; own = false; sel = 0 }
@@ -230,7 +231,7 @@ enum CommandDraw {
         }
     }
     static func list(_ b: NSRect, rows: [CommandItem], sel: Int, query: String?, uk: Bool) {
-        TapeDraw.surface(b)
+        TapeDraw.surface(b, glass: true)
         let pad = Panel.pad
         var y: CGFloat = 8
         if let q = query {

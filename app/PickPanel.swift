@@ -65,7 +65,7 @@ final class PickPanel {
         panel.isReleasedWhenClosed = false
         view.frame = NSRect(origin: .zero, size: PickView.size)
         view.model = self
-        panel.contentView = view
+        panel.contentView = GlassHost(view, inset: 0)   // Rebuild B: frosted glass
         NotificationCenter.default.addObserver(forName: NSWindow.didResignKeyNotification, object: panel, queue: .main) { [weak self] _ in
             self?.close("away", back: false)
         }
@@ -277,7 +277,7 @@ final class PickView: NSView {
     override func draw(_ dirty: NSRect) {
         guard let m = model else { return }
         let s = m.state, W = Self.W
-        TapeDraw.surface(bounds)
+        TapeDraw.surface(bounds, glass: true)
         NSGraphicsContext.saveGraphicsState()
         NSBezierPath(roundedRect: bounds.insetBy(dx: 1, dy: 1), xRadius: max(0, Native.corner(3) - 1), yRadius: max(0, Native.corner(3) - 1)).addClip()
 

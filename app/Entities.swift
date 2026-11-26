@@ -708,10 +708,11 @@ enum ContextDraw {
         foot(b, [("↑↓", "choose"), ("↵", "this one"), ("1-6", "kind"), ("esc", "plain")])
     }
 
+    /// The keys in the one dark pill (Rebuild B); ↵ is the main action at its blue end.
     private static func foot(_ b: NSRect, _ keys: [(String, String)]) {
-        Panel.divider(x0: 0, x1: b.width, y: b.height - footH)
-        var x = pad
-        for (k, w) in keys { x = TapeDraw.keyWord(k, w, x: x, y: b.height - footH + 11, gap: 14) }
+        let go = keys.first { $0.0 == "↵" }.map { (key: $0.0, word: $0.1) }
+        let pairs = keys.filter { $0.0 != "↵" }.map { (key: $0.0, word: $0.1) }
+        Panel.pill(pairs, go: go, x: pad - 4, mid: b.height - footH / 2, shadow: false)
     }
 }
 

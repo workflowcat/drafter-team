@@ -59,10 +59,10 @@ final class Rework {
 
     init() {
         panel = NSPanel(contentRect: .zero, styleMask: [.nonactivatingPanel, .borderless], backing: .buffered, defer: true)
-        panel.isOpaque = false; panel.backgroundColor = .clear; panel.hasShadow = false
+        panel.isOpaque = false; panel.backgroundColor = .clear; panel.hasShadow = true
         panel.level = .popUpMenu; panel.ignoresMouseEvents = true; panel.hidesOnDeactivate = false
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]
-        panel.contentView = view
+        panel.contentView = GlassHost(view, inset: 0)
     }
 
     /// In the event tap, no Accessibility calls: could ⌥Tab open the list here at all?
@@ -232,7 +232,8 @@ final class Rework {
         x = min(max(x, vis.minX + 4), vis.maxX - size.width - 4)
         panel.setFrame(NSRect(x: x, y: y, width: size.width, height: size.height), display: true)
         view.needsDisplay = true
-        panel.orderFrontRegardless()
+        panel.invalidateShadow()
+        Panel.appear(panel)
     }
 }
 
@@ -270,7 +271,7 @@ final class ReworkView: NSView {
 
     override func draw(_ dirty: NSRect) {
         guard let m = model else { return }
-        Panel.ground(bounds, radius: Panel.control)
+        Panel.ground(bounds, glass: true)
         // head: the kind square, what is going on, esc on the right
         Native.drawMark(Kind.rework.mark, in: NSRect(x: pad - 2, y: 6, width: 16, height: 16), tint: Kind.rework.color)
         let name = m.ran == "custom" ? "Your words" : (m.cmds.first { $0.id == m.ran }?.name ?? "")

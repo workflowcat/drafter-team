@@ -77,7 +77,7 @@ final class Quick {
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]
         view.frame = NSRect(origin: .zero, size: QuickView.fullFrame)
         view.model = self
-        panel.contentView = view
+        panel.contentView = GlassHost(view, inset: QuickView.pad)   // Rebuild B: frosted glass under the card
         NSWorkspace.shared.notificationCenter.addObserver(forName: NSWorkspace.didActivateApplicationNotification, object: nil, queue: .main) { [weak self] _ in
             self?.close("app changed")
         }
@@ -267,7 +267,7 @@ final class Quick {
         Ghost.shared.hide(); Rework.shared.close("quick")
         place(near: near)
         view.needsDisplay = true
-        panel.orderFrontRegardless()
+        Panel.appear(panel)
         isOpen = true
         refresh()
         log("quick: open, \(items.count) rows, \(Int(Date().timeIntervalSince(t0) * 1000)) ms")

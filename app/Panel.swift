@@ -4,6 +4,9 @@
 // rows with these pieces, so they read like the calm one-column journal: a soft card with a hairline edge and 12 pt
 // corners, 13 pt words, keys as small rounded key caps, bordered buttons that name their key, the main one filled.
 // AppKit drawing (flipped views) and the same pieces for SwiftUI. Semantic colours only (app/Look.swift, docs/look.md).
+// Rebuild B (26 November 2026, the user: "a bit more ephemeral and less like a document"): the ground is frosted glass
+// (GlassHost blurs the app below, the ground draws a light tint and a hairline over it), corners are 18 pt, the keys
+// sit in one dark pill whose blue end is the main action (`pill`), and a panel rises 6 pt as it fades in (`appear`).
 // No state, no files.
 import AppKit
 import SwiftUI
@@ -12,7 +15,7 @@ enum Panel {
     // MARK: sizes (points)
 
     /// A floating panel's corner; a control's (a button, a chip, a row) is `control`; a key cap's `key`.
-    static let corner: CGFloat = 12, control: CGFloat = 8, key: CGFloat = 5
+    static let corner: CGFloat = 18, control: CGFloat = 8, key: CGFloat = 5
     /// Room inside a panel, between two things in it, between a word and its key.
     static let pad: CGFloat = 12, gap: CGFloat = 8
     /// One row of a list: the journal stream's row (kind symbol, one line, app and time at the right).
@@ -31,15 +34,24 @@ enum Panel {
 
     // MARK: the ground
 
-    /// A panel's ground: the raised card colour, a 0.5 pt hairline edge. `shadow`: the one soft float shadow too (draw
-    /// it only where the view has room round the card; a panel with its own window shadow passes false).
-    static func ground(_ b: NSRect, radius: CGFloat = corner, shadow: Bool = false) {
+    /// A panel's ground. `glass`: the panel sits in a GlassHost, so the ground is a light tint over the blur; without it
+    /// the raised card colour. Then a bright inner rim and a 0.5 pt hairline edge. `shadow`: the one soft float shadow
+    /// too, drawn outside the card only (draw it only where the view has room round the card; a panel with its own
+    /// window shadow passes false).
+    static func ground(_ b: NSRect, radius: CGFloat = corner, shadow: Bool = false, glass: Bool = false) {
         let box = NSBezierPath(roundedRect: b.insetBy(dx: 0.25, dy: 0.25), xRadius: radius, yRadius: radius)
-        if shadow {
-            NSGraphicsContext.saveGraphicsState(); softShadow().set(); Native.card.setFill(); box.fill(); NSGraphicsContext.restoreGraphicsState()
-        }
-        Native.card.setFill(); box.fill()
-        Native.line.setStroke(); box.lineWidth = 0.5; box.stroke()
+        if shadow { outerShadow(box, around: b) }
+        (glass ? Native.glassTint : Native.card).setFill(); box.fill()
+        let rim = NSBezierPath(roundedRect: b.insetBy(dx: 1, dy: 1), xRadius: max(0, radius - 1), yRadius: max(0, radius - 1))
+        Native.glassTop.setStroke(); rim.lineWidth = 0.5; rim.stroke()
+        Native.glassEdge.setStroke(); box.lineWidth = 0.5; box.stroke()
+    }
+    /// The soft float shadow of `box`, outside it only: a glass tint over it would show it through otherwise.
+    static func outerShadow(_ box: NSBezierPath, around b: NSRect) {
+        NSGraphicsContext.saveGraphicsState()
+        let clip = NSBezierPath(rect: b.insetBy(dx: -80, dy: -80)); clip.append(box); clip.windingRule = .evenOdd; clip.addClip()
+        softShadow().set(); NSColor.black.setFill(); box.fill()
+        NSGraphicsContext.restoreGraphicsState()
     }
     /// The soft shadow under what floats: wider and lighter than a window's.
     static func softShadow() -> NSShadow { Native.floatShadow() }
@@ -71,22 +83,86 @@ enum Panel {
         (k as NSString).draw(at: NSPoint(x: (r.midX - tw / 2).rounded(), y: TapeDraw.lineTop(f, mid: r.midY)), withAttributes: a)
         return w
     }
-    /// Key caps and their words in a row ("↑↓ choose  ⇥ put in  esc close"), from `x` on the line round `mid`.
-    /// Returns the x after the last.
+    /// Key caps and their words in a row ("↑↓ choose  ⇥ put in  esc close"), from `x` on the line round `mid`: since
+    /// Rebuild B they sit in the dark key pill. Returns the x after it.
     @discardableResult
     static func hints(_ pairs: [(key: String, word: String)], x: CGFloat, mid: CGFloat, color: NSColor = Native.muted) -> CGFloat {
-        var x = x
-        let a = TapeDraw.at(hint, color)
-        for (k, w) in pairs {
-            x += keycap(k, x: x, y: (mid - capH / 2).rounded()) + 6
-            (w as NSString).draw(at: NSPoint(x: x, y: TapeDraw.lineTop(hint, mid: mid)), withAttributes: a)
-            x += TapeDraw.width(w, a) + 14
-        }
-        return x
+        x + pill(pairs, x: x, mid: mid)
     }
-    static func hintsWidth(_ pairs: [(key: String, word: String)]) -> CGFloat {
-        let a = TapeDraw.at(hint, Native.muted)
-        return pairs.reduce(0) { $0 + capWidth($1.key) + 6 + TapeDraw.width($1.word, a) + 14 } - (pairs.isEmpty ? 0 : 14)
+    static func hintsWidth(_ pairs: [(key: String, word: String)]) -> CGFloat { pillWidth(pairs) }
+
+    // MARK: the key pill (Rebuild B)
+
+    static let pillH: CGFloat = 30
+    /// A cap inside the pill: faint white, white key; on the blue end a lighter cap.
+    @discardableResult
+    static func hudCap(_ k: String, x: CGFloat, mid: CGFloat, onBlue: Bool = false, draw: Bool = true) -> CGFloat {
+        let h: CGFloat = 18, a = TapeDraw.at(capFont, Native.onHud), w = max(h, (TapeDraw.width(k, a) + 10).rounded(.up))
+        guard draw else { return w }
+        let r = NSRect(x: x, y: (mid - h / 2).rounded(), width: w, height: h)
+        (onBlue ? NSColor.white.withAlphaComponent(0.24) : Native.hudCap).setFill()
+        NSBezierPath(roundedRect: r, xRadius: key, yRadius: key).fill()
+        let tw = TapeDraw.width(k, a)
+        (k as NSString).draw(at: NSPoint(x: (r.midX - tw / 2).rounded(), y: TapeDraw.lineTop(capFont, mid: r.midY)), withAttributes: a)
+        return w
+    }
+    /// The one key pill: near black, each key a faint white cap with its word, the main action (`go`) at its end in the
+    /// accent colour with its own cap. From `x` on the line round `mid`; returns its width (`draw` false measures only).
+    @discardableResult
+    static func pill(_ pairs: [(key: String, word: String)], go: (key: String, word: String)? = nil, x: CGFloat, mid: CGFloat,
+                     draw: Bool = true, shadow: Bool = true) -> CGFloat {
+        let wa = TapeDraw.at(hint, Native.onHudMuted), ga = TapeDraw.at(strongHint, Native.onHud)
+        var w: CGFloat = 10
+        for (i, p) in pairs.enumerated() { w += hudCap(p.key, x: 0, mid: 0, draw: false) + 6 + TapeDraw.width(p.word, wa) + (i < pairs.count - 1 ? 14 : 0) }
+        var goW: CGFloat = 0
+        if let g = go { goW = 10 + TapeDraw.width(g.word, ga) + 6 + hudCap(g.key, x: 0, mid: 0, draw: false) + 6 }
+        w += go == nil ? 10 : (pairs.isEmpty ? 3 - 10 + 0 : 12) + goW + 3
+        w = w.rounded(.up)
+        guard draw else { return w }
+        let r = NSRect(x: x, y: (mid - pillH / 2).rounded(), width: w, height: pillH)
+        let shape = NSBezierPath(roundedRect: r, xRadius: pillH / 2, yRadius: pillH / 2)
+        if shadow {
+            NSGraphicsContext.saveGraphicsState()
+            let sh = NSShadow(); sh.shadowColor = NSColor.black.withAlphaComponent(0.22); sh.shadowBlurRadius = 10; sh.shadowOffset = NSSize(width: 0, height: -4)
+            sh.set(); Native.hud.setFill(); shape.fill()
+            NSGraphicsContext.restoreGraphicsState()
+        }
+        Native.hud.setFill(); shape.fill()
+        NSColor.white.withAlphaComponent(0.08).setStroke(); shape.lineWidth = 0.5; shape.stroke()
+        var cx = r.minX + 10
+        for p in pairs {
+            cx += hudCap(p.key, x: cx, mid: r.midY) + 6
+            (p.word as NSString).draw(at: NSPoint(x: cx, y: TapeDraw.lineTop(hint, mid: r.midY)), withAttributes: wa)
+            cx += TapeDraw.width(p.word, wa) + 14
+        }
+        if let g = go {
+            let gr = NSRect(x: r.maxX - 3 - goW, y: r.minY + 3, width: goW, height: pillH - 6)
+            Native.go.setFill(); NSBezierPath(roundedRect: gr, xRadius: gr.height / 2, yRadius: gr.height / 2).fill()
+            (g.word as NSString).draw(at: NSPoint(x: gr.minX + 10, y: TapeDraw.lineTop(strongHint, mid: gr.midY)), withAttributes: ga)
+            hudCap(g.key, x: gr.maxX - 6 - hudCap(g.key, x: 0, mid: 0, draw: false), mid: gr.midY, onBlue: true)
+        }
+        return w
+    }
+    static func pillWidth(_ pairs: [(key: String, word: String)], go: (key: String, word: String)? = nil) -> CGFloat {
+        pill(pairs, go: go, x: 0, mid: 0, draw: false)
+    }
+    static var strongHint: NSFont { Native.text(12, .medium) }
+
+    // MARK: motion (Rebuild B)
+
+    /// A panel's way in: it fades in and rises 6 pt (80 ms). Already on screen, or Reduce Motion on: it just shows.
+    static func appear(_ w: NSWindow) {
+        let d = Native.motion("rise")
+        guard d > 0, !w.isVisible else { w.alphaValue = 1; w.orderFrontRegardless(); return }
+        let end = w.frame
+        w.alphaValue = 0
+        w.setFrameOrigin(NSPoint(x: end.minX, y: end.minY - Native.rise))
+        w.orderFrontRegardless()
+        NSAnimationContext.runAnimationGroup { c in
+            c.duration = d; c.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            w.animator().alphaValue = 1
+            w.animator().setFrameOrigin(end.origin)
+        }
     }
 
     // MARK: buttons
@@ -213,12 +289,99 @@ struct PanelButton: View {
     }
 }
 
+/// A cap inside the key pill: faint white, the key in white.
+struct HudCap: View {
+    let key: String
+    var onBlue = false
+    init(_ key: String, onBlue: Bool = false) { self.key = key; self.onBlue = onBlue }
+    var body: some View {
+        Text(key).font(.system(size: 11, weight: .medium)).foregroundStyle(.white)
+            .padding(.horizontal, 5).frame(minWidth: 18, minHeight: 18)
+            .background(RoundedRectangle(cornerRadius: Panel.key).fill(.white.opacity(onBlue ? 0.24 : 0.14)))
+            .accessibilityLabel("key \(key)")
+    }
+}
+
+/// The key pill (Rebuild B): near black, each key a faint cap with its word, the main action at its end in the
+/// accent colour; clicking the blue end runs it.
+struct HudPill: View {
+    struct Key: Identifiable { let key: String; let word: String; var id: String { key + word } }
+    let keys: [Key]
+    var go: Key? = nil
+    var action: (() -> Void)? = nil
+    init(_ keys: [(String, String)], go: (String, String)? = nil, action: (() -> Void)? = nil) {
+        self.keys = keys.map { Key(key: $0.0, word: $0.1) }
+        self.go = go.map { Key(key: $0.0, word: $0.1) }
+        self.action = action
+    }
+    var body: some View {
+        HStack(spacing: 14) {
+            ForEach(keys) { k in
+                HStack(spacing: 6) { HudCap(k.key); Text(k.word).font(.system(size: 12)).foregroundStyle(.white.opacity(0.62)) }
+            }
+            if let g = go {
+                Button { action?() } label: {
+                    HStack(spacing: 6) { Text(g.word).font(.system(size: 12, weight: .medium)); HudCap(g.key, onBlue: true) }
+                        .foregroundStyle(.white).padding(.leading, 10).padding(.trailing, 6).frame(height: 24)
+                        .background(Capsule().fill(Color(nsColor: Native.go)))
+                }.buttonStyle(.plain).padding(.leading, keys.isEmpty ? -7 : 0)
+            }
+        }
+        .padding(.leading, 10).padding(.trailing, go == nil ? 10 : 3).frame(height: Panel.pillH)
+        .background(Capsule().fill(Color(nsColor: Native.hud)))
+        .overlay(Capsule().strokeBorder(.white.opacity(0.08), lineWidth: 0.5))
+        .shadow(color: .black.opacity(0.22), radius: 10, y: 4)
+    }
+}
+
 extension View {
-    /// A floating panel's ground in SwiftUI: the popover material, a hairline edge, 12 pt corners, the soft shadow.
+    /// A floating panel's ground in SwiftUI (Rebuild B): the popover material with the glass tint over it, a bright rim,
+    /// a hairline edge, 18 pt corners, the soft shadow.
     func panelGround() -> some View {
-        self.padding(Panel.pad)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: Panel.corner))
-            .overlay(RoundedRectangle(cornerRadius: Panel.corner).strokeBorder(Color(nsColor: Native.line), lineWidth: 0.5))
-            .shadow(color: .black.opacity(Native.dark ? 0.35 : 0.14), radius: 9, y: 6)
+        self.padding(Panel.pad).glassCard()
+    }
+    /// The glass card itself, without the padding.
+    func glassCard(radius: CGFloat = Panel.corner) -> some View {
+        self.background {
+            ZStack {
+                RoundedRectangle(cornerRadius: radius).fill(.regularMaterial)
+                RoundedRectangle(cornerRadius: radius).fill(Color(nsColor: Native.glassTint))
+            }
+        }
+        .overlay(RoundedRectangle(cornerRadius: radius - 1).strokeBorder(Color(nsColor: Native.glassTop), lineWidth: 0.5).padding(1))
+        .overlay(RoundedRectangle(cornerRadius: radius).strokeBorder(Color(nsColor: Native.glassEdge), lineWidth: 0.5))
+        .shadow(color: .black.opacity(Native.dark ? 0.35 : 0.14), radius: 12, y: 6)
+    }
+    /// Rebuild B's way in for a SwiftUI piece: it fades in and rises 6 pt.
+    func riseIn(_ shown: Bool) -> some View {
+        self.opacity(shown ? 1 : 0).offset(y: shown ? 0 : Native.rise)
+            .animation(.easeOut(duration: Native.motion("rise")), value: shown)
+    }
+}
+
+/// Frosted glass behind a floating panel (Rebuild B): the app below blurred, masked to the card, which sits `inset`
+/// from the window's edge (the room for the drawn shadow) with `radius` corners. The panel's drawing view goes inside
+/// and fills it; its ground then passes `glass: true`.
+final class GlassHost: NSVisualEffectView {
+    init(_ content: NSView, inset: CGFloat, radius: CGFloat = Panel.corner) {
+        super.init(frame: content.frame)
+        material = .popover; blendingMode = .behindWindow; state = .active
+        maskImage = Self.mask(inset: inset, radius: radius)
+        content.frame = bounds; content.autoresizingMask = [.width, .height]
+        addSubview(content)
+    }
+    required init?(coder: NSCoder) { fatalError("not used") }
+    /// A stretchable mask: the rounded card, clear round it.
+    static func mask(inset: CGFloat, radius: CGFloat) -> NSImage {
+        let side = 2 * (inset + radius) + 1
+        let img = NSImage(size: NSSize(width: side, height: side), flipped: false) { r in
+            NSColor.black.setFill()
+            NSBezierPath(roundedRect: r.insetBy(dx: inset, dy: inset), xRadius: radius, yRadius: radius).fill()
+            return true
+        }
+        let c = inset + radius
+        img.capInsets = NSEdgeInsets(top: c, left: c, bottom: c, right: c)
+        img.resizingMode = .stretch
+        return img
     }
 }

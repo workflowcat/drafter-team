@@ -13,7 +13,7 @@ tips) in `app/Panel.swift`.
   the accent `controlAccentColor`; states `systemRed` (live, recording), `systemGreen` (done), `systemOrange` (a fix).
   No hex palettes in the interface.
 - **Controls:** native: the system switch, pickers and buttons. Rounded corners: 4-5 pt keys and tags, 6-8 pt controls,
-  12 pt floating panels.
+  18 pt floating glass.
 - **Symbols:** SF Symbols. The app's own names (`bookmark`, `waves`, `verified`) map to symbols in `Native.symbols`.
 - **Grey text stays plain:** the field's own font, a lighter shade, no fade, no animation.
 - **The strip stays black** in both appearances (it merges with the notch) and draws its words in the dark
@@ -32,15 +32,26 @@ The words the window, Help and these docs use, one meaning each:
 - **Share notes:** puts a recording's notes on the clipboard, for you to paste where you want.
 - **To do:** the follow-ups found in a recording's notes. Written "To do", never "To-dos".
 
-## Floating panels (caret-cozy round, 23 November 2026)
+## Rebuild B: what floats is glass (26 November 2026)
 
-- One ground: the card colour, a 0.5 pt hairline edge, 12 pt corners, one soft shadow (`Panel.ground`).
-- 12 pt inside, 8 pt between, 13 pt words, 12 pt hints.
-- Rows as in the journal: the kind's symbol in its colour, one line, app and time quiet at the right; the chosen
-  row a soft accent lift with 8 pt corners (`Panel.row`).
-- Keys as small key caps everywhere: 20 pt high, 5 pt corners, a soft fill and a hairline (`Panel.keycap`).
-- Buttons bordered, with their key cap; the main one filled with the accent (`Panel.button`). Tips use the ground.
-- SwiftUI: `PanelKeyCap`, `PanelButton`, `.panelGround()` (the popover material).
+Drafter floats over your work and fades when you are done. Shared pieces in `app/Panel.swift`, tokens in `app/Look.swift`.
+
+- **Glass:** a floating panel sits in a `GlassHost` (the popover material, the app below blurred) and its ground
+  draws a light tint, a bright rim and a 0.5 pt hairline over it (`Panel.ground(..., glass: true)`). 18 pt corners.
+  The one soft shadow is drawn outside the card only. SwiftUI: `.glassCard()` and `.panelGround()`.
+- **One key pill:** the keys of a panel sit in one near-black pill, each a faint white cap with its word; the main
+  action is the pill's blue end with its own cap (`Panel.pill`, SwiftUI `HudPill`). The blue end is `systemBlue`
+  even with a graphite accent, so "do it" always reads. Footers with loose key caps are gone.
+- **No page titles:** a page names itself with a small glass chip (`PlaceChip`, inside `PageHeader`), its one muted
+  line after it. Every page is on the window's icon rail at the left (`app/WindowRail.swift`); the ⋯ menu keeps them
+  too, with their keys.
+- **The chosen line lifts:** the open row in the stream and the current Welcome step become a near-white card with
+  the float shadow (`Native.lift`); done steps fade, the rest wait folded.
+- **Motion:** a panel fades in and rises 6 pt in 80 ms (`Panel.appear`, SwiftUI `.riseIn`); nothing moves with
+  Reduce Motion on.
+- **Live stays black:** the strip and the recording notch keep the black housing.
+- Inside a panel: 12 pt in, 8 pt between, 13 pt words, rows as in the journal (`Panel.row`), buttons bordered with
+  their key cap (`Panel.button`). Light key caps (`Panel.keycap`, `PanelKeyCap`) stay for keys named inside text.
 
 ## Kinds
 

@@ -77,6 +77,15 @@ struct WelcomeView: View {
     @State private var languages = ((LocalConfig.json["user"] as? [String: Any])?["languages"] as? [String] ?? ["en"]).joined(separator: ", ")
     @State private var saved = ""
     @State private var voice = Drafter.shared.settings.voice
+    @State private var nameDone = !LocalConfig.user("name").trimmingCharacters(in: .whitespaces).isEmpty
+    @State private var picked: Int? = nil   // a step the user opened by its title
+    /// Rebuild B: the step you are on lifts and opens (the first one not done, or the one picked); done steps fade, the
+    /// rest wait folded to their titles.
+    private var doneFlags: [Bool] {
+        [item("accessibility")?.ok == true, nameDone, voice && item("microphone")?.ok == true,
+         item("screen")?.ok == true && item("calendar")?.ok == true, false, false]
+    }
+    private var current: Int { picked ?? ((doneFlags.firstIndex(of: false) ?? 5) + 1) }
     private let timer = Timer.publish(every: 2, on: .main, in: .common).autoconnect()
 
     private var items: [PermissionItem] { _ = tick; return Welcome.permissions(Drafter.shared.settings) }
@@ -84,7 +93,7 @@ struct WelcomeView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 22) {
+            VStack(alignment: .leading, spacing: 10) {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Welcome to Drafter").font(NativeFont.display(22))
                     Text("Grey text at the caret from a small model on this Mac, voice on Right Option, and notes from your calls. Your text stays on this Mac unless you connect a model.")
@@ -106,7 +115,9 @@ struct WelcomeView: View {
                     HStack(spacing: 8) {
                         Button("Save") {
                             let langs = languages.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces).lowercased() }.filter { !$0.isEmpty }
-                            saved = Welcome.saveUser(name: name, languages: langs) ? "Saved" : "Could not save. Check that data/ can be written."
+                            let ok = Welcome.saveUser(name: name, languages: langs)
+                            saved = ok ? "Saved" : "Could not save. Check that data/ can be written."
+                            if ok { nameDone = true; picked = nil }
                         }.disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
                         if !saved.isEmpty { Text(saved).foregroundStyle(UIInk.muted) }
                     }
@@ -145,9 +156,17 @@ struct WelcomeView: View {
                 HStack {
                     Text("Open this again from the menu bar: Welcome and setup…").font(NativeFont.text(12)).foregroundStyle(UIInk.muted)
                     Spacer()
-                    Button("Done") { done() }.buttonStyle(.borderedProminent).keyboardShortcut(.defaultAction)
-                }
-            }.padding(28).font(NativeFont.text(13))
+                    HudPill([], go: ("↵", "Done")) { done() }   // Rebuild B: the keys in one pill
+                    Button("Done") { done() }.keyboardShortcut(.defaultAction).opacity(0).frame(width: 0, height: 0).accessibilityHidden(true)
+                }.padding(.top, 12)
+            }
+            .padding(24).font(NativeFont.text(13))
+            .glassCard()   // Rebuild B: one glass card on the washed ground
+            .padding(20)
+        }
+        .background {
+            LinearGradient(colors: [UIInk.blue.opacity(0.06), UIInk.paper, UIInk.violet.opacity(0.04)], startPoint: .topLeading, endPoint: .bottomTrailing)
+                .ignoresSafeArea()
         }
         .frame(width: 600, height: 720)
         .onReceive(timer) { _ in tick += 1 }
@@ -162,19 +181,34 @@ struct WelcomeView: View {
     }
 
     private func step<C: View>(_ n: Int, _ title: String, done: Bool, optional: Bool = false, @ViewBuilder _ content: () -> C) -> some View {
-        HStack(alignment: .top, spacing: 14) {
+        let on = n == current
+        return HStack(alignment: .top, spacing: 14) {
             ZStack {
-                Circle().fill(done ? Color(nsColor: Native.ok) : UIInk.soft).frame(width: 24, height: 24)
-                if done { Image(systemName: "checkmark").font(.system(size: 11, weight: .bold)).foregroundStyle(.white) }
-                else { Text("\(n)").font(NativeFont.mono(12)).foregroundStyle(UIInk.muted) }
-            }.accessibilityLabel(done ? "Step \(n), done" : "Step \(n)")
+                Circle().fill(on ? UIInk.blue : done ? Color(nsColor: Native.ok) : UIInk.soft).frame(width: 24, height: 24)
+                if done && !on { Image(systemName: "checkmark").font(.system(size: 11, weight: .bold)).foregroundStyle(.white) }
+                else { Text("\(n)").font(NativeFont.mono(12)).foregroundStyle(on ? .white : UIInk.muted) }
+            }.accessibilityLabel(done ? "Step \(n), done" : on ? "Step \(n), current" : "Step \(n)")
             VStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 6) {
-                    Text(title).font(NativeFont.text(15, .semibold))
-                    if optional { Text("optional").font(NativeFont.text(11)).foregroundStyle(UIInk.muted) }
+                    Text(title).font(NativeFont.text(on ? 15 : 13, on ? .semibold : .regular)).foregroundStyle(on ? UIInk.ink : UIInk.muted)
+                    if optional { Text("optional").font(NativeFont.text(11)).foregroundStyle(UIInk.faint) }
+                    Spacer(minLength: 0)
                 }
-                content().foregroundStyle(UIInk.ink).fixedSize(horizontal: false, vertical: true)
+                .frame(minHeight: 24)
+                .contentShape(Rectangle())
+                .onTapGesture { if !on { picked = n } }
+                .accessibilityAddTraits(on ? [] : .isButton)
+                if on { content().foregroundStyle(UIInk.ink).fixedSize(horizontal: false, vertical: true).transition(.opacity) }
             }
         }
+        .padding(.horizontal, on ? 16 : 6).padding(.vertical, on ? 14 : 4)
+        .background {
+            if on {
+                RoundedRectangle(cornerRadius: 14).fill(Color(nsColor: Native.lift))
+                    .shadow(color: .black.opacity(Native.dark ? 0.4 : 0.10), radius: 14, y: 5)
+            }
+        }
+        .opacity(done && !on ? 0.55 : 1)
+        .animation(.easeOut(duration: Native.motion("fold")), value: on)
     }
 }

@@ -15,7 +15,7 @@ final class MentionCard {
     private var spot: Spot?
     var isOpen: Bool { panel.isVisible }
 
-    init() { panel.contentView = view; view.card = self }
+    init() { panel.contentView = GlassHost(view, inset: 0); panel.hasShadow = true; view.card = self }
 
     var current: Entity? { sel < people.count ? Entities.store.records[people[sel]] : nil }
     var list: [Entity] { people.map { Entities.store.records[$0] } }
@@ -45,7 +45,8 @@ final class MentionCard {
         panel.setFrame(NSRect(origin: o, size: size), display: true)
         view.frame = NSRect(origin: .zero, size: size)
         view.needsDisplay = true
-        panel.orderFrontRegardless()
+        panel.invalidateShadow()
+        Panel.appear(panel)
     }
 
     func hide() { if panel.isVisible { panel.orderOut(nil) }; people = []; typed = nil; sel = 0 }
@@ -101,7 +102,7 @@ final class MentionView: NSView {
 enum MentionDraw {
     /// The list: also drawn by --ui-preview from made-up people.
     static func list(_ b: NSRect, people: [Entity], sel: Int, slots: [MentionSlot]) {
-        TapeDraw.surface(b)
+        TapeDraw.surface(b, glass: true)
         let rowH = MentionView.row
         for (i, e) in people.enumerated() {
             // the journal's row (app/Panel.swift): the person symbol, the name, their company at the right

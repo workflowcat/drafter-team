@@ -85,10 +85,7 @@ final class QuickView: NSView {
         guard let m = model else { return }
         let size = Self.cardSize(m)
         let card = NSRect(x: Self.pad, y: Self.pad, width: size.width, height: size.height)
-        NSGraphicsContext.saveGraphicsState()
-        Native.floatShadow().set(); Native.card.setFill(); NSBezierPath(roundedRect: card, xRadius: Native.corner(3), yRadius: Native.corner(3)).fill()
-        NSGraphicsContext.restoreGraphicsState()
-        TapeDraw.surface(card)
+        Panel.ground(card, radius: Native.corner(3), shadow: true, glass: true)   // the glass (GlassHost blurs what is below)
         NSGraphicsContext.saveGraphicsState()
         NSBezierPath(roundedRect: card.insetBy(dx: 1, dy: 1), xRadius: max(0, Native.corner(3) - 1), yRadius: max(0, Native.corner(3) - 1)).addClip()
         let t = NSAffineTransform(); t.translateX(by: Self.pad, yBy: Self.pad); t.concat()
@@ -334,13 +331,15 @@ final class QuickView: NSView {
 
     private func drawFoot(_ m: Quick, y: CGFloat) {
         let W = Self.W, h = Self.footH
-        TapeDraw.hairline(x0: 0, x1: W, y: y)
-        let groups = buttons(m)
-        let p = ShotRules.pill(groups.map { $0.map { _ in ShotRules.pillButton } }, at: CGPoint(x: Self.rowX + 2, y: y + (h - ShotRules.pillButton) / 2), pad: 0)
-        for d in p.dividers { Native.line.setFill(); NSRect(x: d.rounded() - 0.5, y: y + 14, width: 1, height: h - 28).fill() }
-        for (b, r) in zip(groups.flatMap { $0 }, p.items) {
-            ShotPill.button(PillFace(glyph: b.glyph, key: b.key, word: b.word, primary: b.primary), r, hover: false)
-        }
+        // Rebuild B: the keys in the one dark pill, the main action at its blue end; the rest drop from the end when
+        // the pill would run into the notice at the right
+        let all = buttons(m).flatMap { $0 }
+        let go = all.first { $0.primary }.map { (key: $0.key, word: $0.word) }
+        var pairs = all.filter { !$0.primary }.map { (key: $0.key, word: $0.word) }
+        let room = W - 2 * Self.rowX - (m.notice.isEmpty && m.mode != .rework ? 0 : 200)
+        while !pairs.isEmpty, Panel.pillWidth(pairs, go: go) > room { pairs.removeLast() }
+        let pw = Panel.pill(pairs, go: go, x: Self.rowX + 4, mid: y + h / 2, shadow: false)
+        let p = (bar: NSRect(x: Self.rowX + 4, y: y, width: pw, height: h), 0)
         // the right side: a removal's undo, a rewrite's length change, else nothing
         let right = W - 14, mid = y + h / 2
         if m.mode == .rework, m.run == .result, let it = m.source {

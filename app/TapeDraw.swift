@@ -190,5 +190,5 @@ enum TapeDraw {
 
     /// The floating surface: the panels' one ground (Panel.ground: card colour, a hairline edge, 12 pt corners; the
     /// panel adds the one float shadow).
-    static func surface(_ b: NSRect, radius: CGFloat = Panel.corner) { Panel.ground(b, radius: radius) }
+    static func surface(_ b: NSRect, radius: CGFloat = Panel.corner, glass: Bool = false) { Panel.ground(b, radius: radius, glass: glass) }
 }

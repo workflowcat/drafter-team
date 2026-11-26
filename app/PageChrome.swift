@@ -7,8 +7,9 @@ enum PageLayout {
     static let searchWidth: CGFloat = 280
 }
 
-/// Unified page header: 24pt Display title, optional count badge capsule, optional muted subtitle,
-/// optional trailing slot (search field or action controls), and a crisp 0.5pt bottom hairline.
+/// The page's place (Rebuild B, 26 November 2026: no page titles, the place is a chip): a small glass chip with the
+/// page's name and its count, the one muted line after it, the trailing slot (a search field or the page's controls)
+/// at the right. No hairline under it: the page floats on the window's ground.
 struct PageHeader<Trailing: View>: View {
     let title: String
     var subtitle: String? = nil
@@ -23,38 +24,40 @@ struct PageHeader<Trailing: View>: View {
     }
 
     var body: some View {
-        HStack(alignment: .center, spacing: 16) {
-            VStack(alignment: .leading, spacing: 3) {
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    Text(title)
-                        .font(NativeFont.display(22))
-                        .foregroundStyle(UIInk.ink)
-                        .lineLimit(1)
-                    if let count {
-                        Text("\(count)")
-                            .font(NativeFont.mono(11))
-                            .foregroundStyle(UIInk.muted)
-                            .padding(.horizontal, 7)
-                            .frame(height: 20)
-                            .background(Capsule().fill(UIInk.well))
-                            .accessibilityLabel("\(count) items")
-                    }
-                }
-                if let subtitle, !subtitle.isEmpty {
-                    Text(subtitle)
-                        .font(NativeFont.text(12))
-                        .foregroundStyle(UIInk.muted)
-                        .lineLimit(2)
-                }
+        HStack(alignment: .center, spacing: 12) {
+            PlaceChip(title: title, count: count)
+            if let subtitle, !subtitle.isEmpty {
+                Text(subtitle)
+                    .font(NativeFont.text(12))
+                    .foregroundStyle(UIInk.muted)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
             }
             Spacer(minLength: 12)
             trailing
         }
-        .padding(.top, 16)
-        .padding(.bottom, 12)
-        .overlay(alignment: .bottom) {
-            Rectangle().fill(UIInk.line).frame(height: 0.5)
+        .padding(.top, 14)
+        .padding(.bottom, 10)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(title)
+    }
+}
+
+/// Where you are, as a chip: the page's name in 13 pt semibold on the glass, its count after it.
+struct PlaceChip: View {
+    let title: String
+    var count: Int? = nil
+    var body: some View {
+        HStack(spacing: 6) {
+            Text(title).font(NativeFont.text(13, .semibold)).foregroundStyle(UIInk.ink).lineLimit(1)
+            if let count {
+                Text("\(count)").font(NativeFont.num(11)).foregroundStyle(UIInk.muted)
+                    .accessibilityLabel("\(count) items")
+            }
         }
+        .padding(.horizontal, 12).frame(height: 28)
+        .glassCard(radius: 14)
+        .accessibilityAddTraits(.isHeader)
     }
 }
 

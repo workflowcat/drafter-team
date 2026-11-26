@@ -16,7 +16,7 @@ final class CommandPanel: NSPanel {
 final class CardView: NSView {
     var appearanceChanged: (() -> Void)?
     override func viewDidChangeEffectiveAppearance() { super.viewDidChangeEffectiveAppearance(); needsDisplay = true; appearanceChanged?() }
-    override func draw(_ r: NSRect) { Panel.ground(bounds) }
+    override func draw(_ r: NSRect) { Panel.ground(bounds, glass: true) }
 }
 
 final class Command: NSObject, NSTextFieldDelegate {
@@ -39,12 +39,12 @@ final class Command: NSObject, NSTextFieldDelegate {
     private func make() -> CommandPanel {
         let p = CommandPanel(contentRect: NSRect(x: 0, y: 0, width: 620, height: 166),
                              styleMask: [.nonactivatingPanel, .borderless], backing: .buffered, defer: false)
-        p.isOpaque = false; p.backgroundColor = .clear; p.hasShadow = false
+        p.isOpaque = false; p.backgroundColor = .clear; p.hasShadow = true
         p.level = NSWindow.Level(rawValue: NSWindow.Level.statusBar.rawValue + 1)
         p.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         p.hidesOnDeactivate = false
         let v = CardView(frame: NSRect(x: 0, y: 0, width: 620, height: 166))
-        p.contentView = v
+        p.contentView = GlassHost(v, inset: 0)   // Rebuild B: frosted glass
         v.appearanceChanged = { [weak self] in self?.draw() }
         input.frame = NSRect(x: 18, y: 166 - 44, width: 584, height: 28)
         input.isBordered = false; input.drawsBackground = false; input.focusRingType = .exterior
@@ -72,12 +72,12 @@ final class Command: NSObject, NSTextFieldDelegate {
         options = [["chip": "Sample · Voice panel design discussion"], ["chip": "Sample · Color notes"], ["chip": "Sample · Light appearance check"]]
         chosen = 0; status.stringValue = "↑↓ choose · ⏎ copy · esc close"
         draw()
-        if let view = panel?.contentView { try UIShots.save(view, folder + "/command.png") }
+        if let view = panel?.contentView?.subviews.first { try UIShots.save(view, folder + "/command.png") }
         input.stringValue = ";free 30 next week"
         options = [["chip": "Insert all 3 available times"], ["chip": "Mon 26 Oct 2026, 09:00–09:30 (Europe/Kyiv)"], ["chip": "Mon 26 Oct 2026, 10:30–11:00 (Europe/Kyiv)"]]
         status.stringValue = "Primary calendar only · Europe/Kyiv · ↑↓ choose · ⏎ insert"
         draw()
-        if let view = panel?.contentView { try UIShots.save(view, folder + "/lookup.png") }
+        if let view = panel?.contentView?.subviews.first { try UIShots.save(view, folder + "/lookup.png") }
 
     }
 

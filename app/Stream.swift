@@ -36,8 +36,8 @@ struct StreamBar: View {
     var title = ""
     var body: some View {
         HStack(spacing: 10) {
-            Color.clear.frame(width: 64, height: 1)
-            if m.page != .tape { BackRow(title: title) }
+            Color.clear.frame(width: 20, height: 1)   // the window's three dots sit over the rail and here
+            if m.page != .tape { BackRow(title: m.page == .doc ? title : "") }   // Rebuild B: the page names itself in a chip
             Spacer()
             RecordControl(live: RecordLive.shared, clock: RecordLive.shared.clock)
             SwiftUI.Menu {
@@ -326,8 +326,8 @@ struct StreamField: View {
             }
         }
         .padding(.horizontal, 14).frame(height: 46)
-        .background(RoundedRectangle(cornerRadius: 10).fill(UIInk.card).shadow(color: .black.opacity(0.06), radius: 6, y: 2))
-        .overlay { RoundedRectangle(cornerRadius: 10).strokeBorder(focused && m.nav.region == .search ? UIInk.blue.opacity(0.5) : UIInk.line, lineWidth: focused && m.nav.region == .search ? 1 : 0.5) }
+        .glassCard(radius: 14)   // Rebuild B: the field is glass
+        .overlay { if focused && m.nav.region == .search { RoundedRectangle(cornerRadius: 14).strokeBorder(UIInk.blue.opacity(0.5), lineWidth: 1) } }
         .onChange(of: m.focusField, initial: true) { _, _ in focused = true }
         .onTapGesture { m.nav.region = .search }
     }
@@ -478,9 +478,14 @@ struct StreamRow: View {
             if open { StreamOpen(it: it, st: st).padding(.leading, 40).padding(.bottom, 12).padding(.top, 2) }
         }
         .padding(.horizontal, 10)
-        .background(RoundedRectangle(cornerRadius: 8).fill(open ? UIInk.card : picked ? UIInk.blue.opacity(0.10) : chosen ? UIInk.pick : hover ? UIInk.hover : .clear))
+        // Rebuild B: the open line lifts out of the stream as a white card with the float shadow
+        .background {
+            RoundedRectangle(cornerRadius: open ? 12 : 8)
+                .fill(open ? Color(nsColor: Native.lift) : picked ? UIInk.blue.opacity(0.10) : chosen ? UIInk.pick : hover ? UIInk.hover : .clear)
+                .shadow(color: .black.opacity(open ? (Native.dark ? 0.4 : 0.10) : 0), radius: 14, y: 5)
+        }
         .overlay {
-            if open { RoundedRectangle(cornerRadius: 8).strokeBorder(UIInk.line, lineWidth: 0.5) }
+            if open { RoundedRectangle(cornerRadius: 12).strokeBorder(Color(nsColor: Native.glassEdge), lineWidth: 0.5) }
             else if picked { RoundedRectangle(cornerRadius: 8).strokeBorder(UIInk.blue.opacity(0.5), lineWidth: 1) }
         }
         .padding(.vertical, open ? 6 : 0)

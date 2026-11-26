@@ -36,6 +36,20 @@ enum Native {
     static let onPrimary = NSColor.alternateSelectedControlTextColor
     static let onCut = NSColor.white                          // words on the black notch housing
     static let onCutMuted = NSColor.white.withAlphaComponent(0.6)
+    // Rebuild B (26 November 2026, the user: "a bit more ephemeral and less like a document"): what floats is frosted
+    // glass over the app below, its keys sit in one dark pill whose blue end is the main action, and it fades away.
+    /// The glass tint over the blur behind a panel, its bright top edge, its outline.
+    static var glassTint: NSColor { dark ? NSColor(white: 0.13, alpha: 0.62) : NSColor(white: 1, alpha: 0.64) }
+    static var glassTop: NSColor { NSColor.white.withAlphaComponent(dark ? 0.10 : 0.75) }
+    static var glassEdge: NSColor { dark ? NSColor.white.withAlphaComponent(0.12) : NSColor.black.withAlphaComponent(0.10) }
+    /// The chosen line lifted out of the glass: near white in light, a lighter grey in dark.
+    static var lift: NSColor { dark ? NSColor(white: 0.24, alpha: 0.92) : NSColor(white: 1, alpha: 0.96) }
+    /// The key pill: near black in both appearances, white words, faint white caps.
+    static let hud = NSColor(white: 0.07, alpha: 0.84)
+    static let onHud = NSColor.white, onHudMuted = NSColor.white.withAlphaComponent(0.62)
+    static let hudCap = NSColor.white.withAlphaComponent(0.14)
+    /// The pill's blue end, the main action: blue even with a graphite accent, so "do it" always reads.
+    static let go = NSColor.systemBlue
     /// The window behind the panes, a row under the pointer, the chosen row.
     static let well = NSColor.windowBackgroundColor
     static let hover = NSColor.quinarySystemFill
@@ -47,14 +61,17 @@ enum Native {
 
     // MARK: shapes and motion
 
-    /// Corners: 0 square, 1 keys and tags, 2 controls, 3 floating panels (12 pt since the caret-cozy round).
-    static func corner(_ i: Int) -> CGFloat { [0, 4, 6, 12][min(3, max(0, i))] }
+    /// Corners: 0 square, 1 keys and tags, 2 controls, 3 floating glass (18 pt since Rebuild B; 12 pt before).
+    static func corner(_ i: Int) -> CGFloat { [0, 4, 6, 18][min(3, max(0, i))] }
     /// Radii: "pane", "card", "row".
-    static func radius(_ k: String) -> CGFloat { ["pane": 12, "card": 10, "row": 6][k] ?? 8 }
-    /// How long a motion takes, in seconds ("fold", "fade"); 0 when Reduce Motion is on.
+    static func radius(_ k: String) -> CGFloat { ["pane": 18, "card": 12, "row": 8][k] ?? 8 }
+    /// How long a motion takes, in seconds ("fold", "fade", "rise" the panel's way in, "pill" the key pill's delay
+    /// after it, "idle" how long the pill stays without a key); 0 when Reduce Motion is on.
     static func motion(_ k: String) -> Double {
-        NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? 0 : (["fold": 0.12, "fade": 0.08][k] ?? 0)
+        NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? 0 : (["fold": 0.12, "fade": 0.08, "rise": 0.08, "pill": 0.12, "idle": 2][k] ?? 0)
     }
+    /// How far a panel rises as it fades in.
+    static let rise: CGFloat = 6
     /// The one shadow on what floats.
     /// The one soft shadow under what floats (caret-cozy round: wider and lighter than a window's).
     static func floatShadow() -> NSShadow {
