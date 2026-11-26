@@ -949,7 +949,7 @@ extension Quick {
             QuickItem(kind: .copied, text: "https://example.com/projects/station-redesign/drawings?utm_source=newsletter&id=48213", app: "Safari", at: now - 40,
                       clip: .link, title: "Station redesign · drawings"),
             QuickItem(kind: .copied, text: "Image · 640 × 400", app: "Preview", at: now - 3 * 60, image: true, clip: .image, bytes: bytes, picture: name, ocr: ocr),
-            QuickItem(kind: .copied, text: NSHomeDirectory() + "/Desktop/station-drawings-final.pdf", app: "Finder", at: now - 9 * 60, clip: .file, bytes: 482_113),
+            QuickItem(kind: .copied, text: "~/Desktop/station-drawings-final.pdf", app: "Finder", at: now - 9 * 60, clip: .file, bytes: 482_113),
             QuickItem(kind: .copied, text: "The plan is at https://example.com/plans/station, see the second page", app: "Mail", at: now - 20 * 60),
             QuickItem(kind: .typed, text: "See you at the station at nine, I will bring the drawings.", app: "Messages", at: now - 30 * 60),
             QuickItem(kind: .copied, text: "Room 4.12, second floor, the door on the left", app: "Mail", at: now - 50 * 60, rich: true),

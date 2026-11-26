@@ -35,22 +35,25 @@ is done and what is left, then work through the required ones in order. Run the 
 
 ## 3. Environment and models
 
-Ask what they want: typing only, or typing and voice (dictation and calls). Then:
+Ask what they want: typing only, or typing and voice (dictation and calls). Free disk needed: about 3 GB for typing
+only, about 8 GB with voice. Then:
 
 ```bash
-scripts/setup.sh --models --app          # typing: about 1 GB
-scripts/setup.sh --voice --app           # typing and voice: about 5 GB
+scripts/setup.sh --models --app          # typing: about 1 GB to download
+scripts/setup.sh --models --app --voice  # typing and voice: about 5 GB to download
 ```
 
 Run it in the background; it takes 10 to 20 minutes, mostly downloads. If a download fails, run it again: it goes on
 from where it stopped.
 
 The doctor's "suggested for this Mac" line names the typing model that fits this Mac's memory and speed. The default
-one (Qwen3 1.7B) works everywhere. To use the suggested one, the person picks it in Drafter: Settings > Typing > Model,
-Download, then select. Or download it ahead from the shell:
+one (Qwen3 1.7B) works everywhere, and it is the only one `scripts/train.sh` trains a layer for. To use the
+suggested one, the person picks it in Drafter: Settings > Typing > Model, Download, then select. Or download it ahead
+from the shell, by its catalog id (the doctor line shows it), which also takes the revision pinned in
+`engine/catalog.json` (ask first, with its `disk_gb` from the catalog):
 
 ```bash
-.venv/bin/python -B engine/fetch_model.py <repo from the doctor line>
+.venv/bin/python -B engine/fetch_model.py --id <catalog id from the doctor line>
 ```
 
 ## 4. Their config
@@ -61,22 +64,27 @@ sentence about their work (`about`), and how they write (`style_rules`, for exam
 marks"). Every key is optional; keep the JSON valid. Leave `integrations` off unless they ask for one; explain each
 from `docs/customize.md` first.
 
-## 5. Open, permissions, login
+## 5. Open, permissions, voice, login
+
+Follow the order in `docs/onboarding.md`:
 
 ```bash
 open ~/Applications/Drafter.app
 ```
 
-Tell them: System Settings > Privacy & Security > Accessibility, turn on Drafter (required); Microphone for voice;
-Screen & System Audio Recording only for the other side of calls. After each one, quit Drafter from the menu bar pen
-and open it again. Then, if they want it at login:
-
-```bash
-scripts/install-login.sh
-```
-
-and the one `launchctl bootstrap` command it prints (ask first). The doctor should now end with "Ready." Ask them to
-type a few words in Notes and confirm grey text appears.
+1. Accessibility (required): System Settings > Privacy & Security > Accessibility, turn on Drafter, then quit
+   Drafter from the menu bar pen and open it again. Only this permission needs the restart.
+2. Their config (step 4 above), if not done yet.
+3. Voice (if set up with `--voice`): it starts off. They turn on "Voice on Right Option" in the menu bar pen and
+   allow the Microphone.
+4. Optional: Screen & System Audio Recording (the other side of calls; Drafter then keeps screenshots of the screen
+   in `data/calls/<time>/shots/` while a recording runs, off in Settings: "Screenshots while recording") and
+   Calendars (meeting notes before an event).
+5. Optional: Settings > Cloud > Connect a model, typed by the person. Connecting turns no switch on.
+6. Optional, ask first: `scripts/install-login.sh` and the one `launchctl bootstrap` command it prints.
+7. Try it: grey text in Notes, Tab takes a word. With voice on: Right Option, a sentence, Right Option again; the
+   words wait in the strip until ↵ puts them in.
+8. Run the doctor again: it should end with "Ready."
 
 ## 6. Their own writing (optional, after setup)
 
@@ -111,7 +119,7 @@ after it.
 ## 8. Updating
 
 ```bash
-git pull && scripts/setup.sh --app
+git pull && scripts/setup.sh --models --app      # add --voice if they use voice
 ```
 
 Then quit and reopen Drafter. `data/` stays as it is.

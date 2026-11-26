@@ -1,6 +1,8 @@
 """Fresh replay set (local only, data/replay-fresh.json) from lines the user wrote AFTER the last retrain, so no model
-layer has seen them: Beeper messages the user sent, each with the 8 messages before it (the reply context), and lines the user
-typed to Claude (typed.jsonl). Bigger than data/replay.json (30) so show/hide rules can be told apart.
+layer has seen them: Beeper messages the user sent, each with the 8 messages before it (the reply context; only when the
+`beeper` integration is on, engine/integrations.py), and lines the user typed into an AI app's box (typed.jsonl, the apps
+in AI_APPS). Bigger than data/replay.json (30) so show/hide rules can be told apart. Items from an AI app keep
+src "claude": the benches read that as the AI kind of box, whichever AI app it was.
 
     .venv/bin/python bench/make_fresh.py [claude_n] [beeper_n]
 """
@@ -10,6 +12,9 @@ from retrain_state import last_retrain
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "engine"))
 from people import beeper_bin
+import integrations
+# the app names typed.jsonl holds for an AI assistant's box (app/AppKind.swift "ai"); add yours here
+AI_APPS = {"Claude", "ChatGPT", "Codex", "Gemini", "Perplexity", "Le Chat", "Copilot", "Cursor"}
 ENV = {**os.environ, "BEEPER_READONLY": "1"}
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("claude_n", nargs="?", type=int, default=60)
@@ -52,6 +57,7 @@ cut = since(args.since)
 rnd = random.Random(31)
 out = []
 try:
+    if not integrations.available("beeper"): raise RuntimeError("the beeper integration is off: no chat lines")
     mine = [m for m in run("messages", "search", "--sender", "me", "--after", cut.strftime("%Y-%m-%dT%H:%M:%SZ"), "--limit", "400")
             if m.get("type") == "TEXT" and 12 <= len(clean(m.get("text", ""))) <= 240 and len(clean(m["text"]).split()) >= 3]
 except Exception as e:
@@ -70,12 +76,12 @@ for m in mine:
 
 ts = cut.timestamp()
 typed = [json.loads(l) for l in (ROOT / "data/typed.jsonl").read_text().splitlines() if l.strip()]
-lines = list(dict.fromkeys(r["text"].strip() for r in typed if r["t"] > ts and r.get("app") == "Claude" and len(r["text"].split()) >= 4))
+lines = list(dict.fromkeys(r["text"].strip() for r in typed if r["t"] > ts and r.get("app") in AI_APPS and len(r["text"].split()) >= 4))
 rnd.shuffle(lines)
 out += [{"src": "claude", "app": "Claude", "context": "", "text": t[:240]} for t in lines[:CLAUDE_N]]
 published = publish(out, args.output, args.min_items)
 print(f"since {cut:%Y-%m-%d %H:%M}Z:", len(out), "items:", sum(o["src"] == "beeper" for o in out), "beeper,",
-      sum(o["src"] == "claude" for o in out), "claude,", sum(len(o["text"]) for o in out), "letters")
+      sum(o["src"] == "claude" for o in out), "AI app,", sum(len(o["text"]) for o in out), "letters")
 
 if not published:
     print(f"fewer than {args.min_items} fresh lines: previous set kept")

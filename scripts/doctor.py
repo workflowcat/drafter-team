@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "data"
 APP = Path.home() / "Applications" / "Drafter.app"
 VOICE = ["mlx-community/parakeet-tdt-0.6b-v3", "mlx-community/whisper-large-v3-turbo"]
+TYPING_GB, VOICE_GB = 3, 8      # free disk scripts/setup.sh asks for: typing only, typing and voice
 checks = []
 
 
@@ -44,7 +45,12 @@ def mac():
     add("mac", "macOS 15 or newer", major >= 15, ver, "Update macOS in System Settings > General > Software Update")
     add("mac", "memory", ram >= 16, f"{ram:.0f} GB" + ("" if ram >= 16 else ": typing may fit, voice and training may not"),
         "", optional=True)
-    add("mac", "free disk", free >= 8, f"{free:.0f} GB free (about 3 GB for typing, 4 GB more for voice)", "Free some disk space")
+    # the same numbers as scripts/setup.sh: about 3 GB for typing only, about 8 GB with voice
+    voice_here = all(hub_has(r) for r in VOICE)
+    add("mac", "free disk for typing", free >= TYPING_GB, f"{free:.0f} GB free (typing needs about {TYPING_GB} GB)", "Free some disk space")
+    add("mac", "free disk for voice", voice_here or free >= VOICE_GB,
+        "voice models already here" if voice_here else f"{free:.0f} GB free (typing and voice need about {VOICE_GB} GB)",
+        "Free some disk space before scripts/setup.sh --voice", optional=True)
     return ram
 
 
@@ -53,20 +59,20 @@ def tools():
     add("tools", "Command Line Tools (swiftc)", run(["xcrun", "--find", "swiftc"]), "", "xcode-select --install")
     add("tools", "ffmpeg", shutil.which("ffmpeg"), "reads audio files that are not WAV", "brew install ffmpeg", optional=True)
     claude = shutil.which("claude") or (Path.home() / ".local/bin/claude").is_file()
-    add("tools", "claude CLI", claude, "only for the optional cloud helpers (Settings > Connect a model)",
+    add("tools", "claude CLI", claude, "only for the optional cloud helpers (Settings > Cloud > Connect a model)",
         "npm install -g @anthropic-ai/claude-code", optional=True)
 
 
 def env():
     py = ROOT / ".venv/bin/python"
     ok = py.exists() and "3.12.12" in run([str(py), "--version"])
-    add("python", "environment (.venv, Python 3.12.12)", ok, "", "scripts/setup.sh")
+    add("python", "environment (.venv, Python 3.12.12)", ok, "", "scripts/setup.sh --models --app")
     return ok
 
 
 def config():
     p = DATA / "drafter.local.json"
-    add("you", "your config (data/drafter.local.json)", p.exists(), "", "scripts/setup.sh  (writes it from drafter.local.example.json)")
+    add("you", "your config (data/drafter.local.json)", p.exists(), "", "scripts/setup.sh --models --app  (writes it from drafter.local.example.json)")
     if not p.exists(): return
     try: c = json.loads(p.read_text())
     except Exception: add("you", "config is valid JSON", False, "", "Fix the JSON in data/drafter.local.json"); return
@@ -86,19 +92,19 @@ def models(ram, have_env):
     except Exception:
         ms = []
     live = next((m for m in ms if m.get("id") == "live"), {"repo": "mlx-community/Qwen3-1.7B-4bit", "name": "Qwen3 1.7B"})
-    add("models", "typing model", hub_has(live["repo"]), live["repo"], "scripts/setup.sh --models")
+    add("models", "typing model", hub_has(live["repo"]), live["repo"], "scripts/setup.sh --models --app")
     if ms and ram:
         adapters = DATA / "adapters"
         plain = catalog.ranked(catalog.here(ms, str(adapters) if adapters.is_dir() else None, DATA))
         try:
             mid, why = catalog.recommend(plain, ram)
             m = next(x for x in plain if x["id"] == mid)
-            add("models", "suggested for this Mac", True, f"{m.get('name', mid)} ({m['repo']}): {why}",
+            add("models", "suggested for this Mac", True, f"{m.get('name', mid)} (id {mid}, {m['repo']}): {why}",
                 "Pick it in Drafter: Settings > Typing > Model, then Download", optional=True)
         except Exception:
             pass
     have = all(hub_has(r) for r in VOICE)
-    add("models", "voice models (dictation, calls)", have, ", ".join(VOICE), "scripts/setup.sh --voice", optional=True)
+    add("models", "voice models (dictation, calls)", have, ", ".join(VOICE), "scripts/setup.sh --models --app --voice", optional=True)
 
 
 def app():

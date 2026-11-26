@@ -55,7 +55,8 @@ enum Connect {
         let c = Drafter.shared.settings.connect
         guard let way = Way(rawValue: c.provider) else { return }
         var body: [String: Any] = ["provider": way.rawValue]
-        if way != .cli { guard let k = key(for: way) else { return }; body["key"] = k }
+        if way == .anthropic { guard let k = key(for: way) else { return }; body["key"] = k }
+        else if way == .openai, let k = key(for: way) { body["key"] = k }   // a local server may need no key
         Engine.shared.post("/model-key", body, timeout: 3)
     }
 
@@ -95,7 +96,7 @@ enum Connect {
         for way in Way.allCases { deleteKey(for: way) }
         save { st in
             st.connect.provider = ""
-            st.rework = false; st.callNotes = false; st.voiceClaude = false
+            st.rework = false; st.callNotes = false; st.voiceClaude = false; st.entityClassify = false; st.pauseRewrite = false
         }
         Engine.shared.post("/model-key", ["provider": ""], timeout: 3)
     }

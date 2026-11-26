@@ -16,7 +16,7 @@ enum JournalKeys {
         ("space", "Play or pause an open voice note or recording; else open or close the row"),
         ("E", "Edit the open row in place (a recording: its title and points)"), ("⌘↵", "Insert into the app you came from; in the editor: save"),
         ("esc", "Step out: the editor (nothing saved), the picked rows, the open row, the search; then close the window"),
-        ("⌘C", "Copy"), ("⇧⌘C", "Copy as… another written form"), ("⌘P", "Pin or Unpin"), ("⇧⌘A", "Copy for an agent"),
+        ("⌘C", "Copy"), ("⇧⌘C", "Copy as… another written form"), ("⌘P", "Pin or Unpin"), ("⇧⌘A", "Copy for agent"),
         ("⇧↑ ⇧↓ ⌘-click", "Pick several rows"), ("⌘⇧E", "Combine the picked rows into one draft"),
         ("⌥⌘O", "Show original (a changed item)"), ("⌥⌘R", "Revert: the original text again"),
         ("⌘⌫", "Delete (Undo in the notice for 8 s)"), ("⌘Z", "Undo the last Delete, Edit, Combine or Revert"),
@@ -58,7 +58,7 @@ struct StreamBar: View {
                 Section("Pages") {
                     Button("Names") { m.show(.names) }.keyboardShortcut("n", modifiers: [.command, .shift])
                     Button("Links & Files") { m.show(.links) }.keyboardShortcut("l", modifiers: [.command, .shift])
-                    Button("Screen inspector") { m.show(.screen) }.keyboardShortcut("i", modifiers: [.command, .shift])
+                    Button("What Drafter sees") { m.show(.screen) }.keyboardShortcut("i", modifiers: [.command, .shift])
                     Button("Dictionary") { m.show(.dictionary) }.keyboardShortcut("d", modifiers: [.command, .shift])
                     Button("Shortcuts") { m.show(.shortcuts) }.keyboardShortcut("j")
                 }
@@ -573,7 +573,7 @@ struct RowMenu: View {
         }
         Divider()
         if it.doc == nil { Button((it.pinned ? "Unpin" : "Pin") + "  ⌘P") { m.togglePin(it) } }
-        if it.doc == nil { Button("Copy for an agent  ⇧⌘A") { m.choose(it.id); m.copyForAgent() } }
+        if it.doc == nil { Button("Copy for agent  ⇧⌘A") { m.choose(it.id); m.copyForAgent() } }
         if it.doc == nil, it.quick != nil || it.ownDraft { Button("Delete  ⌘⌫", role: .destructive) { m.choose(it.id); m.delete() } }
     }
 }
@@ -751,7 +751,7 @@ struct ActionRow: View {
             if !more.isEmpty || it.doc == nil {
                 SwiftUI.Menu {
                     ForEach(Array(more.enumerated()), id: \.offset) { _, a in Button(a.word + "  " + a.key) { m.choose(it.id); a.run() } }
-                    if it.doc == nil, it.shot == nil { Button("Copy for an agent  ⇧⌘A") { m.choose(it.id); m.copyForAgent() } }
+                    if it.doc == nil, it.shot == nil { Button("Copy for agent  ⇧⌘A") { m.choose(it.id); m.copyForAgent() } }
                 } label: { Text("More") }
                 .menuStyle(.borderedButton).fixedSize().help("More actions")
             }

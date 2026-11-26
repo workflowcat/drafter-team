@@ -9,6 +9,7 @@
 # First layer: bench/make_train.py, then bench/train.py under the memory guard, into data/adapters.
 # A layer exists: bench/retrain.py --force trains a new one and keeps it only if it beats the old one on your
 # newest lines (that test needs chat and AI-app lines; without them, use --new).
+# It trains a layer for the default typing model only (Qwen3 1.7B, bench/train.py); it does not fit other models.
 # Quit Drafter first: training needs the memory the typing model uses. Restart Drafter after it to load the layer.
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -20,7 +21,7 @@ for arg in "$@"; do
   case "$arg" in
     --check) check=1 ;;
     --new) new=1 ;;
-    --help|-h) sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    --help|-h) sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "Unknown argument: $arg (try --help)" >&2; exit 2 ;;
   esac
 done
@@ -30,7 +31,8 @@ mkdir -p data
 echo "Sources this Mac's config allows: $($PY -B bench/corpus.py --sources)"
 $PY -B bench/corpus.py --no-beeper >/dev/null
 lines=$(wc -l < data/corpus.jsonl | tr -d ' ')
-echo "Your corpus: $lines lines (needs about $MIN_LINES)."
+echo "Your corpus: $lines lines (needs about $MIN_LINES). Training keeps a little fewer: it leaves out the test lines the"
+echo "benches use, lines under 8 letters and sources weighted 0 (bench/make_train.py)."
 if (( lines < MIN_LINES )); then
   cat >&2 <<EOF
 Too little of your own text to train on yet: $lines lines, and a layer needs about $MIN_LINES.

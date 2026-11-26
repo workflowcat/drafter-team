@@ -28,14 +28,16 @@ DEFAULTS = {
     "snippets": {},            # defaults for a new data/snippets.json; an existing one is never changed
     "social": {"facebook_archive": ""},   # a Facebook posts export (combined_posts.json) for the training corpus
     # training corpus sources (bench/corpus.py); Beeper and the vault follow their integrations
-    "corpus": {"typed": True, "takes": True, "claude_code": False, "codex": False},
+    "corpus": {"typed": True, "takes": True, "claude_code": False, "codex": False, "folders": []},
     "integrations": {
         "beeper":      {"enabled": False, "bin": ""},
         "gam":         {"enabled": False, "bin": ""},
-        "vault":       {"enabled": False, "path": "", "name": "", "skill": "", "origin": ""},
+        "vault":       {"enabled": False, "path": "", "name": "", "origin": ""},
         "claude":      {"enabled": False, "bin": ""},
-        "voice_guide": {"enabled": False, "path": ""},
     },
+    # folders whose subfolders are the user's code projects: a project or tool name gets a "Repo" or "Code" pointer
+    # (engine/entities.py); none by default
+    "projects": {"roots": []},
     # build-time ids (app/build.sh): changing them on an installed Mac resets its macOS permissions, so an owner keeps the user's
     "build": {"bundle_id": "", "launchd_label": "", "nightly_label": ""},
 }

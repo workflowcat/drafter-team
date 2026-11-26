@@ -17,9 +17,8 @@ import local
 TABLE = {
     "beeper": ("the `beeper` CLI (Beeper chat app)", "per-person memory, example messages (style.py)"),
     "gam": ("GAM, the Google Workspace admin CLI", ";docs / ;meetings / ;free lookups, Google contacts for the knowledge pack"),
-    "vault": ("a notes folder (an Obsidian vault) and the `claude` skill that files into it", "vault note action, training corpus source"),
-    "claude": ("a signed-in `claude` CLI", "every Claude feature (each also behind its own switch in engine/cloud.py) and the Claude actions"),
-    "voice_guide": ("a text file that describes the user's voice", "the next-message prompt (else the style rules)"),
+    "vault": ("a notes folder (an Obsidian vault)", "the vault note action (actions/vault_note.py), training corpus source"),
+    "claude": ("a signed-in `claude` CLI", "every cloud feature on that connection (each also behind its own switch in engine/cloud.py) and your own Claude actions"),
 }
 
 _seen = {}   # name -> (at, answer): a tool's answer is kept 60 s
@@ -45,7 +44,6 @@ CHECKS = {
     "gam": lambda: Path(local.setting("gam", "bin") or "/nonexistent").is_file(),
     "vault": lambda: Path(local.setting("vault", "path") or "/nonexistent").is_dir(),
     "claude": lambda: bool(claude_bin()),
-    "voice_guide": lambda: Path(local.setting("voice_guide", "path") or "/nonexistent").is_file(),
 }
 
 

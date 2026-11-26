@@ -44,7 +44,7 @@ struct Settings: Codable {
     var duckAudio = true
     var keepMic = false        // keep the microphone running between takes: the take starts 0.6 s before the press (orange dot stays on)
     /// Instant replies (17 November 2026, engine/instant.py): an empty chat or mail box whose last message is theirs shows
-    /// three one-line replies (yes, no, later or a question) from the local model; ⌥1-3 or Tab put one in. Nothing leaves the Mac.
+    /// three one-line replies (yes, no, later or a question) from the local model; Tab puts one in (⌥1-3 are given back to apps, KeyMap.givenBack). Nothing leaves the Mac.
     var instantReplies = true
     var shots = true           // screenshots while a long note or call records, for brief.md (Screen Recording, local only)
     var callScreenVideo = false // opt-in local screen.mp4 for Call Studio; absent keys keep false through Settings.decode

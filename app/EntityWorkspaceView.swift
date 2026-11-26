@@ -266,7 +266,7 @@ struct EntityWorkspaceView: View {
                 Text(entity.kind.capitalized).font(NativeFont.text(12)).padding(.horizontal, 8).padding(.vertical, 4)
                     .background(Capsule().fill(UIInk.well))
                 Spacer(minLength: 8)
-                Button("Share Brief") {
+                Button("Share notes") {
                     copy(ObsidianExportRules.formatShareBrief(title: entity.display, subtitle: entity.kind,
                         summary: s.shareSummary, todos: s.model.promises.map(\.what),
                         links: s.model.links.map(\.url)))

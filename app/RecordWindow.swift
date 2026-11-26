@@ -332,8 +332,6 @@ final class RecordWindow: NSObject, NSWindowDelegate {
 struct RecordView: View {
     @ObservedObject var m: RecordLive
     @State private var pinHover = false
-    @State private var pauseHover = false
-    @State private var stopHover = false
 
     private var hairline: some View { Rectangle().fill(UIInk.line).frame(height: 0.5) }
 
@@ -428,36 +426,12 @@ struct RecordView: View {
         }
     }
 
+    /// Native segmented control, as everywhere else (cohesion round, 26 November 2026).
     private var paneToggle: some View {
-        HStack(spacing: 2) {
-            paneSegment("Notes", pane: .notes)
-            paneSegment("Transcript", pane: .words)
-        }
-        .padding(2)
-        .background(RoundedRectangle(cornerRadius: Native.corner(2)).fill(UIInk.well))
-        .overlay(RoundedRectangle(cornerRadius: Native.corner(2)).strokeBorder(UIInk.line, lineWidth: 0.5))
-    }
-
-    private func paneSegment(_ label: String, pane: RecordLive.Pane) -> some View {
-        let active = m.pane == pane
-        let innerRadius = max(2, Native.corner(2) - 2)
-        return Button { m.pane = pane } label: {
-            Text(label)
-                .font(NativeFont.text(12, active ? .semibold : .medium))
-                .foregroundStyle(active ? UIInk.ink : UIInk.muted)
-                .frame(maxWidth: .infinity)
-                .frame(height: 26)
-                .background(RoundedRectangle(cornerRadius: innerRadius).fill(active ? UIInk.card : Color.clear))
-                .overlay {
-                    if active {
-                        RoundedRectangle(cornerRadius: innerRadius).strokeBorder(UIInk.controlEdge, lineWidth: 0.5)
-                    }
-                }
-                .contentShape(RoundedRectangle(cornerRadius: innerRadius))
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(label)
-        .accessibilityAddTraits(active ? .isSelected : [])
+        SwiftUI.Picker("Recording pane", selection: $m.pane) {
+            Text("Notes").tag(RecordLive.Pane.notes)
+            Text("Transcript").tag(RecordLive.Pane.words)
+        }.pickerStyle(.segmented).labelsHidden()
     }
 
     private var outline: some View {
@@ -498,58 +472,24 @@ struct RecordView: View {
         }
     }
 
+
     private var transcript: some View { RecordTranscript(w: m.live) }
 
     private var mine: some View { RecordMine(n: m.mine) }
 
+    /// Native buttons: Pause bordered, Stop the main one in red (cohesion round, 26 November 2026).
     private var controls: some View {
         HStack(spacing: 10) {
             Button { m.togglePause() } label: {
-                HStack(spacing: 6) {
-                    Glyph(m.paused ? "play" : "pause", size: 13)
-                    Text(m.paused ? "Resume" : "Pause")
-                        .font(NativeFont.text(12.5, .medium))
-                }
-                .foregroundStyle(m.paused ? UIInk.blue : UIInk.ink)
-                .padding(.horizontal, 12)
-                .frame(height: 30)
-                .background(
-                    RoundedRectangle(cornerRadius: Native.corner(2))
-                        .fill(m.paused ? UIInk.selected : (pauseHover ? UIInk.hover : UIInk.well))
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: Native.corner(2))
-                        .strokeBorder(m.paused ? UIInk.blue : UIInk.controlEdge, lineWidth: 1)
-                )
-                .contentShape(RoundedRectangle(cornerRadius: Native.corner(2)))
+                Label(m.paused ? "Resume" : "Pause", systemImage: m.paused ? "play.fill" : "pause.fill")
             }
-            .buttonStyle(.plain)
-            .onHover { pauseHover = $0 }
+            .buttonStyle(.bordered).controlSize(.large)
             .accessibilityLabel(m.paused ? "Resume recording" : "Pause recording")
-
             Spacer()
-
             Button(role: .destructive) { m.stopClicked() } label: {
-                HStack(spacing: 6) {
-                    Glyph("square", size: 11)
-                    Text(m.stopArmed ? "Click again to stop" : "Stop")
-                        .font(NativeFont.text(12.5, .semibold))
-                }
-                .foregroundStyle(UIInk.crit)
-                .padding(.horizontal, 13)
-                .frame(height: 30)
-                .background(
-                    RoundedRectangle(cornerRadius: Native.corner(2))
-                        .fill(m.stopArmed || stopHover ? UIInk.critBg : UIInk.well)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: Native.corner(2))
-                        .strokeBorder(m.stopArmed || stopHover ? UIInk.crit : UIInk.controlEdge, lineWidth: m.stopArmed ? 1.5 : 1)
-                )
-                .contentShape(RoundedRectangle(cornerRadius: Native.corner(2)))
+                Label(m.stopArmed ? "Click again to stop" : "Stop", systemImage: "stop.fill")
             }
-            .buttonStyle(.plain)
-            .onHover { stopHover = $0 }
+            .buttonStyle(.borderedProminent).tint(Color(nsColor: .systemRed)).controlSize(.large)
             .help("Stop and save · also ⇧ Right Option")
             .accessibilityLabel(m.stopArmed ? "Click again to stop recording" : "Stop recording")
         }

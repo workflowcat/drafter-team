@@ -3,6 +3,7 @@ Settings > Typing > Model (engine/catalog.py Downloads). Never imports MLX, neve
 its exact process to cancel; what came in stays in the cache, and the next Download goes on from there.
 
     .venv/bin/python -B engine/fetch_model.py <repo> [revision]
+    .venv/bin/python -B engine/fetch_model.py --id <catalog id>    # the repo and pinned revision from engine/catalog.json
 """
 import os, sys
 
@@ -15,7 +16,14 @@ PATTERNS = ["*.json", "*.safetensors", "*.txt", "*.model", "*.jinja", "*.tiktoke
 
 if __name__ == "__main__":
     from huggingface_hub import snapshot_download
-    repo = sys.argv[1]
-    rev = sys.argv[2] if len(sys.argv) > 2 and sys.argv[2] else None
+    if sys.argv[1:2] == ["--id"]:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        import catalog
+        m = catalog.entry(catalog.load(), sys.argv[2] if len(sys.argv) > 2 else "")
+        if not m: sys.exit("no such catalog id: " + " ".join(sys.argv[2:3]) + " (see engine/catalog.json)")
+        repo, rev = m["repo"], m.get("rev") or None
+    else:
+        repo = sys.argv[1]
+        rev = sys.argv[2] if len(sys.argv) > 2 and sys.argv[2] else None
     path = snapshot_download(repo_id=repo, revision=rev, allow_patterns=PATTERNS)
     print("fetched", flush=True)

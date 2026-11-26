@@ -1,27 +1,67 @@
 {
- "_settings": "Not here: the app's switches (Quick panel keys quickKey and switchKey, clipboard limits quickMax, quickDays and quickSecret, idle sleep textIdleMin and voiceIdleMin) are in Settings and data/settings.json; the theme is in Settings > Look and data/look.json (docs/themes.md).",
- "_about": "Copy to data/drafter.local.json (never in git) and fill in. Every key is optional: with no file the Claude prompts say \"the user\" and every private integration is off. engine/local.py and app/LocalConfig.swift read it; `.venv/bin/python engine/local.py` prints what is in effect.",
+ "_about": "Copy to data/drafter.local.json (never in git) and fill in. Every key is optional: with no file the prompts say \"the user\" and every integration is off. engine/local.py and app/LocalConfig.swift read it; `.venv/bin/python engine/local.py` prints what is in effect. Keys that start with _ are notes and are ignored.",
+ "_settings": "Not here: the app's switches and keys live in Settings and data/settings.json. A few have no row in Settings and are set only in that file: quickMax (clipboard rows kept, 1000), quickSecret (patterns of copies never kept), voiceIdleMin (minutes before the voice reader sleeps, 30). The look follows macOS.",
  "user": {
+  "_note": "name and short_name open the prompts; own_names are forms of your own name, never a contact; own_stems are lower-case Latin stems of your name in its case forms (notes); about is one sentence about your work; languages are the codes you write in (Russian lines are left out of training unless \"ru\" is listed); style_rules is how you write; timezone is an IANA zone (empty = this Mac's); city follows the date in the typing prompt; email seeds the ;mail snippet.",
   "name": "",
   "short_name": "",
   "own_names": [],
   "own_stems": [],
   "about": "",
-  "languages": ["en"],
+  "languages": [
+   "en"
+  ],
   "style_rules": "",
   "timezone": "",
   "city": "",
   "email": ""
  },
- "snippets": {";mail": "", ";cal": ""},
- "social": {"facebook_archive": ""},
- "corpus": {"typed": true, "takes": true, "claude_code": false, "codex": false},
- "integrations": {
-  "beeper": {"enabled": false, "bin": ""},
-  "gam": {"enabled": false, "bin": ""},
-  "vault": {"enabled": false, "path": "", "name": "", "skill": "", "origin": ""},
-  "claude": {"enabled": false, "bin": ""},
-  "voice_guide": {"enabled": false, "path": ""}
+ "_snippets": "Starting snippets for a new data/snippets.json; an existing file is never changed.",
+ "snippets": {
+  ";mail": "",
+  ";cal": ""
  },
- "build": {"bundle_id": "", "launchd_label": "", "nightly_label": ""}
+ "social": {
+  "_note": "facebook_archive: the path of a Facebook posts export (combined_posts.json) to add your own posts to the training corpus.",
+  "facebook_archive": ""
+ },
+ "corpus": {
+  "_note": "Which of your own writing trains your layer (bench/corpus.py): typed lines, voice takes, your prompts to Claude Code and Codex, and folders of your own .md and .txt files.",
+  "typed": true,
+  "takes": true,
+  "claude_code": false,
+  "codex": false,
+  "folders": []
+ },
+ "projects": {
+  "_note": "roots: folders whose subfolders are your code projects; a project name then gets a Repo pointer (engine/entities.py). None by default.",
+  "roots": []
+ },
+ "_integrations": "Each is off until enabled is true and its tool answers (`.venv/bin/python engine/integrations.py`). bin: the tool's path when it is not on PATH. vault: path of the notes folder, name shown on the note chip, origin: the frontmatter origin value of notes you wrote yourself (only those go into training).",
+ "integrations": {
+  "beeper": {
+   "enabled": false,
+   "bin": ""
+  },
+  "gam": {
+   "enabled": false,
+   "bin": ""
+  },
+  "vault": {
+   "enabled": false,
+   "path": "",
+   "name": "",
+   "origin": ""
+  },
+  "claude": {
+   "enabled": false,
+   "bin": ""
+  }
+ },
+ "build": {
+  "_note": "Build-time ids (app/build.sh). Empty = the public defaults. Changing them on an installed Mac resets its macOS permissions.",
+  "bundle_id": "",
+  "launchd_label": "",
+  "nightly_label": ""
+ }
 }

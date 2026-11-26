@@ -7,7 +7,8 @@ From LibreOffice's official dictionaries repository (GitHub mirror of git.libreo
 commit and checked by SHA-256:
   th_en_US_v2.dat  18.6 MB  WordNet 2.1 thesaurus, Princeton WordNet licence (en/WordNet_license.txt)
   th_uk_UA.dat      1.0 MB  Ukrainian thesaurus 1.6.0, Andriy Rysin, GPL / LGPL / MPL (uk_UA/README_th_uk_UA.txt)
-A missing file only means no synonyms in that language.
+A missing file only means no synonyms in that language. The two licence texts named above come along from the same
+commit into models/thesaurus/ (WordNet_license.txt, README_th_uk_UA.txt); they are not checked by SHA-256.
 """
 import hashlib, sys, urllib.request
 from pathlib import Path
@@ -18,6 +19,7 @@ FILES = [
     ("en/th_en_US_v2.dat", "8a3e4637450b7277428da248f0a604b5c92942bc30507220c051181462340f39"),
     ("uk_UA/th_uk_UA.dat", "2b03a9db86edd727ae1328a54b94d448db1eacf8a877642f0b38fba300141fbb"),
 ]
+LICENCES = ["en/WordNet_license.txt", "uk_UA/README_th_uk_UA.txt"]
 OUT = Path(__file__).resolve().parent.parent / "models" / "thesaurus"
 
 if __name__ == "__main__":
@@ -32,4 +34,9 @@ if __name__ == "__main__":
             print(f"  {dest.name}: checksum differs, not saved", file=sys.stderr); bad += 1; continue
         tmp = dest.with_suffix(".tmp"); tmp.write_bytes(data); tmp.replace(dest)
         print(f"  {dest.name}: {len(data) / 1e6:.1f} MB", flush=True)
+    for src in LICENCES:
+        dest = OUT / Path(src).name
+        if dest.exists(): continue
+        try: dest.write_bytes(urllib.request.urlopen(BASE + src, timeout=60).read()); print(f"  {dest.name}: licence", flush=True)
+        except OSError as e: print(f"  {dest.name}: not fetched ({type(e).__name__}); see {BASE + src}", file=sys.stderr)
     sys.exit(1 if bad else 0)

@@ -8,7 +8,7 @@ records calls and long notes. Everything it needs runs on your Mac. This page sh
 | Process | Code | What it owns |
 |---|---|---|
 | Menu-bar app (Swift) | `app/` | Keys, Accessibility reads and writes, the grey text panel, the notch strip, the window, the microphone, call capture, settings |
-| Text engine (Python) | `engine/server.py` | One warm text model, the gate, phrase memory, word finisher, chips, Claude helpers when you turn them on |
+| Text engine (Python) | `engine/server.py` | One warm text model, the gate, phrase memory, word finisher, chips, the cloud helpers when you connect a model and turn them on |
 | Voice process (Python) | `engine/voice.py` | One speech model at a time (Parakeet or Whisper), takes and whole recordings |
 
 The app starts both Python processes and restarts them when they stop. They exit when the app is gone.
@@ -20,10 +20,10 @@ The app starts both Python processes and restarts them when they stop. They exit
 - The voice process has no port. The app writes audio frames to its stdin and reads JSON lines from its stdout.
   The frame kinds are listed at the top of `engine/voice.py`.
 - Both models sleep when unused, so an idle Drafter holds little memory. The text model unloads after
-  `textIdleMin` minutes without typing (30; 0 = never) and loads again when a text field gets focus. The voice
-  reader is dropped after `voiceIdleMin` minutes without a take (30).
-- The Quick panel (`app/Quick.swift`, ranking rules in `app/QuickRules.swift`) and the paste switcher live in the
-  app. They read the clipboard, typed and voice histories from `data/` and never call the engine except for a
+  `textIdleMin` minutes without typing (30; 0 = never; a Settings switch) and loads again when a text field gets
+  focus. The voice reader is dropped after `voiceIdleMin` minutes without a take (30; config-only, in
+  `data/settings.json`).
+- The clipboard picker (`app/Quick.swift`, ranking rules in `app/QuickRules.swift`) lives in the app. They read the clipboard, typed and voice histories from `data/` and never call the engine except for a
   rework.
 - Each Python process runs a memory guard (`engine/guard.py`). It stops the process above a cap: 3.6 GB for the
   text engine (`DRAFTER_CAP_GB`) and 2.8 GB for the voice process (`DRAFTER_VOICE_CAP_GB`).
@@ -63,13 +63,15 @@ Pure rules sit in their own files with no AppKit, so a test can check them alone
 
 All state lives in `data/` in the repo folder. It is never tracked by git.
 
-- `data/drafter.local.json` is your local config: your name for the Claude prompts, your languages and which
+- `data/drafter.local.json` is your local config: your name for the prompts, your languages and which
   optional integrations are on. `drafter.local.example.json` shows every key. `engine/local.py` reads it for the
   engine and `app/LocalConfig.swift` for the app. `.venv/bin/python engine/local.py` prints what is in effect.
   With no file, the prompts say "the user" and every integration is off.
-- `data/settings.json` holds the app's switches, including the Quick panel keys and clipboard limits (`quickKey`,
+- `data/settings.json` holds the app's switches, including the clipboard picker keys and limits (`quickKey`,
   `quickMax`, `quickDays`, `quickSecret`, `switchKey`, `switchFormat`) and the idle sleep (`textIdleMin`,
-  `voiceIdleMin`). The app writes it. The engine reads it and notices when it changes.
+  `voiceIdleMin`). The app writes it. The engine reads it and notices when it changes. Keys with no row in Settings
+  (config-only, the `hidden` list in `app/SettingsRules.swift`) include `quickMax`, `quickSecret`, `switchFormat` and
+  `voiceIdleMin`.
 - `data/words.json` is your dictionary: names, projects and words the model and the voice reader should know.
   `engine/dictionary.py` creates it from `dictionary/words.example.json` on a new install.
 - Typed lines, takes, recordings, notes and logs are listed in [Privacy](privacy.md).
@@ -79,11 +81,19 @@ All state lives in `data/` in the repo folder. It is never tracked by git.
 `bench/nightly.sh` runs once a night from a launchd job. In order, it:
 
 1. Rotates logs (`scripts/rotate_logs.py`).
-2. Builds your writing into one dated corpus (`bench/corpus.py`).
-3. Rebuilds the knowledge pack (`engine/know.py`).
-4. Writes a review of yesterday's suggestions and takes (`bench/review.py`).
-5. Runs the weekly retrain when it is due (`bench/retrain.py`). It needs the Mac on power and idle for 10 minutes.
-6. On Fridays, writes the weekly page (`bench/week.py`).
+2. Compares the SQLite journal (`data/journal.sqlite`) with the JSON lines files, numbers only
+   (`scripts/journal_compare.py`).
+3. Moves recording audio and video older than 14 days to the Trash, when a transcript is there
+   (`scripts/prune_audio.py`; [Privacy](privacy.md) has the conditions).
+4. Builds your writing into one dated corpus (`bench/corpus.py`).
+5. Reads your working sources into local stores (`engine/sources.py run`): mail and Drive through GAM, and the
+   Beeper history. Each runs only when its integration (`gam`, `beeper`) is on and answers; otherwise it is
+   skipped. Read-only, never training input.
+6. Rebuilds the knowledge pack (`engine/know.py`) and the names reference (`engine/names.py`).
+7. Rebuilds the typo fix tables (`engine/typos.py`).
+8. Writes a review of yesterday's suggestions and takes (`bench/review.py`).
+9. Runs the weekly retrain when it is due (`bench/retrain.py`). It needs the Mac on power and idle for 10 minutes.
+10. On Fridays, writes the weekly page (`bench/week.py`).
 
 [Training](training.md) explains the retrain.
 

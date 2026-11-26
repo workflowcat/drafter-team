@@ -14,3 +14,4 @@ bench/out/
 dictionary/words.json
 # downloaded model data (scripts/download_thesaurus.py): not ours to publish
 /models/
+.worktrees/

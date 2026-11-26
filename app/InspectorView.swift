@@ -50,7 +50,7 @@ struct InspectorView: View {
     // MARK: header
 
     private var headerRow: some View {
-        PageHeader("Screen Inspector", subtitle: InspectorRules.menuLine(snapshot)) {
+        PageHeader("What Drafter sees", subtitle: InspectorRules.menuLine(snapshot)) {
             HStack(spacing: 8) {
                 HStack(spacing: 6) {
                     Circle()

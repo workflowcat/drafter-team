@@ -3,7 +3,8 @@ Settings, one of three ways:
 
   cli        the user's signed-in `claude` CLI (kept-running processes, engine/claude_type.py Worker)
   anthropic  an Anthropic API key (Messages API over HTTPS)
-  openai     any OpenAI-compatible endpoint: base URL, key, model name (another provider or a local server)
+  openai     any OpenAI-compatible endpoint: base URL, model name and a key if it needs one (another provider, or a
+             local server, which often takes no key)
 
 The choice lives in data/settings.json `connect` ({provider, fastModel, carefulModel, baseURL, apiModel}); keys never do.
 A key lives in the macOS Keychain (app/Connect.swift); the app hands it to the engine over the local HTTP port
@@ -46,11 +47,13 @@ def kind(st=None):
 
 
 def connected(st=None):
-    """A way is picked, and for an API its key is in memory (handed over by the app from the Keychain)."""
+    """A way is picked, and for an API its key is in memory (handed over by the app from the Keychain). An
+    OpenAI-compatible endpoint needs only its base URL: a local server often takes no key, and the app may hand over
+    an empty one."""
     k = kind(st)
     if k == "cli": return True
     if k == "anthropic": return bool(_keys.get("anthropic"))
-    if k == "openai": return bool(_keys.get("openai")) and bool(connection(st)["baseURL"])
+    if k == "openai": return bool(connection(st)["baseURL"])
     return False
 
 
@@ -117,7 +120,8 @@ def complete(system, user, model, max_tokens=1024, timeout=30, st=None):
         return "".join(b.get("text", "") for b in d.get("content", []) if b.get("type") == "text")
     if k == "openai":
         msgs = ([{"role": "system", "content": system}] if system else []) + [{"role": "user", "content": user}]
-        d = _post(c["baseURL"].rstrip("/") + "/chat/completions", {"Authorization": "Bearer " + _keys.get("openai", "")},
+        key = _keys.get("openai", "")
+        d = _post(c["baseURL"].rstrip("/") + "/chat/completions", {"Authorization": "Bearer " + key} if key else {},
                   {"model": model, "max_tokens": max_tokens, "messages": msgs}, timeout)
         return ((d.get("choices") or [{}])[0].get("message") or {}).get("content") or ""
     raise OSError("no API connected")

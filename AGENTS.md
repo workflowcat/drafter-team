@@ -13,45 +13,52 @@ When a feature is added, removed or its default changes, update `docs/features.m
 
 ## What leaves the Mac
 Ghost text, transcription and training stay local. Text goes to a model outside the Mac only after the user connects
-one (Settings > Connect a model) and turns on that feature's switch. Every such call goes through
+one (Settings > Cloud > Connect a model) and turns on that feature's switch. Every such call goes through
 `claude_on(feature)` and `engine/cloud.py`; docs/privacy.md lists them. Optional integrations
 (`engine/integrations.py`) are off unless `data/drafter.local.json` turns them on, and fail quietly.
 
 ## Keys
-Tab takes the next ghost word or runs the chip (⇧Tab the whole ghost). Right Option = voice (hold = push to talk,
-Esc drops); ⇧ Right Option = long note, or records a call. ⌥Tab on a selection = rework list. Double Shift = other
-layout for the last word. ⌘K = command field in the window. Any other key drops the ghost and goes to the app.
+`app/KeyMap.swift` is the one list. ⇥ takes the next ghost word or runs the chip (⇧⇥ the whole ghost). Right Option =
+voice once turned on (menu: Voice on Right Option; hold = push to talk, ↵ puts the take in, Esc drops); ⇧ Right
+Option = a recording (long note or call). ⌥⇥ on a selection = rework list. Double Shift = other layout for the last
+word. ⇧⌘V = clipboard picker (⌃⌥V off by default). ⌘K = command field in the window. Any other key drops the ghost
+and goes to the app. Docs write keys in macOS order (⌃⌥⇧⌘) and use "Esc" and "↵".
 
 ## Parts
-`app/` (all `*.swift` build into one binary): AppKind kind of app (ai/chat/mail) · Autocorrect typo and layout fix,
-offered at Space · Call call watch, offers, `Spool` files, `Tape` writes both sides on the mic queue · CaptureRules
-back-off, side warnings, call pick, unread (pure) · Clip copied-text chips · Command floating command panel ·
-CorrectionRules pure take-back rules · Emoji emoji codes · Entry voice-history rows, `TypedList` one row per message ·
-Facts fact chips · Fields snippet fill-ins · FixMarks visible undo · Fixer mid-word fix ghost and at-space offer ·
-Focus Accessibility reads and inserts · Ghost grey text panel and chip · History takes and clipboard history ·
-IdeaRules phrases worth a snippet (pure) · Keys event tap, requests, chips · Layout wrong-layout fix · LocalSnapshot
-off-thread file snapshots · LogStats 7-day shown/taken from app.log (pure) · LookupQuery `;docs` etc. · Main menu,
-settings, engine process, `log()`, test typer · Mic microphone capture · PeopleCards / PersonRules person cards ·
-Pill notch strip · PixelTokens generated colours · Presets quick starts · Preview `--ui-preview` renders · Proof
-proofread chip · Recording / Recordings Calls & notes model and view · Rework ⌥Tab list · Rules spoken corrections ·
-Screen OCR fallback · SettingsRules calendar groups (pure) · Shots screenshots in recordings · SnippetRules /
-Snippets snippets · Theme native PixelKit · Transcript brief, echo (pure) · Translate translate chip · Voice voice
-engine process, takes, memory budget · Window main window · Words dictation clean-up · build.sh, sync-pixelkit.py, icon/.
+`app/` (all `*.swift` build into one binary; a `*Rules.swift` file is pure, with its test in `tests/`):
+- Typing: Keys, KeyHooks, KeyMap (every key, the one registry), Focus (Accessibility reads and inserts), Ghost, Fixer,
+  Autocorrect, Typo*, Layout, Words, Typography, LiveType, Put*/Insert*, Rework, PauseRewrite, Reader, Screen and
+  ScreenContext (text above the caret).
+- Voice: Voice (the voice process), VoicePipeline, Voice*Rules, Talk*, Mic, Duck, Speed.
+- Recordings (calls and long notes): Call*, Recording, Recordings, RecordWindow, MeetingNotes, Shots, Shot*,
+  ScreenVideo*, Tape*, Speakers, Transcript*, FileTranscribe, AudioImport.
+- The window: Window, Stream*, Journal* (the SQLite journal), Search*, Inspector*, Entity*, Names*, People*, Links*,
+  TodayThread*, Topic*, SettingsView, Settings, SettingsRules, HelpViews, Look, Panel, PageChrome, PageParts.
+- Clipboard and screenshots: Quick* (the clipboard picker), Clip*, Pick*, Paste*, Capture*, Deck*, Markup*, ScrollShot,
+  PictureLook*.
+- Snippets and commands: Snippets, SnippetRules, SpokenSnippetRules, Fields, SmartFields, Command*, Commands, Presets,
+  Dictionary, DictRules, Synonym*, Mention*, Actions, DetectActions.
+- Glue: Main, MenuBar, Engine (the engine process), Connect (Connect a model), LocalConfig, Preview* (`--ui-preview`),
+  DevHooks, build.sh, icon/.
 
-`engine/`: server.py HTTP on 127.0.0.1:8798, started by the app · model.py one warm MLX model ·
-gatecore.py show/hide gate · words.py word finisher, booster, fix · memory.py phrase memory · prompt.py prompt head ·
-people.py per-chat lines, `beeper_bin()` · style.py example lines (optional Beeper) · claude_type.py Claude on a pause, helper workers
-· claude_worker.py kept Haiku worker · router.py online/offline · proofread.py, translate.py, rework.py, facts.py the
-Claude chips · command.py command line · lookup.py Google lookups · snippets.py snippet cues · actions.py action picker
-· notes.py long-note notes · ask.py ask your notes · prep.py call prep · edits.py learn from edits · integrations.py optional tools · local.py local config · provider.py Connect a model · dictionary.py shared
-dictionary · know.py, contacts.py knowledge pack · guard.py memory watchdog · voice.py voice process (Parakeet,
-Whisper) · voice_settings.py, voice_language.py, stand_ins.py voice helpers.
+`engine/`: server.py HTTP on 127.0.0.1:8798, started by the app · model.py one warm MLX model · catalog.py,
+fetch_model.py typing models · gatecore.py show/hide gate · prompt.py, chat_template.py prompts · words.py word
+finisher · memory.py phrase memory · fim.py mid-line ghosts · cadence.py, instant.py, idle_prompt.py · typos.py,
+word_fixes.py, synonyms.py · people.py, style.py, whom.py chats (optional Beeper) · rework.py, pause_rewrite.py,
+voice_claude.py the cloud helpers · cloud.py which switch owns each · provider.py Connect a model · claude_type.py,
+claude_worker.py, worker_pool.py the CLI workers · router.py online/offline · command.py, actions.py, lookup.py,
+snippets.py · notes.py, ask.py, prep.py, promises.py, speakers.py recordings · names.py, entities.py, know.py,
+contacts.py, dictionary.py, obsidian.py, sources.py, local_search.py knowledge · journal_db.py · edits.py, marks.py,
+reader.py, tweaks.py · integrations.py optional tools · local.py local config · guard.py memory watchdog · voice.py
+voice process (Parakeet, Whisper), voice_settings.py, voice_language.py, voice_timing.py, whisper_mel.py,
+stand_ins.py.
 
-Also: `actions/` chip actions · `dictionary/` words, presets, cues · `bench/` benches, review, retrain, nightly.sh ·
-`scripts/` setup, checks, smoke, rotate_logs.py · `tests/` · `data/` the user's data, never in git.
+Also: `actions/` chip actions · `dictionary/` words, presets, cues · `bench/` benches, retrain, nightly.sh ·
+`scripts/` setup, doctor, downloads, checks, rotate_logs.py, prune_audio.py · `tests/` · `data/` the user's data, never in git.
 
 ## Build and test
-- Setup: `scripts/setup.sh --models --app` (`--help` for the options). The app builds with `app/build.sh` into
+- Setup: `python3 scripts/doctor.py`, then `scripts/setup.sh --models --app` (add `--voice` for dictation and calls;
+  `--help` for the options). People follow docs/onboarding.md. The app builds with `app/build.sh` into
   `~/Applications/Drafter.app`; the bundle id and launchd label come from `data/drafter.local.json` (`build`).
 - Tests: each file in its own process, `zsh scripts/run_tests.sh` for all Python tests, or
   `.venv/bin/python -B tests/test_x.py`. Swift: a pure file with its test, the exact command heads each test file.

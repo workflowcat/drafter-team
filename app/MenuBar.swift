@@ -39,6 +39,7 @@ final class Menu: NSObject, NSMenuDelegate {
         meet.toolTip = Talk.shared.recording ? "Same as ⇧ Right Option. The transcript and the note follow."
             : "A call app on the microphone: the call, both sides. Otherwise in person, your microphone only. Also ;meet in any field."
         if !Focus.trusted() { m.addItem(withTitle: "Allow Accessibility…", action: #selector(askTrust), keyEquivalent: "").target = self }
+        m.addItem(withTitle: "Welcome and setup…", action: #selector(openWelcome), keyEquivalent: "").target = self
         m.addItem(.separator())
         m.addItem(withTitle: "Open Drafter (recordings, clipboard, settings)", action: #selector(openCommand), keyEquivalent: "").target = self
         m.addItem(withTitle: "Links & Files…", action: #selector(openLinks), keyEquivalent: "").target = self
@@ -61,7 +62,7 @@ final class Menu: NSObject, NSMenuDelegate {
             let i = m.addItem(withTitle: (skipped ? "Use in " : "Skip ") + (app.localizedName ?? id), action: #selector(toggleSkip), keyEquivalent: "")
             i.target = self; i.representedObject = id
         }
-        let vl = m.addItem(withTitle: "Type into the field while I talk (else ↩ inserts the note)", action: #selector(toggleLive), keyEquivalent: "")
+        let vl = m.addItem(withTitle: "Type into the field while I speak (else ↵ puts it in)", action: #selector(toggleLive), keyEquivalent: "")
         vl.target = self; vl.state = t.settings.voiceInsert == "live" ? .on : .off
         let km = m.addItem(withTitle: "Keep the microphone ready: first word never lost (orange dot stays on)", action: #selector(toggleKeepMic), keyEquivalent: "")
         km.target = self; km.state = t.settings.keepMic ? .on : .off
@@ -70,7 +71,7 @@ final class Menu: NSObject, NSMenuDelegate {
         let sc = m.addItem(withTitle: "Read the messages on screen (this Mac only)" + (t.settings.screenContext && !Screen.allowed ? " (needs Screen Recording)" : ""),
                            action: #selector(toggleScreen), keyEquivalent: "")
         sc.target = self; sc.state = t.settings.screenContext ? .on : .off
-        let sh = m.addItem(withTitle: "Screenshots in long notes and calls (for the agent brief, on this Mac only)", action: #selector(toggleShots), keyEquivalent: "")
+        let sh = m.addItem(withTitle: "Screenshots while recording (on this Mac only)", action: #selector(toggleShots), keyEquivalent: "")
         sh.target = self; sh.state = t.settings.shots ? .on : .off
         m.addItem(withTitle: "Open dictionary", action: #selector(openDictionary), keyEquivalent: "").target = self
         m.addItem(.separator())
@@ -80,6 +81,7 @@ final class Menu: NSObject, NSMenuDelegate {
 
     @objc func stopRecording() { Talk.shared.stopRecording("the menu bar") }
     @objc func meetingNotes() { MeetingNotes.toggle(from: "the menu bar") }
+    @objc func openWelcome() { Welcome.show() }
     @objc func askTrust() { Focus.trusted(prompt: true) }
     @objc func togglePause() { Drafter.shared.change { $0.paused.toggle() }; Drafter.shared.apply() }
     @objc func toggleSkip(_ s: NSMenuItem) {
@@ -116,7 +118,7 @@ final class Menu: NSObject, NSMenuDelegate {
         for d in ["notes", "calls"] { try? FileManager.default.createDirectory(at: Home.data.appendingPathComponent(d), withIntermediateDirectories: true) }
         NSWorkspace.shared.open(Home.data.appendingPathComponent("notes")); NSWorkspace.shared.open(Home.data.appendingPathComponent("calls"))
     }
-    /// Quit from the menu. A long note or call that is recording asks first (2026-10-30: the "Ulis+Bp" call stopped at
+    /// Quit from the menu. A long note or call that is recording asks first (2026-10-30: a call stopped at
     /// 29 min with a clean exit and no line in the log; a clean exit is not restarted, so Drafter stayed off for 55 min).
     @objc func quit() {
         if Talk.shared.recording {

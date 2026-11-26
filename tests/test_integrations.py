@@ -63,10 +63,10 @@ class Off(unittest.TestCase):
 class On(unittest.TestCase):
     def test_on_only_when_enabled_and_present(self):
         folder = Path(TMP.name) / "vault"; folder.mkdir(exist_ok=True)
-        use({"integrations": {"vault": {"enabled": True, "path": str(folder)}, "voice_guide": {"enabled": True, "path": str(folder / "missing.txt")},
+        use({"integrations": {"vault": {"enabled": True, "path": str(folder)}, "claude": {"enabled": False, "bin": str(folder / "missing")},
                               "gam": {"enabled": False, "bin": str(folder)}}})
         self.assertTrue(integrations.available("vault"))
-        self.assertFalse(integrations.available("voice_guide"))   # turned on, but its file is not there
+        self.assertFalse(integrations.available("voice_guide"))   # removed: an unknown name is never available
         self.assertFalse(integrations.available("gam"))           # a path, but not turned on
         self.assertFalse(integrations.available("nonsense"))
 

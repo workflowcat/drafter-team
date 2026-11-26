@@ -10,12 +10,16 @@ usage() {
   cat <<'EOF_USAGE'
 Usage: scripts/setup.sh [--models] [--voice] [--app] [--lean]
 
+  The usual first run:  scripts/setup.sh --models --app     (add --voice for dictation and calls)
+
   (no flag)  check this Mac, make the Python environment, write data/drafter.local.json from the example
-  --models   download the text model for typing (about 1 GB) and the thesaurus for synonyms (about 20 MB)
-  --voice    also download the two voice readers for dictation and calls (about 4.1 GB)
+  --models   download the text model for typing (about 1 GB), the thesaurus for synonyms (about 20 MB) and the
+             speaker model that tells voices apart in a call (about 40 MB)
+  --voice    also download the two voice readers for dictation and calls (about 4.1 GB; implies --models)
   --app      build ~/Applications/Drafter.app (needs Apple Command Line Tools)
   --lean     a second environment (.venv-lean) only to check the install; not for the app
 
+Free disk it asks for: about 3 GB for typing only, about 8 GB with --voice.
 Nothing is started. Afterwards: open Drafter, grant the permissions printed at the end, and if you want it at login
 run scripts/install-login.sh yourself. Train on your own writing later with scripts/train.sh.
 EOF_USAGE
@@ -37,7 +41,8 @@ fi
 [[ $(uname -s) == Darwin && $(uname -m) == arm64 ]] || { echo 'Requires native Apple-silicon macOS (not Rosetta).' >&2; exit 1; }
 major=$(sw_vers -productVersion | cut -d. -f1)
 (( major >= 15 )) || { echo 'Requires macOS 15 or newer (Swift app deployment target).' >&2; exit 1; }
-# Room and memory: the text model and the environment take about 3 GB, the voice readers 4.1 GB more.
+# Room and memory: typing only about 3 GB (environment, text model, thesaurus), with voice about 8 GB (4.1 GB more,
+# plus room to unpack). scripts/doctor.py checks the same two numbers.
 need_gb=3; (( voice )) && need_gb=8
 free_gb=$(df -g . | awk 'NR==2 {print $4}')
 (( free_gb >= need_gb )) || { echo "Needs about $need_gb GB free on this disk; $free_gb GB is free." >&2; exit 1; }
@@ -86,18 +91,23 @@ if ! command -v ffmpeg >/dev/null; then
   echo 'ffmpeg is absent: install it for non-PCM audio file decoding. Native recorded WAVs need no decoder.'
 fi
 if command -v claude >/dev/null || [[ -x "$HOME/.local/bin/claude" ]]; then
-  echo 'Found a claude CLI. It is not used until you pick it under Settings > Connect a model.'
+  echo 'Found a claude CLI. It is not used until you pick it under Settings > Cloud > Connect a model.'
 fi
 cat <<'EOF_NEXT'
 Environment ready. Nothing was started.
 
-Permissions, the first time you open Drafter (System Settings > Privacy & Security):
-  1. Accessibility: Drafter reads the field you type in, puts the ghost text there and sees Tab and Right Option.
-  2. Microphone: only for voice and calls (needs --voice).
-  3. Screen & System Audio Recording: optional; reads text above the caret when an app gives none, and the
-     other side of a call. Nothing is stored from the screen.
-  4. Calendars and Reminders: only when you press an event or reminder chip.
-Drafter asks for each one when a feature needs it; turn it on, then quit and reopen Drafter.
-
-Next: open ~/Applications/Drafter.app (build it with --app). At login: scripts/install-login.sh, which you run yourself.
+Next steps (docs/onboarding.md has them in full):
+  1. Open ~/Applications/Drafter.app (build it with --app). A pen appears in the menu bar.
+  2. Accessibility (System Settings > Privacy & Security): required. Drafter reads the field you type in, puts the
+     ghost text there and sees Tab and Right Option. Quit and reopen Drafter after you turn it on.
+  3. Put your name and languages in data/drafter.local.json ("user").
+  4. Voice starts off: turn on "Voice on Right Option" in the menu bar pen, then allow the Microphone (needs --voice).
+  5. Optional: Screen & System Audio Recording, for the other side of a call and for text above the caret when an
+     app gives none. While a call or long note records, Drafter keeps screenshots of your screen in
+     data/calls/<time>/shots/ (on this Mac only). Turn that off in Settings: "Screenshots while recording".
+     Screen video of a call is off unless you turn it on.
+  6. Optional: Calendars, for meeting notes before a calendar event and for the event and reminder chips.
+  7. Optional: Settings > Cloud > Connect a model. Nothing leaves this Mac until you connect one and turn on a switch.
+  8. Optional: start at login with scripts/install-login.sh, then the one command it prints.
+Then run python3 scripts/doctor.py again.
 EOF_NEXT

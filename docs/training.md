@@ -12,6 +12,8 @@ trained on your writing and added to 16 layers of the model.
   (`DRAFTER_TRAIN_CAP_GB`, default 6 GB).
 - The engine merges the layer into the model in memory for typing (`DRAFTER_LORA_FUSE`, default 1).
   /health reports `lora_merged`.
+- `bench/train.py` trains for Qwen3 1.7B only. Another model picked in Settings > Typing > Model runs without your
+  layer unless a layer was trained for that model by hand and named in `engine/catalog.json` (`layer`).
 - Chips and rewrites switch the layer off for that call. A model trained on chat lines follows instructions less
   well.
 
@@ -22,7 +24,7 @@ trained on your writing and added to 16 layers of the model.
 
 | Source | What it is |
 |---|---|
-| `typed` | Lines you sent with Return while Drafter was on (`data/typed.jsonl`) |
+| `typed` | Lines you sent with ↵ while Drafter was on (`data/typed.jsonl`) |
 | `take` | Your voice takes, the cleaned text |
 | `cc`, `codex` | Your own prompts in coding-agent sessions |
 | `beeper` | Messages you sent, through the optional Beeper integration |
@@ -35,7 +37,8 @@ The first source wins a duplicate. The filters drop:
 - lines over 600 characters, lines of fewer than 3 words, text over 6 lines;
 - agent wrappers and lines signed by an agent;
 - anything matching a recent clipboard text;
-- any line in Russian.
+- lines with Russian-only letters (ы, э, ъ, ё), unless `"ru"` is in `user.languages` in your local config. No
+  other language is filtered: `user.languages` changes only this rule.
 
 A typed line that matches a take is marked as dictated. `bench/make_train.py --corpus data/corpus.jsonl` turns the
 corpus into training lines, with a weight per source (`corpus.WEIGHTS`). Typed lines count twice; notes and posts
@@ -60,7 +63,8 @@ flowchart TD
 `bench/retrain.py` does the work. The rules a new layer must meet:
 
 - Both layers are tested on fresh lines that neither has seen. `bench/make_fresh.py` draws them from what you
-  wrote since the last retrain, and `bench/make_train.py` leaves them out of training.
+  wrote since the last retrain: lines typed into an AI app (Claude, ChatGPT, Codex and others in its `AI_APPS`) and,
+  with the Beeper integration on, chat messages with their context. `bench/make_train.py` leaves them out of training.
 - Each layer is recorded the way Drafter types (`bench/typebench.py`, with the booster) and scored through the
   gate on held-out folds (`gate.summary`).
 - The new layer wins only when letters saved over both app kinds go up by more than 0.5 points, and neither
@@ -80,7 +84,8 @@ scripts/train.sh            # --check: only say whether there is enough text
 ```
 
 It builds the corpus from the sources your local config allows (`data/drafter.local.json`, see
-[Privacy](privacy.md)). It stops with a clear message when there is too little text to train on (about 2000 lines).
+[Privacy](privacy.md)). It stops with a clear message when there is too little text to train on (about 2000 corpus lines). The count is
+of corpus lines; training keeps a little fewer, as it leaves out the test lines and very short lines.
 The first time, it trains a layer into `data/adapters`. When a layer exists, it runs the retrain above, which keeps
 the new layer only if it does better. That comparison needs chat and AI-app lines in your newest text; without
 them, `scripts/train.sh --new` trains a new layer and keeps the old one in `data/adapters-prev`.

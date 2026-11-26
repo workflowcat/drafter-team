@@ -25,6 +25,8 @@ struct PermissionItem: Equatable, Identifiable {
     let neededFor: String
     let actionLabel: String
     let settingsURL: String
+    /// Missing and needed counts as needing attention; missing and optional is shown grey (cohesion round, 26 November 2026).
+    var needed = true
 }
 
 enum SettingsSearchRules {
@@ -68,49 +70,36 @@ enum SettingsSearchRules {
         return selected != .all && selected != .cloud
     }
 
-    /// Unified macOS permissions and system-key checklist for Settings.
-    static func permissions(accessibility: Bool, screenRecording: Bool, calendar: Bool,
+    /// Unified macOS permissions and system-key checklist for Settings and the first-run window. One name per permission,
+    /// as macOS shows it. Accessibility is always needed; the microphone when voice is on; screen recording when a feature
+    /// that reads the screen is on; calendars are optional.
+    static func permissions(accessibility: Bool, microphone: Bool = true, screenRecording: Bool, calendar: Bool,
+                            voiceOn: Bool = false, screenUsed: Bool = true,
                             captureSystemKeyOn: Bool, captureEnabled: Bool) -> [PermissionItem] {
+        let pane = "x-apple.systempreferences:com.apple.preference.security?Privacy_"
         var out: [PermissionItem] = [
-            PermissionItem(
-                id: "accessibility",
-                title: "Accessibility",
-                ok: accessibility,
-                neededFor: "Grey text at the caret, Tab, shortcuts, and typing fixes",
-                actionLabel: "Open Accessibility",
-                settingsURL: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
-            ),
-            PermissionItem(
-                id: "screen",
-                title: "Screen Recording",
-                ok: screenRecording,
-                neededFor: "Reading chat messages on screen (OCR) and quick capture",
-                actionLabel: "Open Screen Recording",
-                settingsURL: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture"
-            ),
-            PermissionItem(
-                id: "calendar",
-                title: "Calendars",
-                ok: calendar,
-                neededFor: "Meeting titles, ;free slots, and pre-call note offers",
-                actionLabel: "Open Calendars",
-                settingsURL: "x-apple.systempreferences:com.apple.preference.security?Privacy_Calendars"
-            ),
+            PermissionItem(id: "accessibility", title: "Accessibility", ok: accessibility,
+                           neededFor: "Grey text at the caret, Tab, keys and typing fixes. Quit and reopen Drafter after allowing it.",
+                           actionLabel: "Open Accessibility", settingsURL: pane + "Accessibility"),
+            PermissionItem(id: "microphone", title: "Microphone", ok: microphone,
+                           neededFor: "Voice on Right Option, long notes and calls",
+                           actionLabel: "Open Microphone", settingsURL: pane + "Microphone", needed: voiceOn),
+            PermissionItem(id: "screen", title: "Screen & System Audio Recording", ok: screenRecording,
+                           neededFor: "The other side of a call, screenshots while recording, and reading chats on screen",
+                           actionLabel: "Open Screen Recording", settingsURL: pane + "ScreenCapture", needed: screenUsed),
+            PermissionItem(id: "calendar", title: "Calendars", ok: calendar,
+                           neededFor: "Meeting titles, ;free slots and the offer to take notes before a call",
+                           actionLabel: "Open Calendars", settingsURL: pane + "Calendars", needed: false),
         ]
         if captureEnabled {
-            out.append(PermissionItem(
-                id: "captureKey",
-                title: "macOS ⌘⇧5 shortcut",
-                ok: !captureSystemKeyOn,
-                neededFor: "Turn off macOS's built-in ⌘⇧5 so Drafter quick capture receives it",
-                actionLabel: "Open Keyboard Shortcuts",
-                settingsURL: "x-apple.systempreferences:com.apple.Keyboard-Settings.extension"
-            ))
+            out.append(PermissionItem(id: "captureKey", title: "macOS ⇧⌘5 shortcut", ok: !captureSystemKeyOn,
+                                      neededFor: "Turn off macOS's own ⇧⌘5 so Drafter's quick capture receives it",
+                                      actionLabel: "Open Keyboard Shortcuts", settingsURL: "x-apple.systempreferences:com.apple.Keyboard-Settings.extension"))
         }
         return out
     }
 
     static func attentionCount(_ items: [PermissionItem]) -> Int {
-        items.reduce(0) { $0 + ($1.ok ? 0 : 1) }
+        items.reduce(0) { $0 + ($1.ok || !$1.needed ? 0 : 1) }
     }
 }

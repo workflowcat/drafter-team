@@ -9,7 +9,7 @@ import ScreenCaptureKit
 
 enum Home {
     static let root: URL = {
-        let p = Bundle.main.object(forInfoDictionaryKey: "DrafterHome") as? String ?? NSHomeDirectory() + "/Codius/Drafter"
+        let p = Bundle.main.object(forInfoDictionaryKey: "DrafterHome") as? String ?? NSHomeDirectory() + "/drafter-team"
         return URL(fileURLWithPath: p)
     }()
     static let data = root.appendingPathComponent("data")
@@ -194,7 +194,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         Brief.me = LocalConfig.shortName
         CallDoc.me = LocalConfig.ownKeys
         Menu.shared.setup()
-        Focus.trusted(prompt: true)
+        SnippetRules.initials = SnippetRules.initials(name: LocalConfig.user("name"), given: LocalConfig.user("initials"))
+        // the first launch opens the Welcome window, which asks for Accessibility in its first step (app/Welcome.swift)
+        if CommandLine.arguments.count == 1, !FileManager.default.fileExists(atPath: Welcome.marker.path) { Welcome.showIfFirstRun() }
+        else { Focus.trusted(prompt: true) }
         Keys.shared.start()
         Drafter.shared.checkBattery()
         Drafter.shared.apply()

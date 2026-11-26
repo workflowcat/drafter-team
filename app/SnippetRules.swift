@@ -26,9 +26,18 @@ enum SnippetRules {
         if let value = replacements[typed], !value.isEmpty {
             return SnippetMatch(old: typed + " ", new: value + " ", key: typed)
         }
-        let key = typed == "AU" ? emailKey(snippets) : snippets.keys.sorted().first { $0.lowercased() == typed.lowercased() && typed.hasPrefix(";") }
+        let key = !initials.isEmpty && typed == initials ? emailKey(snippets) : snippets.keys.sorted().first { $0.lowercased() == typed.lowercased() && typed.hasPrefix(";") }
         guard let key, let value = snippets[key] else { return nil }
         return SnippetMatch(old: typed + " ", new: value + " ", key: key)
+    }
+    /// The user's initials in capitals (two letters or more) put in their e-mail address; empty turns it off. Set at launch
+    /// from `user.initials`, else the first letters of `user.name` in data/drafter.local.json.
+    static var initials = ""
+    static func initials(name: String, given: String) -> String {
+        let g = given.trimmingCharacters(in: .whitespaces).uppercased()
+        if !g.isEmpty { return g.count >= 2 ? g : "" }
+        let parts = name.split(separator: " ").compactMap { $0.first.map { String($0).uppercased() } }
+        return parts.count >= 2 ? parts.prefix(3).joined() : ""
     }
     static func emailKey(_ snippets: [String: String]) -> String? {
         [";mail", ";email", ";e"].first { snippets[$0]?.isEmpty == false }
@@ -42,7 +51,7 @@ enum SnippetRules {
                 if let key = keys.first { return SnippetMatch(old: typed, new: snippets[key]!, key: key) }
             }
             if typed.count >= 2, let key = emailKey(snippets), let email = snippets[key],
-               (typed == "AU" || email.lowercased().hasPrefix(typed.lowercased())), typed != email {
+               ((!initials.isEmpty && typed == initials) || email.lowercased().hasPrefix(typed.lowercased())), typed != email {
                 return SnippetMatch(old: typed, new: email, key: key)
             }
         }

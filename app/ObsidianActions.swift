@@ -1,4 +1,4 @@
-// Explicit export writes locally; Share Brief only copies to the clipboard.
+// Explicit export writes locally; Share notes only copies to the clipboard.
 import AppKit
 import SwiftUI
 
@@ -17,7 +17,7 @@ struct ObsidianActions: View {
             Button("Send to Obsidian", action: save)
                 .disabled(m.settings.obsidianVault.isEmpty || saving)
                 .help(m.settings.obsidianVault.isEmpty ? "Set an Obsidian vault in Settings" : "Save a new note in the vault's Drafter folder")
-            Button("Share Brief") {
+            Button("Share notes") {
                 if !m.preview { History.copy(brief) }
                 notice = m.preview ? "Sample brief copied" : "Brief copied"
             }.disabled(brief.isEmpty).help("Copy a brief to share")

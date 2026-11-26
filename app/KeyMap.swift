@@ -155,7 +155,7 @@ enum KeyMap {
         KeyDef(id: "commandRun", keys: "click", job: "command", surface: .window, scope: "command field", help: "run one", section: "actions"),
         KeyDef(id: "commandUndo", keys: "⌘Z", job: "command", surface: .window, scope: "command field"),
         KeyDef(id: "openLinks", keys: "⇧⌘L", job: "window", surface: .window, help: "Links & Files", section: "elsewhere"),
-        KeyDef(id: "openScreen", keys: "⇧⌘I", job: "window", surface: .window, help: "Screen & live status inspector", section: "elsewhere"),
+        KeyDef(id: "openScreen", keys: "⇧⌘I", job: "window", surface: .window, help: "What Drafter sees", section: "elsewhere"),
         KeyDef(id: "settings", keys: "⌘,", job: "window", surface: .window, help: "Settings", section: "elsewhere"),
         KeyDef(id: "shortcuts", keys: "⌘J", job: "window", surface: .window, help: "Shortcuts", section: "elsewhere"),
     ]

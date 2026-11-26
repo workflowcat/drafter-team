@@ -101,6 +101,15 @@ class Provider(unittest.TestCase):
         self.assertEqual((path, body["model"]), ("/v1/chat/completions", "local-made-up-model"))
         self.assertEqual(headers.get("authorization"), "Bearer made-up-key")
 
+    def test_openai_compatible_server_without_a_key(self):
+        self.use({"provider": "openai", "baseURL": self.url + "/v1", "apiModel": "local-made-up-model"})
+        provider.set_key("openai", "")                                 # a local server that takes no key
+        self.assertTrue(provider.connected())
+        self.assertEqual(provider.ask("hello", 5), "Made-up answer to: hello")
+        self.assertNotIn("authorization", SEEN[-1][1])
+        self.use({"provider": "openai", "baseURL": "", "apiModel": "m"})
+        self.assertFalse(provider.connected())                       # no base URL: not connected
+
     def test_refused_key_fails_quietly(self):
         self.use({"provider": "anthropic", "baseURL": self.url}); provider.set_key("anthropic", "made-up-refused")
         self.assertIsNone(provider.ask("hello", 5))

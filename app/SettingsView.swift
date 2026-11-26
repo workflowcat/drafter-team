@@ -83,8 +83,7 @@ struct SettingsView: View {
         let scr = m.preview ? true : Screen.allowed
         let cal = m.preview ? true : EKEventStore.authorizationStatus(for: .event) == .fullAccess
         let sys5 = m.preview ? false : Capture.systemKeyOn
-        return SettingsSearchRules.permissions(accessibility: ax, screenRecording: scr, calendar: cal,
-                                               captureSystemKeyOn: sys5, captureEnabled: !s.captureKey.isEmpty)
+        return Welcome.permissions(s, preview: m.preview, accessibility: ax, screen: scr, calendar: cal, systemKey: sys5)
     }
 
     @ViewBuilder var settingsHeader: some View {
@@ -130,7 +129,7 @@ struct SettingsView: View {
                 VStack(alignment: .leading, spacing: 0) {
                     ForEach(items) { p in
                         HStack(spacing: 10) {
-                            Circle().fill(Color(nsColor: p.ok ? Native.ok : Native.warn)).frame(width: 6, height: 6)
+                            Circle().fill(p.ok ? Color(nsColor: Native.ok) : p.needed ? Color(nsColor: Native.warn) : UIInk.faint).frame(width: 6, height: 6)
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(p.title).font(NativeFont.text(13, .medium)).foregroundStyle(UIInk.ink)
                                 Text(p.neededFor).font(NativeFont.text(11.5)).foregroundStyle(UIInk.muted)
@@ -140,7 +139,7 @@ struct SettingsView: View {
                                 Text("Ready").font(NativeFont.mono(11)).foregroundStyle(UIInk.faint)
                             } else if let u = URL(string: p.settingsURL) {
                                 Button(p.actionLabel) { NSWorkspace.shared.open(u) }
-                                    .buttonStyle(.plain).font(NativeFont.text(12, .medium)).foregroundStyle(UIInk.blue)
+                                    .buttonStyle(.bordered).controlSize(.small)
                             }
                         }
                         .padding(.horizontal, 12).padding(.vertical, 7)
@@ -169,7 +168,7 @@ struct SettingsView: View {
     }
 
     private var voiceHasMatch: Bool {
-        anyMatch(["Right Option for voice", "Type into the field while I speak"])
+        anyMatch(["Voice on Right Option", "Type into the field while I speak"])
     }
 
     private var callsHasMatch: Bool {
@@ -187,11 +186,11 @@ struct SettingsView: View {
     private var cloudHasMatch: Bool {
         anyMatch([
             "Connect a model cloud Claude Anthropic OpenAI",
-            "Claude tidies a voice take after it goes in: names, the chat on screen cloud",
+            "The connected model tidies a voice take after it goes in: names, the chat on screen cloud",
             "⌥Tab reworks the selected text cloud Claude",
-            "Claude offers a rewrite when I pause cloud",
-            "Claude writes the call outline and summary cloud",
-            "Claude names the kind of a new name (the name only) cloud"
+            "The connected model offers a rewrite when I pause cloud",
+            "The connected model writes the call outline and summary cloud",
+            "The connected model names the kind of a new name (the name only) cloud"
         ])
     }
 
@@ -368,7 +367,7 @@ struct SettingsView: View {
                     }
                     if showCat(.voice) && voiceHasMatch {
                         group("Voice") {
-                            row("Right Option for voice", s.voice, value: m.stats.map { "\($0["takes"]?.shown ?? 0) today" }) { $0.voice = $1 }
+                            row("Voice on Right Option", s.voice, value: m.stats.map { "\($0["takes"]?.shown ?? 0) today" }) { $0.voice = $1 }
                             row("Type into the field while I speak", s.voiceInsert == "live") { $0.voiceInsert = $1 ? "live" : "enter" }
                         }
                     }
@@ -391,7 +390,7 @@ struct SettingsView: View {
                                     .font(NativeFont.text(12)).foregroundStyle(UIInk.muted).fixedSize(horizontal: false, vertical: true).padding(.top, 4)
                             }
                             // ⌘⇧V held is the clipboard (Space or a letter: the full picker)
-                            row("Clipboard on ⌘⇧V (hold; Space opens the full picker)", !s.switchKey.isEmpty, value: s.switchKey.isEmpty ? nil : s.switchKey) { $0.switchKey = $1 ? "⌘⇧V" : "" }
+                            row("Clipboard picker on ⇧⌘V", !s.switchKey.isEmpty, value: s.switchKey.isEmpty ? nil : s.switchKey) { $0.switchKey = $1 ? "⌘⇧V" : "" }
                             if SettingsSearchRules.matches(query: search, title: "Data folder Dictionary", extra: "open files") {
                                 line {
                                     HStack(spacing: 16) {
@@ -419,14 +418,14 @@ struct SettingsView: View {
                 ConnectSection(m: m).padding(.leading, G.gutter + G.gap).padding(.bottom, 8)   // on the grid, under the heading
             }
             // after a Clean or Polished take went in (engine/voice_claude.py); its spend counts under the same cap
-            row("Claude tidies a voice take after it goes in: names, the chat on screen", s.voiceClaude, sends: true,
+            row("The connected model tidies a voice take after it goes in: names, the chat on screen", s.voiceClaude, sends: true,
                 value: s.voiceClaude ? String(format: "up to $%.2f a day", s.backOfficeCap) : nil) { $0.voiceClaude = $1 }
             row("⌥Tab reworks the selected text", s.rework, sends: true, stat: LogStats.rework, typing: true) { $0.rework = $1 }
             // a typing pause: Claude offers a rewrite of the paragraph as a chip (app/PauseRewrite.swift); same daily cap
-            row("Claude offers a rewrite when I pause", s.pauseRewrite, sends: true, typing: true,
+            row("The connected model offers a rewrite when I pause", s.pauseRewrite, sends: true, typing: true,
                 value: s.pauseRewrite ? String(format: "up to $%.2f a day", s.backOfficeCap) : nil) { $0.pauseRewrite = $1 }
-            row("Claude writes the call outline and summary", s.callNotes, sends: true) { $0.callNotes = $1 }
-            row("Claude names the kind of a new name (the name only)", s.entityClassify, sends: true) { $0.entityClassify = $1 }
+            row("The connected model writes the call outline and summary", s.callNotes, sends: true) { $0.callNotes = $1 }
+            row("The connected model names the kind of a new name (the name only)", s.entityClassify, sends: true) { $0.entityClassify = $1 }
         }
     }
 

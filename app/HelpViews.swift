@@ -63,7 +63,7 @@ struct HelpView: View {
         let wide = m.width >= 820
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
-                PageHeader("Help", subtitle: "Drafter helps you write in any app: suggestions, dictation, notes, calls and small actions. History stays on this Mac. Parts that use Claude say so.")
+                PageHeader("Help", subtitle: "Drafter helps you write in any app: suggestions, dictation, notes, calls and small actions. History stays on this Mac. Parts that send text to a connected model say so.")
                 if wide {
                     HStack(alignment: .top, spacing: 14) {
                         VStack(alignment: .leading, spacing: 14) {
@@ -82,7 +82,7 @@ struct HelpView: View {
                                  stat: m.stats.map { "today: \($0["takes"]?.shown ?? 0) takes" } ?? "")
                             part("Calls and long notes", glyph: "phone", "Audio goes to disk while it records, with screenshots when the screen changes. At the end: a transcript of both sides, a title from your calendar, people, a summary and to-dos. Calls & notes shows them as notes you can search; For agent hands one to Claude or Codex. A call is recorded only when you say so.",
                                  keys: KeyMap.help("calls"))
-                            part("Actions", glyph: "sparkle", "Use the field in the title bar: book 30 minutes tomorrow, find a free slot, remind me …, ;snippet. Haiku handles requests; the model on this Mac is the fallback. Nothing runs until you click.",
+                            part("Actions", glyph: "sparkle", "Press ⌘K in the window: book 30 minutes tomorrow, find a free slot, remind me …, ;snippet. The connected model handles requests; the model on this Mac is the fallback. Nothing runs until you click.",
                                  keys: KeyMap.help("actions"))
                             part("Elsewhere", glyph: "globe", "", keys: KeyMap.help("elsewhere"))
                         }
@@ -101,7 +101,7 @@ struct HelpView: View {
                          stat: m.stats.map { "today: \($0["takes"]?.shown ?? 0) takes" } ?? "")
                     part("Calls and long notes", glyph: "phone", "Audio goes to disk while it records, with screenshots when the screen changes. At the end: a transcript of both sides, a title from your calendar, people, a summary and to-dos. Calls & notes shows them as notes you can search; For agent hands one to Claude or Codex. A call is recorded only when you say so.",
                          keys: KeyMap.help("calls"))
-                    part("Actions", glyph: "sparkle", "Use the field in the title bar: book 30 minutes tomorrow, find a free slot, remind me …, ;snippet. Haiku handles requests; the model on this Mac is the fallback. Nothing runs until you click.",
+                    part("Actions", glyph: "sparkle", "Press ⌘K in the window: book 30 minutes tomorrow, find a free slot, remind me …, ;snippet. The connected model handles requests; the model on this Mac is the fallback. Nothing runs until you click.",
                          keys: KeyMap.help("actions"))
                     part("Elsewhere", glyph: "globe", "", keys: KeyMap.help("elsewhere"))
                 }
@@ -220,7 +220,7 @@ struct ShortcutsView: View {
                                     .background(Capsule().fill(UIInk.well))
                             }
                         }
-                        ShortcutEditor(label: "Email", hint: "AU + Space or ;mail + Space. Type the first letters of your address, then Tab, to complete it.", key: ";mail", file: "snippets.json", initial: snippets[";mail"] ?? "", preview: m.preview)
+                        ShortcutEditor(label: "Email", hint: (SnippetRules.initials.isEmpty ? "" : SnippetRules.initials + " + Space or ") + ";mail + Space. Type the first letters of your address, then Tab, to complete it.", key: ";mail", file: "snippets.json", initial: snippets[";mail"] ?? "", preview: m.preview)
                             .id("email-" + (snippets[";mail"] ?? ""))
                         Rectangle().fill(UIInk.line).frame(height: 0.5)
                         ShortcutEditor(label: "Calendar link", hint: ";cal + Space. “My calendar link” or “лінк на календар” offers the link with Tab.", key: ";cal", file: "snippets.json", initial: snippets[";cal"] ?? "", preview: m.preview)
@@ -291,7 +291,7 @@ struct ShortcutsView: View {
                             PageField(placeholder: "Replace with", text: $replacement)
                             PagePillButton(title: "Add", glyph: "plus", primary: true, enabled: !trigger.isEmpty && !replacement.isEmpty && !m.preview) {
                                 let key = trigger.trimmingCharacters(in: .whitespacesAndNewlines)
-                                guard !key.isEmpty, !key.contains(where: { $0.isWhitespace }), key != "AU", !LookupQuery.reserved.contains(key), !snippets.keys.contains(key) else { status = "Use one word, without spaces, that is not a built-in shortcut."; return }
+                                guard !key.isEmpty, !key.contains(where: { $0.isWhitespace }), key != SnippetRules.initials, !LookupQuery.reserved.contains(key), !snippets.keys.contains(key) else { status = "Use one word, without spaces, that is not a built-in shortcut."; return }
                                 do {
                                     try Snippets.save(key, replacement, file: "replacements.json")
                                     rows = Snippets.replacements; trigger = ""; replacement = ""; status = "Saved"

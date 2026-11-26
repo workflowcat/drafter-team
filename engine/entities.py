@@ -1033,6 +1033,23 @@ def surfaces_for(rec, ordinary, stop, first_stop=()):
     return out
 
 
+def project_roots():
+    """Folders whose subfolders are the user's code projects: `projects.roots` in data/drafter.local.json. None by default."""
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import local
+    roots = (local.config().get('projects') or {}).get('roots') or []
+    return [local.expand(r) for r in roots if isinstance(r, str) and r.strip()]
+
+
+def project_dirs(root=None):
+    """{folded name: path} of each project folder: the subfolders of `root` (tests), else of the configured roots."""
+    out = {}
+    for r in ([root] if root is not None else project_roots()):
+        try: out.update({fold(d.name): str(d) for d in Path(r).iterdir() if d.is_dir() and not d.name.startswith(('.', '_'))})
+        except OSError: pass
+    return out
+
+
 def build(out=None, *, vault=None, contacts=None, lines=(), chats=(), now=None, data=None, ordinary=None, codius=None, write=True):
     """Build data/entities.json. vault: a path, False (off) or None (from the local config). lines: the user's sent rows
     (data/typed.jsonl); chats: [[their lines in one chat, oldest first]] (data/people.json), for names said together."""
@@ -1040,9 +1057,7 @@ def build(out=None, *, vault=None, contacts=None, lines=(), chats=(), now=None, 
     out = Path(out) if out is not None else data / 'entities.json'
     now = time.time() if now is None else now
     if vault is None: vault = source_path(data)
-    codius = Path(codius) if codius is not None else Path.home() / 'Codius'
-    try: codius = {fold(d.name): str(d) for d in codius.iterdir() if d.is_dir() and not d.name.startswith(('.', '_'))}
-    except OSError: codius = {}
+    codius = project_dirs(codius)
     allow = read_json(data / 'context-allow.json', {})
     allow = allow if isinstance(allow, dict) else {}
     cache = read_json(data / 'entity-sources.json', {})

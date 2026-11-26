@@ -11,6 +11,14 @@ enum UIShots {
         guard let data = rep.representation(using: .png, properties: [:]) else { throw NSError(domain: "Preview", code: 2) }
         try data.write(to: URL(fileURLWithPath: path))
     }
+    /// The first-run window as a new user sees it (permissions as this preview copy has them).
+    static func welcomeShot(_ folder: String) throws {
+        let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 600, height: 720), styleMask: [.titled], backing: .buffered, defer: false)
+        let v = NSHostingView(rootView: WelcomeView(done: {}))
+        v.frame = NSRect(x: 0, y: 0, width: 600, height: 720); w.contentView = v
+        RunLoop.main.run(until: Date().addingTimeInterval(0.3))
+        try save(v, folder + "/welcome.png")
+    }
     static func run(_ folder: String, dark: Bool) throws {
         try FileManager.default.createDirectory(atPath: folder, withIntermediateDirectories: true)
         NSApp.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
@@ -30,6 +38,7 @@ enum UIShots {
         if only == "record-window" { try RecordPreview.run(folder, dark: dark, windowOnly: true); return }   // the recording window alone
         if only == "strips" { try stripStyles(folder); return }   // every style, both themes, and the two contact sheets
         if only == "quick" { try Quick.shared.preview(folder); return }
+        if only == "welcome" { try welcomeShot(folder); return }   // the first-run window (app/Welcome.swift)
         try Pill.shared.preview(folder)
         try Command.shared.preview(folder)
         try Quick.shared.preview(folder)
@@ -37,6 +46,7 @@ enum UIShots {
         try EntityPreview.run(folder)
         try onScreen(folder)
         try windowShots(folder, dark: dark)
+        try welcomeShot(folder)
         try shotJournalShots(folder, dark: dark)
         print("Native UI previews passed: " + folder)
     }
@@ -53,7 +63,7 @@ enum UIShots {
             Entry(id: id, when: at(h, mi, back: back), app: app, text: text, audio: "", secs: secs)
         }
         var clips = [e("c1", 12, 38, "Safari", "https://example.org/station/review-14#plan"),
-                     e("c5", 12, 30, "Preview", "Image · 640 × 400"), e("c6", 12, 27, "Finder", NSHomeDirectory() + "/Desktop/station-drawings-final.pdf"),
+                     e("c5", 12, 30, "Preview", "Image · 640 × 400"), e("c6", 12, 27, "Finder", "~/Desktop/station-drawings-final.pdf"),
                      e("c2", 12, 4, "Mail", "Room 4.12, second floor, the door on the left"),
                      e("c3", 11, 9, "Xcode", "let share = taken / shown"),
                      e("c4", 10, 31, "Mail", "Mila Synthetic, +380 00 000 00 00, Tuesday after 14:00"),

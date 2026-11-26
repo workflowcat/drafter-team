@@ -13,16 +13,18 @@ A take is one stretch of dictation.
 | Right Option | Starts a take. Press again to end it. |
 | Hold Right Option | Push to talk: the take ends when you let go. |
 | Esc | Drops a short take. It never drops a long note or a call. |
-| Enter | Puts the words heard so far into the field, without sending. Listening goes on. |
-| ⇧ Right Option | Starts a long note, or records a call when another app holds the microphone (it also takes the strip's call offer; Tab never does). |
+| ↵ | During a take: puts the words heard so far into the field, without sending; listening goes on. After it: puts the take in. |
+| ⇧ Right Option | Starts a recording: a long note, or records a call when another app holds the microphone (it also takes the strip's call offer; Tab never does). |
 | Right Option twice | The last take again at the caret (`againTap`). |
 | A key while Right Option is held | Before any words: the take is dropped and the key goes to the app (⌥ characters). |
 
-- When a take ends, its text goes in at the caret. With no text field in focus, it goes to the clipboard.
+- When a take ends, its words wait in the strip, and ↵ puts them in at the caret (`voiceInsert` "enter", the
+  default; "live" types the words into the field as you speak). Any other key, or 45 s, leaves the take in the
+  window; Right Option twice puts it in later. With no text field in focus, it goes to the clipboard.
 - A take ends by itself after 45 s with no new words.
 - `app/Rules.swift` handles spoken corrections ("no wait", "scratch that"), spoken lists and closing words.
-- Select text, then talk: your words replace the selection, or an instruction rewrites it. A rewrite may use Claude
-  only when the `rework` switch is on (see [Privacy](privacy.md)).
+- Select text, then talk: your words replace the selection, or an instruction rewrites it. A rewrite may use the
+  connected model only when the `rework` switch is on (see [Privacy](privacy.md)).
 - Every take is kept in `data/takes.jsonl`, with its recording in `data/audio/` for 14 days. When rules changed a
   take, the text as heard is kept too, as `raw`.
 
@@ -82,12 +84,13 @@ side and no warning.
 
 ## Call notes
 
-`engine/notes.py` turns a recording into a note in `data/notes/`: a title, a summary and to-dos.
+`engine/notes.py` turns a recording into a note in `data/notes/`: a title, a summary and a To do list.
 
 - The live outline in the strip is rebuilt every 75 s from everything said so far.
-- The outline and the final summary use Claude Haiku only when the `callNotes` switch is on and the Mac is
-  online. Off, the local text model writes them. Only the transcript text is sent, never audio.
-- With the `shots` setting on, `app/Shots.swift` takes a screenshot when the screen changes and then stands
+- The outline and the final summary use the connected model (its fast model) only when the `callNotes` switch is on
+  and the Mac is online. Off, the local text model writes them. Only the transcript text is sent, never audio.
+- With the `shots` setting on (the default; Settings: "Screenshots while recording"), `app/Shots.swift` keeps
+  screenshots in the recording's shots folder, on this Mac only. It takes one when the screen changes and then stands
   still. `app/Transcript.swift` writes `brief.md`: what was said in time order, with each screenshot where it was
   taken. You can hand that file to a coding agent.
 - **Screen video while recording** in Settings > Calls is off by default (`callScreenVideo`). It saves local

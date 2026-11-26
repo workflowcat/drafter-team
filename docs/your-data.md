@@ -7,9 +7,9 @@ Drafter gets better at guessing your next words the more of **your own** writing
 
 | File | What | Turn off |
 |---|---|---|
-| `data/typed.jsonl` | Each message you send with Return while Drafter is on | Menu bar: "Learn from what I send" |
+| `data/typed.jsonl` | Each message you send with ↵ while Drafter is on | Menu bar: "Learn from what I send" |
 | `data/takes.jsonl` | Your dictation takes | Settings > Voice |
-| `data/clipboard.jsonl` | Text you copied (for the Quick panel; never trained on) | Settings, search "clipboard" |
+| `data/clipboard.jsonl` | Text you copied (for the clipboard picker; never trained on) | Settings, search "clipboard" |
 | `data/calls/` | Recordings and transcripts of calls and long notes | Settings > Calls |
 
 Password fields, apps you skip and secure input are never read.

@@ -39,15 +39,17 @@ struct SettingsSearchChecks {
 
         // Permissions checklist
         let allOK = SettingsSearchRules.permissions(accessibility: true, screenRecording: true, calendar: true, captureSystemKeyOn: false, captureEnabled: true)
-        check(allOK.count == 4, "4 items when capture enabled")
+        check(allOK.count == 5, "5 items when capture enabled")
         check(SettingsSearchRules.attentionCount(allOK) == 0, "0 items need attention when all granted")
 
         let missing = SettingsSearchRules.permissions(accessibility: false, screenRecording: true, calendar: false, captureSystemKeyOn: true, captureEnabled: true)
-        check(SettingsSearchRules.attentionCount(missing) == 3, "3 items need attention")
+        check(SettingsSearchRules.attentionCount(missing) == 2, "accessibility and the key need attention; calendars are optional")
+        check(SettingsSearchRules.attentionCount(SettingsSearchRules.permissions(accessibility: true, microphone: false, screenRecording: true, calendar: true, voiceOn: true, captureSystemKeyOn: false, captureEnabled: false)) == 1, "the microphone is needed once voice is on")
+        check(SettingsSearchRules.attentionCount(SettingsSearchRules.permissions(accessibility: true, microphone: false, screenRecording: false, calendar: true, voiceOn: false, screenUsed: false, captureSystemKeyOn: false, captureEnabled: false)) == 0, "unused permissions stay grey")
         check(missing.first { $0.id == "accessibility" }?.settingsURL.contains("Privacy_Accessibility") == true, "accessibility deep link")
 
         let noCap = SettingsSearchRules.permissions(accessibility: true, screenRecording: true, calendar: true, captureSystemKeyOn: true, captureEnabled: false)
-        check(noCap.count == 3, "capture key check omitted when capture disabled")
+        check(noCap.count == 4, "capture key check omitted when capture disabled")
         check(SettingsSearchRules.attentionCount(noCap) == 0, "disabled capture needs no attention")
 
         print("settings search rules: all checks passed")

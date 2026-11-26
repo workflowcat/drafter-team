@@ -19,6 +19,19 @@ tips) in `app/Panel.swift`.
 - **The strip stays black** in both appearances (it merges with the notch) and draws its words in the dark
   label colours; never the faintest grey on it (`tests/strip_rules.swift` checks contrast on black).
 
+## Glossary
+
+The words the window, Help and these docs use, one meaning each:
+
+- **Take:** one dictation, from Right Option to the words going in at the caret.
+- **Recording:** a call or a long spoken note (⇧ Right Option). Its audio, transcript and notes stay together.
+- **Meeting notes:** a recording started for a calendar event, from the strip's offer.
+- **The stream:** the window's main view: what you typed, said, copied and recorded, by day.
+- **Snippets:** short cues like `;mail` that put in a longer text (the Shortcuts page, ⌘J).
+- **Copy for agent:** puts a line on the clipboard that points a coding agent at the open recording (⇧⌘A).
+- **Share notes:** puts a recording's notes on the clipboard, for you to paste where you want.
+- **To do:** the follow-ups found in a recording's notes. Written "To do", never "To-dos".
+
 ## Floating panels (caret-cozy round, 23 November 2026)
 
 - One ground: the card colour, a 0.5 pt hairline edge, 12 pt corners, one soft shadow (`Panel.ground`).
@@ -49,7 +62,7 @@ The journal window is one calm column, at most 680 pt, search first (`app/Stream
   is prominent: Insert for text, Play for audio. Pin and Delete are labelled. The rest sit in More.
 - **Player:** Play (prominent), back 10 s, the time, a scrubber, the length, forward 10 s, speed. The line playing
   is marked with the selection colour; a click on a line plays from there.
-- **Editing:** a real multi-line field in place, Save (⌘↵, prominent) and Cancel (esc) under it.
+- **Editing:** a real multi-line field in place, Save (⌘↵, prominent) and Cancel (Esc) under it.
 - **Foot:** one line: the notice with Undo, the picked rows with Combine, or what the keys do here.
 - No toolbar of icons. Controls show on the open row or on hover only.
 

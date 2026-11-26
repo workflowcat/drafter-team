@@ -2,6 +2,8 @@ import Foundation
 // swiftc -parse-as-library app/SnippetRules.swift tests/shortcuts.swift -o app/build/shortcuts-test && app/build/shortcuts-test
 @main struct Checks {
  static func main() throws {
+    precondition(SnippetRules.initials(name: "Ada Umber", given: "") == "AU" && SnippetRules.initials(name: "Ada", given: "") == "" && SnippetRules.initials(name: "", given: "kd") == "KD")
+    SnippetRules.initials = "AU"
     let snippets = [";mail": "au@example.com", ";cal": "https://example.com/calendar", ";m": "short"]
     let cues = try JSONDecoder().decode([SnippetCue].self, from: Data(contentsOf: URL(fileURLWithPath: "dictionary/snippet-cues.json")))
     let exact: [(String, String?)] = [("AU ", "au@example.com "), ("hello AU ", "au@example.com "), ("au ", nil), ("SAU ", nil), ("AU", nil), ("AU  ", nil), ("AU! ", nil), (";CAL ", "https://example.com/calendar "), (";calx ", nil), (";дякую ", "Дякую, отримав. ")]

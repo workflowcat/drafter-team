@@ -2,7 +2,7 @@
 // quick overview, quickly send info to the agents"). Since the look round "Tape" (14 November 2026) every call and long
 // note is a block on the tape (TapeWindow.swift), found by the tape's one search; Return opens it as a page here: the
 // recording as a document (title, people, summary,
-// to-dos, then the conversation with times and the screenshots where they were taken). "For agent" puts the line that
+// to-dos, then the conversation with times and the screenshots where they were taken). "Copy for agent" puts the line that
 // points an agent at it on the clipboard; on a search it copies the matching lines of every recording found.
 import AppKit
 import SwiftUI
@@ -820,14 +820,6 @@ struct DocView: View {
     private var followToggle: some View {
         Toggle("Follow playhead", isOn: $followPlayhead).toggleStyle(.checkbox).font(NativeFont.text(12)).fixedSize()
     }
-    private var summary: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            if !d.points.isEmpty { section("Summary") { ForEach(Array(d.points.enumerated()), id: \.offset) { _, p in bullet(p, CallDoc.terms(m.query)) } } }
-            if !d.todos.isEmpty { section("To-dos") { ForEach(Array(d.todos.enumerated()), id: \.offset) { _, p in todo(p, CallDoc.terms(m.query)) } } }
-            if d.points.isEmpty && d.todos.isEmpty { Text(d.live ? "Summary follows when recording ends." : "No summary yet").font(NativeFont.text(13)).foregroundStyle(UIInk.muted) }
-            recordingDetails
-        }
-    }
     @ViewBuilder private var recordingDetails: some View {
         if !d.place.isEmpty || !d.project.isEmpty || !d.details.isEmpty || !d.merged.isEmpty {
             DisclosureGroup("Details") { facts.padding(.top, 8) }.font(NativeFont.text(13))
@@ -905,7 +897,7 @@ struct DocView: View {
                 .buttonStyle(.borderedProminent)
                 .help("Copy the notes, to-dos, chapters and links, ready to paste")
             SwiftUI.Menu {
-                Button("Copy notes") { m.copyNotes(d) }.keyboardShortcut("c", modifiers: [.command, .shift])
+                Button("Copy notes") { m.copyNotes(d) }
                 SwiftUI.Menu("Copy transcript as") {
                     ForEach(WindowModel.CopyForm.allCases, id: \.self) { f in Button(f.rawValue) { m.copyAs(d, f) } }
                 }.disabled(d.turns.isEmpty)
