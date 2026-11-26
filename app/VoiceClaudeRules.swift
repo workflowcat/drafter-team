@@ -1,6 +1,6 @@
 // Claude cleanup after a voice take (`voiceClaude`, 17 November 2026): pure rules. The flow is in app/TalkFlow.swift,
 // the engine side in engine/voice_claude.py. Parakeet's text goes in at once; Claude's version replaces it in place only
-// while he has not typed since and the field still ends with it. ⌫ right after puts Parakeet's text back (Rework.takeBack).
+// while the user has not typed since and the field still ends with it. ⌫ right after puts Parakeet's text back (Rework.takeBack).
 import Foundation
 
 enum VoiceClaudeRules {

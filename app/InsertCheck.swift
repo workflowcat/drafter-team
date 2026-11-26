@@ -1,9 +1,9 @@
 // The live insert check, one step per run (scripts/insert_check.sh; insert audit, 23 November 2026, docs/inserts.md).
 // `open -n -W -a Drafter --args --insert-check <dir> <bundle> <kind> <n> <line>` starts a second Drafter process that
 // does one insert the way the app does it, into the field in front, reads the field back through Accessibility and
-// writes <dir>/result-<n>.txt. Keys it posts (ghost, snippet) are unmarked, so the running Drafter answers them as his.
+// writes <dir>/result-<n>.txt. Keys it posts (ghost, snippet) are unmarked, so the running Drafter answers them as the user's.
 // It acts only when: <dir> is its own temp folder, the app in front is <bundle> and one of TextEdit, Chrome or Safari,
-// and the focused field holds ⟦drafter-test⟧ (InsertCheckRules). It never presses Return, never sends, puts his
+// and the focused field holds ⟦drafter-test⟧ (InsertCheckRules). It never presses Return, never sends, puts the user's
 // clipboard back, and does not read or write data/ (the app's log line aside).
 import AppKit
 import ApplicationServices
@@ -57,7 +57,7 @@ enum InsertCheck {
                 e?.post(tap: .cghidEventTap); Thread.sleep(forTimeInterval: 0.01)
             }
         }
-        func typeKeys(_ s: String) {   // as his own keys: no Return, no control character
+        func typeKeys(_ s: String) {   // as the user's own keys: no Return, no control character
             for ch in s where !(ch.unicodeScalars.first.map { $0.value < 0x20 } ?? true) {
                 guard ready() else { finish("stopped: front app or marker changed while typing", 3) }
                 var u = Array(String(ch).utf16)
@@ -68,7 +68,7 @@ enum InsertCheck {
                 Thread.sleep(forTimeInterval: 0.05)
             }
         }
-        // his clipboard, put back at the end (each insert puts it back itself too)
+        // the user's clipboard, put back at the end (each insert puts it back itself too)
         let pb = NSPasteboard.general
         let saved = pb.pasteboardItems?.map { item -> NSPasteboardItem in
             let c = NSPasteboardItem(); for t in item.types { if let d = item.data(forType: t) { c.setData(d, forType: t) } }; return c
@@ -90,9 +90,9 @@ enum InsertCheck {
         case "insert":        // Tab accept, the ; picker's insert, Quick, Capture.put, voice put: Focus.insert at the spot
             guard let s = Focus.spot(skip: []).0 else { finish("stopped by guard (\(Focus.spot(skip: []).1))") }
             _ = Focus.insert(line, at: s)
-        case "paste":         // every ⌘V with his clipboard saved and back (rework, mention fallback, journal paste)
+        case "paste":         // every ⌘V with the user's clipboard saved and back (rework, mention fallback, journal paste)
             Focus.paste(line)
-        case "voice-paste":   // a voice piece with no clean spot: pasted, his clipboard left with the take
+        case "voice-paste":   // a voice piece with no clean spot: pasted, the user's clipboard left with the take
             guard Focus.pasteTarget(Focus.spot(skip: []).1) || Focus.spot(skip: []).0 != nil else { finish("stopped by guard") }
             Focus.paste(line + " ", restore: false)
         case "type":          // live voice typing, snippets, autocorrect: key events
@@ -103,7 +103,7 @@ enum InsertCheck {
             ShotSend.paste(steps: [.picture(0), .text(line)], pngs: [picture()], urls: [])
         case "picture":       // Capture.put(picture:) and the Quick panel's image row
             Focus.paste("", write: Capture.pictureWriter(picture())); changedOnly = true
-        case "ghost":         // the running Drafter's ghost: type the line's start as his keys, then Tab
+        case "ghost":         // the running Drafter's ghost: type the line's start as the user's keys, then Tab
             typeKeys(line); spin(2.5)
             guard ready() else { finish("stopped: front app or marker changed", 3) }
             let typed = field() ?? ""
@@ -111,7 +111,7 @@ enum InsertCheck {
             let after = field()
             giveBack()
             finish(after == typed ? "nothing (no ghost shown?)" : (after.map { ($0 as NSString).length > (typed as NSString).length } ?? false) ? "ok (+\((after! as NSString).length - (typed as NSString).length) chars)" : "wrong text")
-        case "snippet":       // the running Drafter's ; picker: type the trigger as his keys, then Tab (the first row)
+        case "snippet":       // the running Drafter's ; picker: type the trigger as the user's keys, then Tab (the first row)
             typeKeys(line); spin(1.5)
             guard ready() else { finish("stopped: front app or marker changed", 3) }
             let typed = field() ?? ""
@@ -130,7 +130,7 @@ enum InsertCheck {
             if InsertCheckRules.verdict(before: before, after: after, line: line, changed: changedOnly).hasPrefix("ok") { break }
         }
         let ms = Int(Date().timeIntervalSince(t0) * 1000)
-        spin(2.0)   // the deck holds a picture 1.6 s before his clipboard comes back
+        spin(2.0)   // the deck holds a picture 1.6 s before the user's clipboard comes back
         after = field()
         giveBack()
         let v = InsertCheckRules.verdict(before: before, after: after, line: line, changed: changedOnly)

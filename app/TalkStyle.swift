@@ -50,7 +50,7 @@ extension Talk {
         return out
     }
 
-    /// The cleanup level and mode for an app (front app when nil): his pick this session, the app's, its kind's, Clean.
+    /// The cleanup level and mode for an app (front app when nil): the user's pick this session, the app's, its kind's, Clean.
     func levelChoice(bundle: String? = nil, kind: String? = nil) -> VoiceChoice {
         let st = Drafter.shared.settings
         let front = NSWorkspace.shared.frontmostApplication
@@ -59,8 +59,8 @@ extension Talk {
         return VoiceModeRules.pick(kind: k, bundle: id, byKind: st.voiceLevel, byApp: st.voiceLevelApps, modes: st.voiceModes, picked: levelPicked)
     }
 
-    /// Polished: the clean text rewritten as written text by the local model (`/rewrite`, never Claude), with his mode's
-    /// prompt and his writing note for the app. The clean text when the model fails, is slow (6 s) or answers badly.
+    /// Polished: the clean text rewritten as written text by the local model (`/rewrite`, never Claude), with the user's mode's
+    /// prompt and the user's writing note for the app. The clean text when the model fails, is slow (6 s) or answers badly.
     func polish(_ clean: String, _ c: VoiceChoice, bundle: String, done: @escaping (String) -> Void) {
         let st = Drafter.shared.settings, t0 = Date()
         let note = WritingNotes.forApp(bundle, global: st.writingNote, perApp: st.appNotes)
@@ -85,7 +85,7 @@ extension Talk {
         return shown + "\n" + note
     }
 
-    /// Spoken cues he gave his snippets: data/snippet-meta.json {";key": {"say": ["my site", "мій сайт"]}}. Read when it
+    /// Spoken cues the user gave their snippets: data/snippet-meta.json {";key": {"say": ["my site", "мій сайт"]}}. Read when it
     /// changes; no file, no extra cues ("my <key>" works without it).
     static func snippetMeta() -> [String: [String]] {
         let url = Home.data.appendingPathComponent("snippet-meta.json")

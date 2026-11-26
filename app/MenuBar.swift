@@ -18,7 +18,7 @@ final class Menu: NSObject, NSMenuDelegate {
 
     func refresh() {
         let t = Drafter.shared
-        // a pen on a line = Drafter (2026-10-21, Andrii: the cursor icon was confusing); slashed when paused
+        // a pen on a line = Drafter (2026-10-21, the user: the cursor icon was confusing); slashed when paused
         let name = Talk.shared.recording ? "record.circle" : SecureInput.holder != nil ? "lock" : t.active ? (Engine.shared.ready ? "pencil.line" : "hourglass") : "pencil.slash"
         item?.button?.image = NSImage(systemSymbolName: name, accessibilityDescription: "Drafter")
         item?.button?.toolTip = SecureInput.holder.map { "\($0) holds secure input: typed keys are hidden from Drafter (Enter, Tab, suggestions). Click out of its password field or reload it." }
@@ -154,7 +154,7 @@ final class Menu: NSObject, NSMenuDelegate {
 }
 
 
-/// "Words to learn": words he changed after dictating (engine/edits.py). Learn puts the pair into the shared
+/// "Words to learn": words the user changed after dictating (engine/edits.py). Learn puts the pair into the shared
 /// dictionary, so the same mishearing is written right next time; Ignore drops it.
 final class Learn: NSObject {
     static let shared = Learn()

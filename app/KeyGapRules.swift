@@ -1,7 +1,7 @@
-// Key gaps (2026-11-14): how long he waits between two typed letters in the same field, as a histogram only, for
+// Key gaps (2026-11-14): how long the user waits between two typed letters in the same field, as a histogram only, for
 // bench/models/twotier.py (a bigger model after a pause only helps if the pause is long enough; data/app.log had no
 // real gaps). Keys.handle calls `key` once per typed key; Keys.ask calls `field` with the kind of the field it read
-// (nil: skipped app, password field, secure input, no app). Once a minute while he typed, and when the app kind
+// (nil: skipped app, password field, secure input, no app). Once a minute while the user typed, and when the app kind
 // changes, one line goes out:
 //   keygap <ai|chat|mail|other> lt60 N lt90 N lt120 N lt150 N lt200 N lt300 N lt500 N lt1000 N pause N ghost N
 // ltX = gaps under X ms (and at or over the bucket before), pause = gaps of 1000 ms or more, ghost = gaps (pauses
@@ -12,7 +12,7 @@ import Foundation
 struct KeyGaps {
     /// Upper edges in ms; a gap at or over the last edge is a pause.
     static let edges: [UInt64] = [60, 90, 120, 150, 200, 300, 500, 1000]
-    static let window: UInt64 = 60_000_000_000          // ns: one line a minute at most while he types
+    static let window: UInt64 = 60_000_000_000          // ns: one line a minute at most while the user types
     static let kinds = ["ai", "chat", "mail", "other"]
 
     // the histogram of the open window (fixed size, mutated in place)

@@ -1,5 +1,5 @@
 // Text clean-up for dictation and the shared dictionary's spelling rules, taken as they are from Voice Notes
-// (Main.swift, 2026-10-18): Tidy drops "uh"/"um" and doubled words, Words writes Andrii's terms the right way.
+// (Main.swift, 2026-10-18): Tidy drops "uh"/"um" and doubled words, Words writes the user's terms the right way.
 import Foundation
 
 enum Tidy {
@@ -60,7 +60,7 @@ enum Tidy {
     }
 }
 
-/// Andrii's own words (words.json): written the right way however they were heard. Plain text
+/// The user's own words (words.json): written the right way however they were heard. Plain text
 /// replacement after the read, so it costs no time.
 enum Words {
     /// The shared dictionary.
@@ -69,7 +69,7 @@ enum Words {
     }()
 
     private static var json: [String: Any] { loaded.json }
-    /// Read again when words.json changes (a word learned from his edits counts at once).
+    /// Read again when words.json changes (a word learned from the user's edits counts at once).
     private static var loaded: (stamp: Date?, json: [String: Any], keep: NSRegularExpression?, rules: [(NSRegularExpression, String)]) = (nil, [:], nil, [])
     private static var generation = 0
     /// Changes whenever words.json is read again (Tidy's memo keys on it).

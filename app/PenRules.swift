@@ -1,5 +1,5 @@
-// The markup pen (17 November 2026; Andrii: "I can see the highlighting, but all of those are boxes. Would be nice to
-// be able to draw as well."), pure: a freehand stroke's points thinned while he draws, drawn as a Catmull-Rom curve
+// The markup pen (17 November 2026; the user: "I can see the highlighting, but all of those are boxes. Would be nice to
+// be able to draw as well."), pure: a freehand stroke's points thinned while the user draws, drawn as a Catmull-Rom curve
 // through them, its bounding box, and its line in the "Marks" text (the point count and the box, never the full list).
 // The mark itself is a PicMark with tool .pen (app/MarkupRules.swift); drawing in app/Markup.swift. Tests:
 // tests/pen_rules.swift.
@@ -19,7 +19,7 @@ enum PenRules {
     }
 
     /// The stroke as a smooth line: a uniform Catmull-Rom curve through every point, `steps` samples per segment.
-    /// The curve passes through each point he drew, so it never strays from the stroke; ends are held by repeating them.
+    /// The curve passes through each point the user drew, so it never strays from the stroke; ends are held by repeating them.
     static func smooth(_ pts: [CGPoint], steps: Int = 8) -> [CGPoint] {
         guard pts.count > 2, steps > 1 else { return pts }
         var out = [pts[0]]

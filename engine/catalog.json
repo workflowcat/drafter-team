@@ -6,9 +6,9 @@
   "cap_gb": "engine memory guard while this model is loaded",
   "p50_ms / p95_ms": "ms to the first whole word at a key",
   "words_shown / words_all": "words right from the caret, as Tab Tab Tab: at the keys its gate shows / at every key",
-  "kept_per_1k": "letters a Tab takes that are his next letters, per 1,000 typed",
-  "first_word_pct": "the first word is his next word, at every key",
-  "layer": "his trained layer: true = live's data/adapters; a path = that folder under data/ (data/layers/<name>, outside git); false = none",
+  "kept_per_1k": "letters a Tab takes that are the user's next letters, per 1,000 typed",
+  "first_word_pct": "the first word is the user's next word, at every key",
+  "layer": "the user's trained layer: true = live's data/adapters; a path = that folder under data/ (data/layers/<name>, outside git); false = none",
   "gate": "live = data/gate.json; a file under engine/defaults/ = fitted on this model's trial recording (bench/catalog_gates.py)"
  },
  "models": [

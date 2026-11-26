@@ -1,6 +1,6 @@
 """The command line (2026-10-21; ⌘K in Drafter's window, the floating panel from a lookup chip): one line - "забукай 30 хв з Савою завтра після обіду",
 "find a free hour on Thursday", "remind me to send the act on Friday", ";sig" - becomes up to three options, each one
-step he can run with Enter (nothing runs before that). Online: Claude Haiku reads the line (router.py); offline: the
+step the user can run with Enter (nothing runs before that). Online: Claude Haiku reads the line (router.py); offline: the
 same action triggers and the local model as the chips use. Snippets live in data/snippets.json ({";key": "text"})."""
 import json, re, time
 from datetime import datetime

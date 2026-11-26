@@ -1,6 +1,6 @@
-// Quick starts (2026-10-31, Andrii: "presets of starting new docs like doc.new or a quick google meet start"):
+// Quick starts (2026-10-31, the user: "presets of starting new docs like doc.new or a quick google meet start"):
 // ";doc" then Tab opens a new Google Doc in the browser, ";meet" starts a Google Meet, and so on; the trigger is
-// taken out of the field. Shared list: dictionary/presets.json; his own (same shape, checked first): data/presets.json.
+// taken out of the field. Shared list: dictionary/presets.json; the user's own (same shape, checked first): data/presets.json.
 // Opening a page is all it does: it sends nothing and creates nothing on its own.
 import AppKit
 

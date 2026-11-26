@@ -7,7 +7,7 @@ import Foundation
 
 // MARK: - name forms (entities)
 
-/// Other written forms of a name: "andrii" -> "андрій", "андрія"… Given folded, answered folded.
+/// Other written forms of a name: "taras" -> "тарас", "тараса"… Given folded, answered folded.
 protocol SearchNameForms {
     func otherForms(of folded: String) -> [String]
 }

@@ -92,7 +92,7 @@ enum TopicClusterRules {
     /// `untaggedBursts`: a burst joins two rows only when neither carries a person or project (the stream's topics,
     /// review 25 November 2026: a burst chained a tagged topic to unrelated rows typed next to it).
     /// `commonShare`: a word on more than that share of the rows (and on more than 8) links nothing, and a burst needs a
-    /// shared word (the stream's topics, 25 November 2026: on his rows, bursts and his everyday words chained 1,312 of
+    /// shared word (the stream's topics, 25 November 2026: on the user's rows, bursts and their everyday words chained 1,312 of
     /// 1,484 rows into one topic).
     static func cluster(_ items: [TopicInput], maxGapHours: Double = 36, untaggedBursts: Bool = false, commonShare: Double? = nil) -> [TopicCluster] {
         let rows = items.sorted { $0.at != $1.at ? $0.at > $1.at : $0.id < $1.id }

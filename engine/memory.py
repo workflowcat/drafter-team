@@ -1,11 +1,11 @@
-"""Phrase memory: Andrii's own sentences, so a phrase he has written before comes back in a few milliseconds, before
+"""Phrase memory: the user's own sentences, so a phrase the user has written before comes back in a few milliseconds, before
 (and instead of) the model.
 
     .venv/bin/python engine/memory.py build      # writes data/phrases.jsonl (local only, never in git)
     .venv/bin/python engine/memory.py try "можемо поговорити кор"
 
-Sources, all read-only and local: messages he sent in Beeper, what he typed to Claude in Claude
-Code / the Claude app (his prompts, not pasted text or messages from other sessions), and what he sent while Drafter was
+Sources, all read-only and local: messages the user sent in Beeper, what the user typed to Claude in Claude
+Code / the Claude app (their prompts, not pasted text or messages from other sessions), and what the user sent while Drafter was
 on (data/typed.jsonl). Nothing from skipped apps or password fields ever gets there.
 """
 import glob, json, os, re, subprocess, sys, threading, time
@@ -41,7 +41,7 @@ SKIP_PROMPT = re.compile(r"^(<|\[|Background \(from|Reply with|Caveat:|This sess
 
 
 def claude_prompts(days=60):
-    """His own typed prompts: user turns with plain text, from a person (userType external), not pasted walls."""
+    """The user's own typed prompts: user turns with plain text, from a person (userType external), not pasted walls."""
     since = time.time() - days * 86400
     files = [f for f in glob.glob(str(Path.home() / ".claude/projects/*/*.jsonl")) if os.path.getmtime(f) > since]
     out = []
@@ -88,7 +88,7 @@ CORPUS = DATA / "corpus.jsonl"
 
 
 def from_corpus(sources):
-    """His lines from data/corpus.jsonl in these sources, plus what he sent after it was built (data/typed.jsonl);
+    """The user's lines from data/corpus.jsonl in these sources, plus what the user sent after it was built (data/typed.jsonl);
     None when there is no corpus yet (the old sources then)."""
     try:
         built = CORPUS.stat().st_mtime
@@ -132,7 +132,7 @@ def vote(conts, max_words=3, agree=0.75):
 
 
 class Memory:
-    """All his text as one string; a query finds the same words he has used before and returns what followed."""
+    """All the user's text as one string; a query finds the same words the user has used before and returns what followed."""
 
     def __init__(self):
         self.lock = threading.Lock()
@@ -151,7 +151,7 @@ class Memory:
                 except Exception: pass
             try: texts += [json.loads(l)["text"] for l in (DATA / "typed.jsonl").read_text().splitlines()[-2000:] if l.strip()]
             except Exception: pass
-        texts = [re.sub(r"[ \t]{2,}", " ", t) for t in texts]   # his double spaces are slips, not style
+        texts = [re.sub(r"[ \t]{2,}", " ", t) for t in texts]   # the user's double spaces are slips, not style
         with self.lock:
             self.text = "\n" + "\n".join(texts) + "\n"
             self.low = self.text.lower()

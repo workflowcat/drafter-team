@@ -135,7 +135,7 @@ enum JournalSearch {
 // MARK: - the rows as documents
 
 extension TapeItem {
-    /// What the search index holds for this row: his change first (it is what the row shows), the stored text after it.
+    /// What the search index holds for this row: the user's change first (it is what the row shows), the stored text after it.
     /// Wire round: what the detector finds in it marks the document (has:date..., mentions:); a call is read in its
     /// summary and the start of what was said.
     var searchDoc: SearchDoc {

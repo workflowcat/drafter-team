@@ -13,17 +13,17 @@ mkdir -p data/review && { .venv/bin/python -B scripts/journal_compare.py || echo
 # Call audio older than 14 days with a transcript beside it moves to the Trash; text and notes stay
 .venv/bin/python scripts/prune_audio.py
 # Includes the optional daily Contacts refresh; missing/slow GAM keeps its cached snapshot.
-# his writing as one dated corpus (typed, takes, Claude Code and Codex prompts, Beeper): training lines,
+# the user's writing as one dated corpus (typed, takes, Claude Code and Codex prompts, Beeper): training lines,
 # phrase memory and the word finisher read it (bench/corpus.py)
 .venv/bin/python bench/corpus.py > /dev/null
-# his working sources into local stores, read-only and incremental (engine/sources.py): mail, the whole Beeper history,
+# the user's working sources into local stores, read-only and incremental (engine/sources.py): mail, the whole Beeper history,
 # Docs and Drive; whom.py and the attach finder read them. Never style or training input.
 .venv/bin/python engine/sources.py run
 .venv/bin/python engine/know.py build
-# the names reference from the pack, the entity store and his lines (data/names.json), then its derived files:
+# the names reference from the pack, the entity store and the user's lines (data/names.json), then its derived files:
 # known-words.txt for autocorrect, words.json terms order and mishearings for voice (engine/names.py)
 .venv/bin/python engine/names.py build
-# the ranked typo fix: word pairs he writes (data/typo-bigrams.tsv) and its gate refit on his offers (data/typo-gate.json)
+# the ranked typo fix: word pairs the user writes (data/typo-bigrams.tsv) and its gate refit on their offers (data/typo-gate.json)
 .venv/bin/python -B engine/typos.py > /dev/null
 .venv/bin/python bench/review.py "$y" > /dev/null
 .venv/bin/python bench/retrain.py

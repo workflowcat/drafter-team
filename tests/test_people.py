@@ -1,5 +1,5 @@
-"""Per-person memory (engine/people.py): which chat is on screen from fingerprints of its lines, his older lines for
-the prompt, and lines he sends joining that chat at once."""
+"""Per-person memory (engine/people.py): which chat is on screen from fingerprints of its lines, the user's older lines for
+the prompt, and lines the user sends joining that chat at once."""
 import sys, tempfile, unittest
 from pathlib import Path
 

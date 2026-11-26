@@ -61,7 +61,7 @@ the replay.
 Your own lines, takes, notes and chats live in `data/` and never go into code, tests, docs or commits. Tests use
 made-up lines. Report numbers, never quotes.
 
-`tests/test_no_private.py` checks every published file for home folder paths and real email addresses. It also
+`tests/test_no_private.py` checks every tracked file for home folder paths and real email addresses. It also
 checks names from a deny-list you keep outside git (`data/public-deny.txt`, or the file named by `DRAFTER_DENY`).
 Use `@example.com` addresses in examples. Use made-up names such as Marta, Sava, Mila or Alex.
 

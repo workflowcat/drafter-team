@@ -147,7 +147,7 @@ class PeopleWho(unittest.TestCase):
                 {"isSender": False, "senderName": "Myroslava Kvitka"}]
         people.note_who(c, hist, ("Myroslava Kvitka", False))
         self.assertEqual(c["who"], ["Myroslava Kvitka"]); self.assertEqual(c["title"], "Myroslava Kvitka"); self.assertNotIn("group", c)
-        people.note_who(c, [{"isSender": True}])                         # only his lines: the names stay
+        people.note_who(c, [{"isSender": True}])                         # only the user's lines: the names stay
         self.assertEqual(c["who"], ["Myroslava Kvitka"])
         people.note_who(c, [{"isSender": False, "senderName": "A B"}, {"isSender": False, "senderName": "C D"}])
         self.assertTrue(c["group"])

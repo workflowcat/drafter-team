@@ -194,7 +194,7 @@ final class Engine {
 }
 
 /// How much memory the Mac has free, as macOS itself counts it (kern.memorystatus_level, %). Under `low` a long
-/// reading puts the text model to sleep (2026-11-01, Andrii: "not to overload the Mac").
+/// reading puts the text model to sleep (2026-11-01, the user: "not to overload the Mac").
 enum Budget {
     static let low = 35
     /// Readings that want the text model asleep, and one request at a time to the engine: what the engine should

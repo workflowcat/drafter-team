@@ -1,10 +1,10 @@
-"""Model catalog round (2026-11-15): a decision gate for each catalog model without his layer, fitted on that model's
+"""Model catalog round (2026-11-15): a decision gate for each catalog model without the user's layer, fitted on that model's
 own trial recording (the big round, held-137, 24 tokens a key), the same fit as `bench/gate.py --save`. CPU only: no
 model is loaded. Numbers only go out (the weights), as the shipped default gate.
 
     .venv/bin/python -B bench/catalog_gates.py [--root <checkout with data/>] [--out engine/defaults/gates]
     .venv/bin/python -B bench/catalog_gates.py --rec qwen3-4b-layer=big-q4b-lr5-s10.jsonl --out bench/out/q4b
-        (--rec id=recording, repeatable: fit only these, e.g. a model with his layer; q4b round 2026-11-16)
+        (--rec id=recording, repeatable: fit only these, e.g. a model with the user's layer; q4b round 2026-11-16)
 
 The live model keeps data/gate.json; these are for the others (engine/catalog.json "gate")."""
 import json, sys

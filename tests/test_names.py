@@ -175,7 +175,7 @@ class Derived(unittest.TestCase):
         d = json.loads((self.data / 'words.json').read_text())
         self.assertEqual(set(d), {'about', 'updated', 'terms', 'heard', 'keep', 'words', 'loose_heard'})   # the voice engine's shape
         self.assertNotIn('Zephyrine', d['terms'])
-        self.assertIn('Larkspur Lab', d['terms'])                   # his spelling is a term
+        self.assertIn('Larkspur Lab', d['terms'])                   # the user's spelling is a term
         self.assertEqual(d['heard'].get('Larkspur Labs'), 'Larkspur Lab')
         self.assertEqual(d['heard'].get('brambel'), 'Bramblix')
         self.assertEqual(d['terms'][0], 'Bramblix')                  # most used first

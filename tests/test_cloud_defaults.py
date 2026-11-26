@@ -32,8 +32,8 @@ class Migrate(unittest.TestCase):
         wrote = cloud.migrate(self.file)
         st = json.loads(self.file.read_text())
         self.assertEqual(set(wrote), set(cloud.DEFAULTS) - {"proofread"} | {"connect"})
-        self.assertEqual(st["connect"], {"provider": "cli"})                 # he stays connected through the CLI
-        self.assertIs(st["proofread"], False)                               # his own choice stays
+        self.assertEqual(st["connect"], {"provider": "cli"})                 # the user stays connected through the CLI
+        self.assertIs(st["proofread"], False)                               # the user's own choice stays
         self.assertEqual(st["cloudDefaults"], "off")
         self.assertEqual({k: st[k] for k in before}, before)
         effective_after = {f: cloud.allowed(f, st) for f in effective_before}

@@ -19,13 +19,13 @@ extension Talk {
         if live { flushTimer = Timer.scheduledTimer(withTimeInterval: 0.3, repeats: true) { [weak self] _ in self?.liveStep() } }
     }
 
-    /// A key of his own during a take (from the event tap): voice waits until his hands stop, then goes on where he is.
+    /// A key of the user's own during a take (from the event tap): voice waits until their hands stop, then goes on where the user is.
     func keyDuringTake() {
         guard live else { return }
         lastHand = Date(); handsMoved()
     }
 
-    /// His key or click: the run ends here; the next words start a new one at the caret as it is then.
+    /// The user's key or click: the run ends here; the next words start a new one at the caret as it is then.
     private func handsMoved() {
         editRev = Keys.shared.editRevision
         if !run.isEmpty { doneBefore += run }
@@ -94,7 +94,7 @@ extension Talk {
         log("live typing: left the field (\(why)), the rest waits for the end")
     }
 
-    /// Settled words not yet in the field go in now, unless his hands are busy or he left the field.
+    /// Settled words not yet in the field go in now, unless the user's hands are busy or the user left the field.
     private func liveStep() {
         guard live, !lost, state == .listening, !sending else { return }
         if Keys.shared.editRevision != editRev { lastHand = Date(); handsMoved(); return }   // a click moves the caret too
@@ -129,7 +129,7 @@ extension Talk {
 
     /// The take (or Enter piece) is over: the final reading goes in. What is in the field stays where it already says
     /// the same; what changed is fixed in place when it is small (or only marks), else the field stays as typed and the
-    /// final text goes to the clipboard. Returns how it went in (a paste holds his clipboard for a moment).
+    /// final text goes to the clipboard. Returns how it went in (a paste holds the user's clipboard for a moment).
     @discardableResult
     func liveFinish(_ final: String, tail: String, piece: Bool) -> Landed {
         flushTimer?.invalidate(); flushTimer = nil
@@ -161,13 +161,13 @@ extension Talk {
             runEl = nil
             report("\(how) \(text.count) chars"); return how == "paste" ? .pasted : .typed
         }
-        // the run must still be the end of the field: the same field with no key or click of his since it started, or
+        // the run must still be the end of the field: the same field with no key or click of the user's since it started, or
         // the field read back ending with it (Chromium's read can differ in spaces and breaks, 13-14 November)
         let s = Focus.spot(skip: []).0
         let front = NSWorkspace.shared.frontmostApplication?.processIdentifier
         let same = runEl != nil && front == runPid && Keys.shared.editRevision == editRev && Focus.focused().map { CFEqual($0, runEl!) } == true
         let reads = s.map { $0.app.processIdentifier == runPid && Talk.plain($0.before).hasSuffix(Talk.plain(run)) } ?? false
-        if runEl == nil, let s, reads { runBefore = s.before.last }   // a new run after his key: its first words go here
+        if runEl == nil, let s, reads { runBefore = s.before.last }   // a new run after the user's key: its first words go here
         guard same || reads, !testing || (s?.value.contains("⟦drafter-test⟧") ?? false),
               let want = runTarget(final) else {
             History.copy(final); keptNote = true; runEl = nil

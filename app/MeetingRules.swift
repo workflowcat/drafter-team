@@ -1,8 +1,8 @@
-// Meeting notes from the app (17 November 2026, Andrii: "need a better way to start meeting notes from the app"; the
+// Meeting notes from the app (17 November 2026, the user: "need a better way to start meeting notes from the app"; the
 // last call recording before that started on 3 November). Pure: no AppKit, no EventKit. Three ways in, one behaviour
 // (app/MeetingNotes.swift): the menu bar's first item, the `;meet` / `;notes` quick start in the one `;` picker, and the
 // strip's offer 1 min before, or at the start of, a calendar event with a video link. With a call app holding the
-// microphone the call is recorded (both sides); without one it is an in-person note (his microphone only).
+// microphone the call is recorded (both sides); without one it is an in-person note (the user's microphone only).
 // Test: tests/meeting_rules.swift.
 import Foundation
 
@@ -13,10 +13,10 @@ struct MeetEvent: Equatable {
     let start: Date
     let end: Date
     var allDay = false
-    var declined = false      // he said no to it
+    var declined = false      // the user said no to it
     var canceled = false
     var video = false         // a Meet, Zoom, Teams (or other call) link in its url, place or notes
-    var others = false        // someone besides him is invited
+    var others = false        // someone besides the user is invited
 }
 
 enum MeetingRules {
@@ -30,7 +30,7 @@ enum MeetingRules {
     static let offerSeconds = 60.0
 
     /// An event worth notes at all: timed, not declined or canceled, and a meeting (a video link or other people), not a
-    /// block of focus time (2026-11-01, Andrii: "pulling too much from my other tools").
+    /// block of focus time (2026-11-01, the user: "pulling too much from my other tools").
     static func meeting(_ e: MeetEvent) -> Bool {
         !e.allDay && !e.declined && !e.canceled && (e.video || e.others) && e.end > e.start
     }
@@ -63,7 +63,7 @@ enum MeetingRules {
         return (word.count >= most / 2 ? word : cut).trimmingCharacters(in: CharacterSet(charactersIn: " ,.;:-·")) + "…"
     }
 
-    /// "14:00" in his own calendar and zone.
+    /// "14:00" in the user's own calendar and zone.
     static func clock(_ d: Date, calendar: Calendar = .current) -> String {
         let c = calendar.dateComponents([.hour, .minute], from: d)
         return String(format: "%02d:%02d", c.hour ?? 0, c.minute ?? 0)
@@ -95,7 +95,7 @@ enum MeetingRules {
     }
 
     enum Mode: Equatable { case call, inPerson }
-    /// A call app holds the microphone (and offers are on there): the call, both sides; else in person, his mic only.
+    /// A call app holds the microphone (and offers are on there): the call, both sides; else in person, the user's mic only.
     static func mode(callAppHoldsMic: Bool) -> Mode { callAppHoldsMic ? .call : .inPerson }
 
     /// What an in-person recording is labelled by, in its meta and on its page.

@@ -1,5 +1,5 @@
 // The two typo fixes as pure functions over closures, so the app, the bench and the tests run the same code:
-// `system` is the fix of 31 October (macOS's correction or his nearest frequent word), `ranked` the one of 15 November.
+// `system` is the fix of 31 October (macOS's correction or the user's nearest frequent word), `ranked` the one of 15 November.
 import Foundation
 
 enum TypoDecide {
@@ -33,7 +33,7 @@ enum TypoDecide {
         return CorrectionRules.distance(typo, word) <= maxD
     }
 
-    /// The ranked fix for one word at Space. nil = he typed a word, or nothing fits. `lazy`: his own words first, and
+    /// The ranked fix for one word at Space. nil = the user typed a word, or nothing fits. `lazy`: the user's own words first, and
     /// macOS's guesses (5-13 ms a call on this Mac) only when they leave the gate short of sure.
     static func ranked(_ core: String, prev: String, appKind: String, mode: String, known: (String) -> Bool,
                        spell: (String, String) -> Bool, guesses: (String, String) -> [String], tables: Tables, lazy: Bool = true) -> Decision? {

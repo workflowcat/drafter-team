@@ -3,7 +3,7 @@
 // Step 1, the `;` card for any entity: `;лан` shows one tape row at the caret (kind glyph, name, what Tab puts in).
 // Tab puts the reference for this app (Obsidian: [[path|name]]; mail: the name, → for "Name <address>"; elsewhere the
 // name), ⇧Tab the plain name, ← → the other forms (address, Telegram, link), ↓ ↑ the next entity, a digit fixes the
-// kind (1 person · 2 org · 3 project · 4 tool · 5 doc · 6 place · 0 not a thing), Esc leaves what he typed.
+// kind (1 person · 2 org · 3 project · 4 tool · 5 doc · 6 place · 0 not a thing), Esc leaves what the user typed.
 // `;ctx lan`: the "context for" brief (the entity and its related ones). Snippet keys keep their prefixes.
 //
 // Step 2, context for agents, only in AI apps (AppKind "ai") and coding agents (RefRules.agent): at a word end the
@@ -12,10 +12,10 @@
 // message (typed or dictated) to a tray and opens the preview (ContextPanel): the exact text that will go in, ← →
 // level (name, one line, full), ↑ ↓ entity, ⌫ remove, ⏎ put the block at the end of the message, ⌘C copy, Esc keeps
 // the tray; nothing goes in without the preview. Backspace right after takes the block (or a card's
-// insert) out again. Nothing is sent: the block is text in his box until he sends it.
+// insert) out again. Nothing is sent: the block is text in the user's box until the user sends it.
 //
 // Files (local, untracked): data/entities.json (read), data/entity-overrides.json (kind fixes), data/entity-picks.json
-// (which one of two, per place, 30 days), data/context-levels.json (his last level per entity, 30 days).
+// (which one of two, per place, 30 days), data/context-levels.json (the user's last level per entity, 30 days).
 import AppKit
 import Carbon
 
@@ -52,7 +52,7 @@ enum Entities {
     private static var _fixes: [String: String] = [:]
     private static var kindFixes: [String: String] { fixLock.lock(); defer { fixLock.unlock() }; return _fixes }
 
-    /// The one-key kind fix: data/entity-overrides.json (the build reads it; his answer wins on every rebuild).
+    /// The one-key kind fix: data/entity-overrides.json (the build reads it; the user's answer wins on every rebuild).
     static func setKind(_ id: String, key: Character) -> String? {
         guard let kind = EntityRules.kindKeys[key] else { return nil }
         let url = Home.data.appendingPathComponent("entity-overrides.json")
@@ -67,7 +67,7 @@ enum Entities {
         return kind
     }
 
-    // MARK: where he is
+    // MARK: where the user is
 
     static func kind(_ s: Spot) -> String {
         AppKind.of(s.app.bundleIdentifier ?? "", title: s.title, ai: Keys.aiApps, chats: Keys.chatApps, browsers: Keys.browsers, aiTitle: Keys.aiTitle)
@@ -165,7 +165,7 @@ enum Entities {
             if let i = tray.firstIndex(where: { $0.id == r.id }) { tray[i].mentions += 1 }
             return
         }
-        // a lone first name or surname that matches one record: still a mark, since he sees the preview before anything goes in
+        // a lone first name or surname that matches one record: still a mark, since the user sees the preview before anything goes in
         pending.append(Pending(index: m.index, id: r.id, text: m.text, candidates: m.candidates.map { st.records[$0].id }, resolved: m.resolved, typed: true))
         EntityMark.shared.show(m, in: s, ambiguous: !m.resolved)
     }
@@ -215,7 +215,7 @@ enum Entities {
         tray.append(TrayItem(id: id, level: level(for: id) ?? defaultLevel(fieldDest.isEmpty ? "ai" : fieldDest), mentions: mentions))
     }
 
-    /// He picked one of two for this name here: remembered for the place (30 days).
+    /// The user picked one of two for this name here: remembered for the place (30 days).
     static func picked(_ id: String, name: String, spot: Spot) {
         var all = readJSON("entity-picks.json")
         all[place(spot) + "|" + EntityRules.fold(name)] = ["id": id, "at": Date().timeIntervalSince1970]
@@ -261,7 +261,7 @@ enum Entities {
         log("context block put in: \(n) entities, \(b.count) chars")
     }
 
-    /// Enter in a field with a tray he never put in: the tray goes, the log counts it (proposal 5.5).
+    /// Enter in a field with a tray the user never put in: the tray goes, the log counts it (proposal 5.5).
     static func sent() {
         if !tray.isEmpty { log("context tray dropped at send: \(tray.count)") }
         tray = []; pending = []; EntityMark.shared.hide()
@@ -291,7 +291,7 @@ enum Entities {
     }
     static func doorHint(_ query: String) -> String? { door(query).map { "⏎ puts in, ⌘C copies " + $0.what } }
 
-    /// A door's text, after the Quick panel closed: into the field he was in, else onto the clipboard.
+    /// A door's text, after the Quick panel closed: into the field the user was in, else onto the clipboard.
     static func doorTake(_ text: String, what: String, put: Bool) {
         let st = Drafter.shared.settings
         if put, !IsSecureEventInputEnabled(), let s = Focus.spot(skip: st.skip).0 {
@@ -304,7 +304,7 @@ enum Entities {
         log("context door: copied, \(text.count) chars")
     }
 
-    /// His correction from a card ("Not related", "Not this one", "Same", "Not the same"): data/entity-fixes.json,
+    /// The user's correction from a card ("Not related", "Not this one", "Same", "Not the same"): data/entity-fixes.json,
     /// applied by the next build (engine/entities.py). No card calls it yet.
     @discardableResult
     static func fix(_ what: String, _ a: String, _ b: String, why: String = "") -> Bool {

@@ -1,4 +1,4 @@
-// Scrolling capture: how frames of one screen region, taken while he scrolls, join into one tall picture
+// Scrolling capture: how frames of one screen region, taken while the user scrolls, join into one tall picture
 // (17 November 2026, like CleanShot X and Shottr; the capture: app/ScrollShot.swift). Each frame becomes one row
 // signature per pixel row; two frames are compared by rows. A fixed header and footer (rows equal in place) stay
 // once; the part between them moved up by `shift` rows, and only the new rows at its foot are added.
@@ -10,8 +10,8 @@ enum StitchRules {
     /// `top` and `bottom` rows are fixed (a sticky header or footer) and are not stitched again.
     struct Match: Equatable { var shift: Int; var top: Int; var bottom: Int }
 
-    /// The least overlap (rows of the moving part both frames share) that counts as a match: he scrolled less than a
-    /// frame; more and the frames cannot be joined (he scrolled too fast).
+    /// The least overlap (rows of the moving part both frames share) that counts as a match: the user scrolled less than a
+    /// frame; more and the frames cannot be joined (the user scrolled too fast).
     static let minOverlap = 24
     /// The share of compared rows that must be equal at the chosen shift.
     static let minRatio = 0.92
@@ -32,7 +32,7 @@ enum StitchRules {
         return out
     }
 
-    /// The next frame against the last kept one (same size). nil: no shift fits (he scrolled up, or too far at once):
+    /// The next frame against the last kept one (same size). nil: no shift fits (the user scrolled up, or too far at once):
     /// the frame is skipped and the last kept one stays.
     static func match(_ prev: [UInt64], _ next: [UInt64]) -> Match? {
         let h = prev.count

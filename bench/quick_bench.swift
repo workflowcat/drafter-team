@@ -1,6 +1,6 @@
 // swiftc -O -parse-as-library app/QuickRead.swift app/DraftCaptureRules.swift app/SearchRules.swift app/SearchIndex.swift app/SearchAdapters.swift app/JournalEngine.swift app/QuickSearch.swift app/Entry.swift app/PictureLookRules.swift app/ClipRules.swift app/QuickRules.swift app/Recording.swift app/Transcript.swift app/CaptureRules.swift bench/quick_bench.swift -o app/build/quick-bench && app/build/quick-bench
 // The speed round (15 November 2026): what opening the Quick panel or the window and typing costs, on made-up history
-// files of his sizes (typed 3.1 MB, takes 1.7 MB, clipboard 0.7 MB, drafts 0.26 MB) in a temporary folder. Never reads
+// files of the user's sizes (typed 3.1 MB, takes 1.7 MB, clipboard 0.7 MB, drafts 0.26 MB) in a temporary folder. Never reads
 // data/. Prints numbers only. Compares the whole-file reads (before) with the followed reads (after).
 import Foundation
 
@@ -37,7 +37,7 @@ struct QuickBench {
             try! s.write(to: u, atomically: true, encoding: .utf8)
             return u
         }
-        // sizes as his files on 15 November (rows, average bytes)
+        // sizes as the user's files on 15 November (rows, average bytes)
         let typed = write("typed.jsonl", 3450) { _, t in ["t": t, "text": text(bytes: 50 + rng.int(1500)), "app": apps[rng.int(apps.count)]] }
         let drafts = write("drafts.jsonl", 1228) { _, t in ["t": t, "text": text(bytes: 40 + rng.int(250)), "app": apps[rng.int(apps.count)], "t0": t - 30] }
         let takes = write("takes.jsonl", 2972) { _, t in ["t": t, "text": text(bytes: 40 + rng.int(900)), "app": apps[rng.int(apps.count)], "audio": "/nowhere/\(Int(t)).wav"] }

@@ -117,7 +117,7 @@ struct HelpView: View {
 }
 
 /// One saved value: it saves on ⏎ or when the field is left, and the last change can be undone (no Save button).
-/// One phrase he types often: its text, how often, a key to make it a shortcut, and Hide.
+/// One phrase the user types often: its text, how often, a key to make it a shortcut, and Hide.
 struct IdeaRow: View {
     let idea: Snippets.Idea
     let add: (String) -> Void

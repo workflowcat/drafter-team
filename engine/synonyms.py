@@ -6,11 +6,11 @@ models/thesaurus/ (not in git): th_en_US_v2.dat (WordNet, Princeton licence) and
 Derkach's dictionary of synonyms; GPL/LGPL/MPL). A file that is missing means no synonyms in that language.
 
 The Ukrainian file lists base forms. A selected form ("швидкого") is matched to its base form by a small table of
-endings, and each synonym gets the same ending back when the result is a word he has written himself (data/mywords.txt)
+endings, and each synonym gets the same ending back when the result is a word the user has written themselves (data/mywords.txt)
 or the class is regular (adjectives in -ий/-ій); otherwise the synonym comes in its base form and says so (`form`).
 English: a few regular endings (-s, -es, -ies, -ed, -ing, -ly) the same way.
 
-Rank: the word he uses more first (data/myword-counts.json), then the thesaurus order; marked old, regional or
+Rank: the word the user uses more first (data/myword-counts.json), then the thesaurus order; marked old, regional or
 "compare" words go last; antonyms never show. An optional `score(before, candidate, after) -> float` callback (the warm
 local model) reranks the first candidates; the server passes it only when it is cheap.
 
@@ -36,7 +36,7 @@ LOW = ("заст", "обл", "поет", "рідко", "рідше", "пор", "
 DROP = ("antonym",)
 
 # Ukrainian endings: (ending of the form, ending of the base form). Longer first; tried only when the form itself is
-# not a headword. Adjectives (-ий, -ій) are regular, so their synonyms take the ending even when he never wrote it.
+# not a headword. Adjectives (-ий, -ій) are regular, so their synonyms take the ending even when the user never wrote it.
 UK_ENDINGS = [
     # adjectives, hard
     ("ого", "ий"), ("ому", "ий"), ("ими", "ий"), ("им", "ий"), ("ім", "ий"), ("ою", "ий"), ("ій", "ий"), ("их", "ий"),
@@ -131,11 +131,11 @@ def lookup(lang, word, depth=0):
     return out
 
 
-# ---------- his words ----------
+# ---------- the user's words ----------
 
 def vocab():
-    """His words: data/mywords.txt (3+ times) as the set, data/myword-counts.json (5+ times) as counts. Re-read when
-    the export changes (the engine rewrites them as he writes)."""
+    """The user's words: data/mywords.txt (3+ times) as the set, data/myword-counts.json (5+ times) as counts. Re-read when
+    the export changes (the engine rewrites them as the user writes)."""
     f, c = DATA / "mywords.txt", DATA / "myword-counts.json"
     try: mt = (f.stat().st_mtime if f.exists() else 0, c.stat().st_mtime if c.exists() else 0)
     except OSError: mt = (0, 0)
@@ -182,7 +182,7 @@ def bases(lang, word):
 
 
 def inflect(lang, syn, fe, be, words):
-    """syn (a base form) in the selected word's form -> (text, form): "matched" when he wrote that form himself,
+    """syn (a base form) in the selected word's form -> (text, form): "matched" when the user wrote that form themselves,
     "guessed" for a regular class, else (syn, "base")."""
     if not fe and not be: return syn, "same"
     if " " in syn: return syn, "base"
@@ -192,7 +192,7 @@ def inflect(lang, syn, fe, be, words):
     else:
         out = ""
     # another class ("говорю" <- -ити, "розмовляти" is -яти): cut as many letters as the base ending or one fewer, add
-    # the form's ending, and keep it only when he has written that word himself
+    # the form's ending, and keep it only when the user has written that word themselves
     for cut in (len(be) - 1, len(be)):
         if cut < 1 or len(syn) - cut < 3: continue
         guess = syn[: len(syn) - cut] + fe
@@ -247,7 +247,7 @@ def handle(req, score=None):
     lead = raw[: len(raw) - len(raw.lstrip())]
     tail = raw[len(raw.rstrip()):]
     core = raw.strip()
-    # trailing punctuation stays his: "швидко," -> the synonym gets the comma back
+    # trailing punctuation stays the user's: "швидко," -> the synonym gets the comma back
     m = re.search(r"[.,;:!?…)»\"]+$", core)
     punct = m.group(0) if m else ""
     sel = core[: len(core) - len(punct)] if punct else core

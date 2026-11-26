@@ -1,4 +1,4 @@
-"""Training lines with recency weighting: his newer lines are sampled more often (weights round, item A).
+"""Training lines with recency weighting: the user's newer lines are sampled more often (weights round, item A).
 
 The base is bench/make_train.py `from_corpus`: per-source weights, nothing dated at or after the held-out cut, no held
 line, the same valid split (seed 3, a twentieth, at least 60). On top, each line's weight is multiplied by

@@ -1,53 +1,53 @@
 # Building with agents
 
-Most of Drafter was built by coding agents, with one lead agent that briefs, checks, merges and releases. This page
-describes that way of working and two mistakes worth learning from.
+Most of Drafter was built by coding agents, with one lead that briefs, checks and merges. This page describes that
+way of working and two mistakes worth learning from.
 
 ## Tracks and roles
 
-Six saved roles in `.claude/agents/` each own one track and its files.
+Four saved roles in `.claude/agents/` each own one track and its files.
 
 | Role | Track | Owns, for example |
 |---|---|---|
 | `drafter-typing` | Grey text speed and accuracy | `engine/model.py`, `engine/gatecore.py`, `engine/words.py`, `bench/`, `app/Keys.swift` |
 | `drafter-voice` | Takes, the strip's logic, calls, transcripts | `engine/voice.py`, `app/Voice.swift`, `app/Call.swift` |
 | `drafter-look` | Window, chips, strip drawing, marks, previews | `app/Look.swift`, `app/Window.swift`, `app/Preview.swift` |
-| `drafter-release` | Setup, config split, licences, private-data scrub | `scripts/`, `drafter.local.example.json` |
-| `drafter-efficiency` | Memory, CPU, battery, startup time | Resource use across all three processes |
 | `drafter-quality` | Tests, the replay, review findings, dead code | `tests/`, `bench/review.py`, `bench/week.py` |
 
 Each role file states a goal that never changes. For typing it is: first grey text sooner, and the first word right
 more often. Every role file ends with the same rules for all builders.
 
-## Worktrees and who builds
+## Branches and who builds
 
-- Each builder works in its own git worktree, `.worktrees/<name>`, on a branch `opus/<name>` cut from main.
-- Builders never edit the main checkout, because the running app is built from it.
-- Builders never run `app/build.sh` and never start, stop or restart the app or its engines.
-- **The lead builds and releases.** Builders make small commits. They do not push or merge.
+- Each builder works on its own branch cut from main. When several run at once, each gets its own git worktree,
+  `.worktrees/<name>`.
+- Builders never run `app/build.sh` unless asked, and never start, stop or restart the app or its engines, because
+  that replaces the app the person is using.
+- Builders make small commits, push their branch to `origin` and open a pull request. Nobody force pushes.
+- **A person merges.** Whoever merges builds from main, restarts the app and does the live checks.
 
-This keeps one person (or agent) responsible for what runs on the Mac. A builder cannot break the live app.
+This keeps one person responsible for what runs on each Mac. A builder cannot break the live app.
 
 ## How a round runs
 
 ```mermaid
 flowchart LR
     A[brief] --> B[build in a worktree]
-    B --> C[round notes]
+    B --> C[pull request notes]
     C --> D[review by another model]
     D --> E[verify each finding]
     E --> F[fix and test]
-    F --> G[lead merges, builds, releases]
+    F --> G[pull request merged, then built]
 ```
 
 1. **Brief.** The lead writes the goal, the files in scope, what is already rejected, and the numbers to report.
 2. **Build.** The builder works in its worktree and runs the whole-app typecheck and each test file.
-3. **Notes.** The builder writes round notes: what changed, what was measured, what was only read from code, and
+3. **Notes.** The builder writes notes in the pull request: what changed, what was measured, what was only read from code, and
    the manual check to do after a rebuild. It says plainly what it did not verify.
 4. **Review.** A different model reads the round's commits and lists findings.
 5. **Verify.** Each finding is checked against the code before anyone fixes it. The verdict is REAL, NOT REAL, or
    REAL BUT DIFFERENT. A real finding gets a failing test first, where one can be written.
-6. **Merge.** The lead merges, builds from the main checkout, restarts the app and does the live checks.
+6. **Merge.** A person merges the pull request, builds from main, restarts the app and does the live checks.
 
 ## Measure first
 
@@ -60,7 +60,7 @@ A typing change is kept only with numbers before and after, on the same held-out
 
 All typing benches score through one replay, `bench/measure.py`. Fitting uses the earlier half of the held-out
 lines, by date, and the score uses the later half. Before this rule, a change could look good on the lines it
-was tuned on. Settings that a bench cannot judge are listed as "believed, not measured" in the round notes.
+was tuned on. Settings that a bench cannot judge are listed as "believed, not measured" in the pull request.
 
 Some ideas lost on numbers and were dropped: wider phrase memory, a bigger model, a layer trained on every source.
 [Training](training.md) lists them.

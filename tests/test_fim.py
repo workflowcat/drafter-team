@@ -57,7 +57,7 @@ class Shape(unittest.TestCase):
         self.assertEqual(fim.shape(t, r, " park.", stop=.3), ("", "none"))
 
     def test_half_word_ignores_the_first_step(self):
-        # he is spelling a word: the first step re-spells it, its rest p does not mean "nothing missing"
+        # the user is spelling a word: the first step re-spells it, its rest p does not mean "nothing missing"
         t, r = toks([("o", .9, .5), (" the", .8, .02), (" park", .7, .9)])
         self.assertEqual(fim.shape(t, r, " park.", heal=" t", stop=.3)[0], "o the")
 
@@ -95,7 +95,7 @@ class Prompt(unittest.TestCase):
             t = self.prompt.tail("we walked", "Notes", after=" park.\nnext line")
             self.assertTrue(t.endswith("Після курсора: park. / next line\nwe walked"), t)
             s = self.prompt.tail("", "Notes", after=" park.\nnext line")
-            self.assertTrue(t.startswith(s))     # the part that stays put while he types in the gap holds it
+            self.assertTrue(t.startswith(s))     # the part that stays put while the user types in the gap holds it
         finally:
             self.prompt.MID_FORM = old
 

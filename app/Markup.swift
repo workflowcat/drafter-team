@@ -4,7 +4,7 @@
 // ⌘Z and ⌘⇧Z undo and redo, ↵ accepts, esc goes back. Our own small layer (no dependency; the options weighed in
 // docs/rounds/2026-11-14-quick.md). The model is MarkupRules.swift; this file draws marks onto a picture (full size
 // on accept, view size while editing) and holds the editor.
-// Look round (15 November 2026; Andrii: "a nicer drawing experience and a better toolbar"): after a region capture the
+// Look round (15 November 2026; the user: "a nicer drawing experience and a better toolbar"): after a region capture the
 // marks go on in place - the picture stays where it was on the screen, the rest dimmed, the markup pill attached under
 // it (ShotRules.attach; key and strip round: no room under it = the screen's bottom edge, never above the picture).
 // Window and screen captures, and ⌘E from the journal, use the editor panel, the same pill at its foot. Five colours
@@ -12,7 +12,7 @@
 // then a Gaussian over them: smooth, and the text under it cannot be read back). A click on a mark selects it, a drag
 // moves it, ⌫ deletes it; undo covers all of it. ⌘N (or +) ends the markup and dims the screen for another picture of
 // the same hand-off.
-// Like the capture, the panel is non-activating and never key: his app keeps the caret, keys come through the event
+// Like the capture, the panel is non-activating and never key: the user's app keeps the caret, keys come through the event
 // tap, the mouse comes here.
 import AppKit
 import CoreImage
@@ -102,7 +102,7 @@ enum MarkupDraw {
         c.setStroke(); p.lineWidth = max(1, lw * 0.18); p.stroke()
     }
 
-    /// A freehand stroke: a smooth curve through his points (PenRules.smooth), round ends and joins, the arrow's shadow.
+    /// A freehand stroke: a smooth curve through the user's points (PenRules.smooth), round ends and joins, the arrow's shadow.
     static func pen(_ pts: [CGPoint], width lw: CGFloat, color c: NSColor) {
         let line = PenRules.smooth(pts)
         guard let f = line.first else { return }

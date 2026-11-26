@@ -1,4 +1,4 @@
-"""Engine memory round (2026-11-17): his layer merged without keeping the plain layers beside the merged ones.
+"""Engine memory round (2026-11-17): the user's layer merged without keeping the plain layers beside the merged ones.
 A tiny made-up Qwen3 (random weights, 4-bit, a LoRA on its last 2 layers) built in memory, no weights from disk:
 - typing (layer on) gives the same logits, bit for bit, as the old way that kept the plain layers
 - the plain copies are gone: active MLX memory drops by their size

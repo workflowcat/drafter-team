@@ -1,4 +1,4 @@
-// Which app a call is in, and what to call it (17 November 2026, Andrii: a Microsoft Teams meeting was labelled Slack).
+// Which app a call is in, and what to call it (17 November 2026, the user: a Microsoft Teams meeting was labelled Slack).
 // Pure Foundation, tested by tests/call_app_rules.swift. Before, the first call app holding the microphone won: Slack
 // can hold the microphone with no huddle open while the meeting runs in Teams, and a browser counted for any tab.
 // Now each call app is scored on what can be seen of it:
@@ -23,7 +23,7 @@ struct CallSeen: Equatable {
 enum CallAppRules {
     /// The app a process belongs to, from its executable's path: the outermost `.app` folder (18 November 2026: in a
     /// Dia call the microphone is held by "Browser Helper (Aperitif)" inside Dia.app, which has no bundle id of its
-    /// own, so no call was seen and the recording was a note of his mic only). nil: not inside an app.
+    /// own, so no call was seen and the recording was a note of the user's mic only). nil: not inside an app.
     static func appPath(executable: String) -> String? {
         guard let r = executable.range(of: ".app/") else { return executable.hasSuffix(".app") ? executable : nil }
         return String(executable[..<r.lowerBound]) + ".app"
@@ -94,7 +94,7 @@ enum CallAppRules {
         }
     }
 
-    /// Record at once, without the offer: his switch for this call app, or for the calendar of the meeting going on.
+    /// Record at once, without the offer: the user's switch for this call app, or for the calendar of the meeting going on.
     /// Offers off in the app wins (no recording there at all).
     static func auto(app: String, on: Bool, calendar: String?, apps: [String], calendars: [String]) -> Bool {
         guard on else { return false }

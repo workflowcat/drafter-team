@@ -7,7 +7,7 @@ link at the old place for apps that still read it there), or starts a new instal
 `words` is the source of truth: [{text, lang, kind, heard?, source}]. `terms`, `heard` and `keep` are written from it on
 every save in the shape the voice engine reads (terms = spelling, heard = mishearing -> meant, keep = left alone).
 
-    .venv/bin/python engine/dictionary.py seed     # words he accepted from Drafter at least twice
+    .venv/bin/python engine/dictionary.py seed     # words the user accepted from Drafter at least twice
     .venv/bin/python engine/dictionary.py add "Харбінджер" uk
 """
 import json, re, sys, time
@@ -86,9 +86,9 @@ def load(file=None):
 
 def save(d, file=None, store=None):
     """Writes `words` and the shape the voice engine reads. With the names reference (data/names.json, engine/names.py) beside
-    it: terms in order of use (Whisper takes the first 60), his Names-page spellings and mishearings in, hidden names out."""
+    it: terms in order of use (Whisper takes the first 60), the user's Names-page spellings and mishearings in, hidden names out."""
     file = Path(file or FILE)
-    # the Whisper hint takes the first 60 terms: the words he added himself go first
+    # the Whisper hint takes the first 60 terms: the words the user added themselves go first
     order = {"menu": 1, "typing": 2}
     d["words"].sort(key=lambda w: order.get(w.get("source"), 9))
     heard = dict(d.get("loose_heard", {}))
@@ -182,7 +182,7 @@ SKIP = re.compile(r"^[+\d\s()-]+$" + _own() + r"|📚|^_|^\.")
 
 def seed():
     d = load()
-    # accepted typing: words he took from Drafter at least twice that look like names or terms
+    # accepted typing: words the user took from Drafter at least twice that look like names or terms
     acc = ROOT / "data" / "accepted.jsonl"
     if acc.exists():
         c = Counter()
@@ -191,7 +191,7 @@ def seed():
             except Exception: continue
             c.update(w for w in re.findall(r"[\w'’&-]{4,}", t) if w[0].isupper() or re.search(r"[a-z][A-Z]", w))
         for w, k in c.items():
-            if k >= 2 and not SKIP.search(w): add(w, kind="term", source="typing", d=d)   # never his own name
+            if k >= 2 and not SKIP.search(w): add(w, kind="term", source="typing", d=d)   # never the user's own name
     out = save(d)
     print(f"{len(out['words'])} words, {len(out['terms'])} terms, {len(out['heard'])} heard, {len(out['keep'])} keep -> {FILE}")
 

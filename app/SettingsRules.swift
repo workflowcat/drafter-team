@@ -1,4 +1,4 @@
-// How Settings groups his calendars (2026-11-13, window round: rows named "Transferred from xx@…" repeated that phrase
+// How Settings groups the user's calendars (2026-11-13, window round: rows named "Transferred from xx@…" repeated that phrase
 // on every row, and every row carried its account under it). Pure, for a test.
 import Foundation
 
@@ -68,7 +68,7 @@ enum SettingsPlan {
     /// No code read them: gone from Settings. `screen` is still read once, as the old name of screenContext.
     /// The night batch, server training and the MCP adapter left the core on 26 November 2026: an old file's keys are ignored.
     static let removed = ["lookVariant", "voiceLive", "screen", "backOffice", "retrainRemote", "mcp"]
-    /// Removed on 17 November 2026: Claude no longer works while he types.
+    /// Removed on 17 November 2026: Claude no longer works while the user types.
     static let removedTyping = ["claudeTyping", "claudePause", "proofread", "proofreadOff", "sentenceProof", "facts",
                                     "translate", "nextMessage"]
 }

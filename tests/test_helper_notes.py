@@ -1,4 +1,4 @@
-"""Parity round (2026-11-15): his writing instructions reach the Claude helper prompts (rework on Claude and on the
+"""Parity round (2026-11-15): the user's writing instructions reach the Claude helper prompts (rework on Claude and on the
 local model; the pause, early lane and next message went on 2026-11-17), and an empty instruction leaves each prompt
 byte-identical. The calls go through the existing claude_on / cloud.py checks (unchanged). Made-up text, no model.
 .venv/bin/python -B tests/test_helper_notes.py"""

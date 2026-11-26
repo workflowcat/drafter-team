@@ -1,4 +1,4 @@
-"""Compare models on Andrii's held-out messages: how much of each suggestion he would keep, and how fast.
+"""Compare models on the user's held-out messages: how much of each suggestion the user would keep, and how fast.
 
     .venv/bin/python bench/bench.py <hf-repo> [raw|chat] [n]
 One model per process. Prints one JSON line and appends it to data/bench.jsonl.

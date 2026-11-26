@@ -2,7 +2,7 @@
 // rows merged, sessions, tags cached per row, chunks of time), one line of the stream (JLine), an action with its key
 // (RowAction) and the journal's words (JournalWords). Since the stream round (23 November 2026) the window draws the
 // items as one calm column (app/Stream.swift); the gallery, the drawn list, the sidebar and the reader are gone.
-// Display rules: app/TapeRules.swift, app/TimeChunkRules.swift. Tags: JournalTags. Search: JournalSearch. His changes
+// Display rules: app/TapeRules.swift, app/TimeChunkRules.swift. Tags: JournalTags. Search: JournalSearch. The user's changes
 // and drafts: JournalStore.
 import AppKit
 import SwiftUI
@@ -22,7 +22,7 @@ struct TapeItem: Identifiable, Equatable {
     var repeats = 1            // the same text this many times within a few minutes, folded into this row
     var took: Double?          // how long it took, in seconds
     var pinned = false
-    var change: String?        // his own change of the text (JournalStore); the stored row keeps the original
+    var change: String?        // the user's own change of the text (JournalStore); the stored row keeps the original
     var chunk = ""             // the chunk of time it sits in (TimeChunks id)
     var hay = ""               // what the search looks in, lower case (set once per build)
     // soft round (display only): the other records of the same text, what happened to it, where it went
@@ -36,7 +36,7 @@ struct TapeItem: Identifiable, Equatable {
     var quick: QuickKind? { switch kind { case .copied: return .copied; case .typed: return .typed; case .said: return .voice; case .call: return nil } }
     /// The stored text (a take with no final text: its live words).
     var text: String { if let e = entry { return e.text.isEmpty ? e.raw : e.text }; return doc?.title ?? "" }
-    /// What Insert and Copy take: his change, else the stored text.
+    /// What Insert and Copy take: the user's change, else the stored text.
     var current: String { change ?? text }
     /// A journal draft (Combine, kept in JournalStore), not a row of the history files.
     var ownDraft: Bool { id.hasPrefix("j:") }
@@ -98,7 +98,7 @@ struct JournalBuild {
 }
 
 enum TapeBuild {
-    /// His calendar: Monday starts the week.
+    /// The user's calendar: Monday starts the week.
     static let cal: Calendar = { var c = Calendar.current; c.firstWeekday = 2; c.locale = Locale(identifier: "en_GB"); return c }()
     /// One queue for every build: the tag cache is only touched there.
     static let queue = DispatchQueue(label: "drafter.journal", qos: .userInitiated)
@@ -120,7 +120,7 @@ enum TapeBuild {
         for d in docs {
             out.append(TapeItem(id: "d:" + d.id, kind: .call, at: d.started.timeIntervalSince1970, app: d.app, line: d.title, doc: d))
         }
-        for o in own {   // his drafts from Combine
+        for o in own {   // the user's drafts from Combine
             let e = Entry(id: o.id, when: Date(timeIntervalSince1970: o.at), app: "Journal", text: o.text, audio: "")
             var it = TapeItem(id: "j:" + o.id, kind: .typed, at: o.at, app: "Journal", line: TapeItem.flat(o.text), entry: e)
             it.pinned = o.pinned

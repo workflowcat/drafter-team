@@ -1,6 +1,6 @@
 import Foundation
 
-/// The owner's local config, data/drafter.local.json (untracked; engine/local.py reads the same file, and the tracked
+/// The user's local config, data/drafter.local.json (untracked; engine/local.py reads the same file, and the tracked
 /// drafter.local.example.json shows every key). No file: neutral wording, every private integration off.
 enum LocalConfig {
     private static var cache: (stamp: Date?, json: [String: Any]) = (nil, [:])

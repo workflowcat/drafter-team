@@ -1,7 +1,7 @@
 // Live typing rules (pure, 2026-11-14): which words of a draft are steady, what goes into the field next, and the
 // smallest set of key steps that turns what Drafter typed into the final text. Talk (Voice.swift) does the typing.
 //
-// Why (Andrii, 2026-11-14: "the part up top near the notch is looking really good while typing in the text box is quite
+// Why (the user, 2026-11-14: "the part up top near the notch is looking really good while typing in the text box is quite
 // slower"): the field got only words two drafts agreed on minus the last two (the strip: minus the last one); once a
 // word already in the field changed in a later draft (a comma, a capital after a new full stop, a word near a 28 s
 // cut), nothing more went in until Enter, and then the rest came in one burst (13-14 November: 20 of 36 piece ends,
@@ -12,8 +12,8 @@ enum LiveType {
     // MARK: steady words
 
     /// How many words of `next` are steady, by the strip's own rule (Pill.fadeIn): the same as in the previous draft,
-    /// never the newest word. `still` counts drafts in a row that came out exactly alike: at 3 he has paused, and the
-    /// last word is steady too (it waited for his next word before, which can be seconds).
+    /// never the newest word. `still` counts drafts in a row that came out exactly alike: at 3 the user has paused, and the
+    /// last word is steady too (it waited for the user's next word before, which can be seconds).
     static func steady(_ prev: [Substring], _ next: [Substring], still: Int) -> Int {
         var n = 0
         while n < min(prev.count, next.count), prev[n] == next[n] { n += 1 }
@@ -170,7 +170,7 @@ enum LiveType {
         var marksOnly = false         // what `left` holds is only case and punctuation (no word is wrong)
     }
 
-    /// While he talks only small fixes near the caret (a comma, a capital, the last word); at the end of a take or an
+    /// While the user talks only small fixes near the caret (a comma, a capital, the last word); at the end of a take or an
     /// Enter piece (`end`), any fix of the same words, or one that touches at most a share of the take.
     static let midReach = 16, midTouch = 12
     static let endReach = 400, endShare = 0.3, endFloor = 24

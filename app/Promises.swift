@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// Promises (2026-11-17, engine/promises.py): promises he made in a chat ("I'll send the deck tomorrow",
+/// Promises (2026-11-17, engine/promises.py): promises the user made in a chat ("I'll send the deck tomorrow",
 /// "завтра скину договір") come back in that chat's empty box when due: a matching saved or copied link, else a
 /// follow-up line. Tab fills the box (never sends) and marks the promise done. The window's Shortcuts page lists the
 /// open ones with Done and Drop.

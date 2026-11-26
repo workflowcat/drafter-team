@@ -1,6 +1,6 @@
 """Instant replies (17 November 2026; Superhuman Instant Reply, Gmail Smart Reply): in an empty chat or mail box where
 the last message is theirs, three one-line replies in three shapes - yes, no or decline, later or a question back - in
-the language of that message and his style, from the local model. ⌥1-3 picks one, Tab takes the first; nothing is
+the language of that message and the user's style, from the local model. ⌥1-3 picks one, Tab takes the first; nothing is
 sent.
 
 Pure text here: the prompt, the parse, whose turn it is. engine/server.py tokenises and runs the model. No data/ reads.
@@ -21,13 +21,13 @@ SHAPE_OF = {"y": "yes", "1": "yes", "yes": "yes", "так": "yes", "n": "no", "2
 
 def lang(text):
     """'uk' when the text has more Cyrillic letters than Latin ones, else 'en' (Russian lines get Ukrainian labels:
-    the labels are his, the reply follows the message's own language)."""
+    the labels are the user's, the reply follows the message's own language)."""
     c, l = len(CYR.findall(text or "")), len(LAT.findall(text or ""))
     return "uk" if c > l else "en"
 
 
 def last_theirs(context):
-    """The last message on screen is theirs (not his, not an assistant's): (True, its text), else (False, "")."""
+    """The last message on screen is theirs (not the user's, not an assistant's): (True, its text), else (False, "")."""
     ts = idle.chat_turns(context or "")
     if not ts: return False, ""
     who, name, text = ts[-1]

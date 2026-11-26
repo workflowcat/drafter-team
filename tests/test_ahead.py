@@ -1,5 +1,5 @@
-"""Look-ahead (engine/server.py): the suggestion for when he takes the current one is worked out behind newer keys,
-kept by the exact request, and dropped when he typed something else meanwhile."""
+"""Look-ahead (engine/server.py): the suggestion for when the user takes the current one is worked out behind newer keys,
+kept by the exact request, and dropped when the user typed something else meanwhile."""
 import json, queue, re, threading, time, types, unittest
 import sys
 from unittest.mock import Mock
@@ -52,11 +52,11 @@ class Ahead(unittest.TestCase):
         self.assertTrue(ns["AHEAD_DAYS_FILE"].exists())   # first count saves at once, then at most once a minute
 
     def test_a_newer_key_meanwhile_still_keeps_the_finished_answer(self):
-        # long round (2026-11-14): an answer that ends a moment after his next key is the exact answer for its text,
+        # long round (2026-11-14): an answer that ends a moment after the user's next key is the exact answer for its text,
         # so it is kept (before, it was thrown away: one cause of the low live hit rate); the futures after it stop
         latest = [5]
         def fake(req, low=False, seq=None, pack=None, **kw):
-            if low: latest[0] += 1                                            # he typed while it ran
+            if low: latest[0] += 1                                            # the user typed while it ran
             return {"text": "ow" if not low else " next", "src": "gate"}
         ns = load(fake, latest)
         ns["complete"]({"before": "let me kn", "app": "Claude"})

@@ -1,18 +1,22 @@
 """engine/speakers.py on a made-up two-track call: who said each line. Never reads data/.
 
-The "voices" are tones (his at 200 Hz, two people of the other side at 330 and 520 Hz), and a stand-in embedder
+The "voices" are tones (the user's at 200 Hz, two people of the other side at 330 and 520 Hz), and a stand-in embedder
 turns a stretch into a vector by its main pitch, so the test checks the labelling, not the model. One more check
 loads the real model when models/speakers/ has it.
 
 Run: .venv/bin/python -B tests/test_speakers.py
 """
-import json, sys, tempfile, unittest, wave
+import json, os, sys, tempfile, unittest, wave
 from pathlib import Path
 
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "engine"))
+# a made-up local config: the user is Marta Example (never the live data/drafter.local.json)
+_CFG = tempfile.NamedTemporaryFile("w", suffix=".json", delete=False)
+json.dump({"user": {"name": "Marta Example"}}, _CFG); _CFG.close()
+os.environ["DRAFTER_LOCAL"] = _CFG.name
 import speakers as S  # noqa: E402
 
 RATE = 16000
@@ -45,7 +49,7 @@ def fake_embed(x):
 
 
 def call(dir_, dead_after=60.0):
-    """me.wav: him at 0-6 and 20-26, after them.wav dies Ana through the laptop speakers at 70-76 and him at 90-96, a
+    """me.wav: the user at 0-6 and 20-26, after them.wav dies Ana through the laptop speakers at 70-76 and the user at 90-96, a
     0.3 s blip at 100. them.wav: Ana at 8-14 and 50-55, Bob at 30-36 and 40-44, a 0.4 s "yes" from Bob at 44.5,
     exact zeros from 60 s."""
     me, them = np.zeros(110 * RATE, np.float32), np.zeros(110 * RATE, np.float32)
@@ -53,7 +57,7 @@ def call(dir_, dead_after=60.0):
     for at in (0, 20, 90): place(me, at, tone(HIM, 6))
     place(me, 70, tone(ANA, 6, 0.15))
     place(me, 100, tone(HIM, 0.3))
-    place(me, 9, tone(ANA, 3, 0.05))          # his mic hears Ana faintly while she talks (the echo line below)
+    place(me, 9, tone(ANA, 3, 0.05))          # the user's mic hears Ana faintly while she talks (the echo line below)
     for at, f, secs in ((8, ANA, 6), (50, ANA, 5), (30, BOB, 6), (40, BOB, 4), (44.5, BOB, 0.4)): place(them, at, tone(f, secs))
     write(dir_ / "me.wav", me); write(dir_ / "them.wav", them)
     rows = [
@@ -70,12 +74,12 @@ def call(dir_, dead_after=60.0):
         {"who": "Я", "start": 100, "end": 100.3, "text": "mm", "track": "me"},
     ]
     (dir_ / "lines.json").write_text(json.dumps(rows))
-    (dir_ / "meta.json").write_text(json.dumps({"call": True, "event": {"people": ["Andrii", "Ana", "Bob"]}}))
+    (dir_ / "meta.json").write_text(json.dumps({"call": True, "event": {"people": ["Marta Example", "Ana", "Bob"]}}))
     return rows
 
 
 def takes(dir_, n=6):
-    """His made-up dictation takes, a day old."""
+    """The user's made-up dictation takes, a day old."""
     import os, time
     dir_.mkdir(parents=True, exist_ok=True)
     for i in range(n):
@@ -101,7 +105,7 @@ class Speakers(unittest.TestCase):
         stats = self.run_it()
         out = json.loads((self.d / "lines.json").read_text())
         by = {r["text"]: r for r in out}
-        # his lines: his voice, on the mic
+        # the user's lines: their voice, on the mic
         for t in ("his first words", "his question", "his closing words"):
             self.assertEqual(by[t]["who"], "Я", t); self.assertEqual(by[t]["track"], "me")
         # the other side: two people, numbered by first appearance, never Я
@@ -109,7 +113,7 @@ class Speakers(unittest.TestCase):
         self.assertEqual(by["ana again"]["who"], "Speaker 2")
         self.assertEqual(by["bob answers"]["who"], "Speaker 3")
         self.assertEqual(by["bob goes on"]["who"], "Speaker 3")
-        # after them.wav died, the mic heard Ana through the speakers: hers, not his
+        # after them.wav died, the mic heard Ana through the speakers: hers, not the user's
         self.assertEqual(by["ana through the speakers"]["who"], "Speaker 2")
         self.assertEqual(by["ana through the speakers"]["track"], "me")
         # a short them line takes its neighbour's voice; a short mic line no one can place is unknown
@@ -120,7 +124,7 @@ class Speakers(unittest.TestCase):
         self.assertEqual(stats["echo_dropped"], 1)
         self.assertEqual(stats["counts"], {"Speaker 2": 3, "Я": 3, "Speaker 3": 3, "unknown": 1})
         self.assertNotIn("Я", [r["who"] for r in out if r["track"] == "them"])
-        # two people on the other side, three in the meeting minus him: no names guessed
+        # two people on the other side, three in the meeting minus the user: no names guessed
         self.assertEqual(stats["named"], {})
         self.assertAlmostEqual(stats["them_alive_min"], 1.0)
         # files: transcript, counts, and the lines before
@@ -132,14 +136,14 @@ class Speakers(unittest.TestCase):
         call(self.d)
         rows = [r for r in json.loads((self.d / "lines.json").read_text()) if "bob" not in r["text"] and r["text"] != "yes"]
         (self.d / "lines.json").write_text(json.dumps(rows))
-        (self.d / "meta.json").write_text(json.dumps({"call": True, "event": {"people": ["Andrii", "Ana"]}}))
+        (self.d / "meta.json").write_text(json.dumps({"call": True, "event": {"people": ["Marta Example", "Ana"]}}))
         stats = self.run_it()
         out = json.loads((self.d / "lines.json").read_text())
         self.assertEqual({r["who"] for r in out if r["track"] == "them"}, {"Ana"})
         self.assertEqual(stats["named"], {"Speaker 2": "Ana"})
 
     def test_no_print_track_only(self):
-        """No takes to build a print from: mic lines are his only while the other side was alive and read apart."""
+        """No takes to build a print from: mic lines are the user's only while the other side was alive and read apart."""
         call(self.d)
         stats = S.run(self.d, print_path=None, log=lambda *_: None, embed=fake_embed)
         by = {r["text"]: r for r in json.loads((self.d / "lines.json").read_text())}
@@ -156,7 +160,7 @@ class Speakers(unittest.TestCase):
         rows = [{"who": "unknown", "start": 0, "end": 78, "text": "a long take", "track": "me"}]
         (self.d / "lines.json").write_text(json.dumps(rows)); (self.d / "meta.json").write_text(json.dumps({"call": True}))
         self.run_it()
-        self.assertEqual(json.loads((self.d / "lines.json").read_text())[0]["who"], "Я")   # 7 of 8 windows his
+        self.assertEqual(json.loads((self.d / "lines.json").read_text())[0]["who"], "Я")   # 7 of 8 windows the user's
         place(me, 0, tone(ANA, 40, 0.0)); me[: 40 * RATE] = tone(ANA, 40)
         write(self.d / "me.wav", me); (self.d / "lines.json").write_text(json.dumps(rows))
         self.run_it()

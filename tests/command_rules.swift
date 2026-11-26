@@ -52,7 +52,7 @@ struct CommandRulesTest {
         check(CommandRules.filter(meet, ";notes").first?.ref == "meeting-notes", ";notes -> meeting notes (alias)")
         check(CommandRules.filter(meet, ";no").first?.ref == "meeting-notes", ";no -> meeting notes by its title")
         check(CommandRules.filter(meet, ";gmeet").first?.title == "New Google Meet", ";gmeet -> Google Meet")
-        // voice modes (research item 3): ;mode lists the levels and his modes; ;mode-em finds his Email mode
+        // voice modes (research item 3): ;mode lists the levels and the user's modes; ;mode-em finds their Email mode
         let vm = CommandRules.voiceModeRows(modes: ["Email"], current: "Clean", uk: false)
         check(vm.map(\.title) == ["Voice mode: Raw", "Voice mode: Clean", "Voice mode: Polished", "Voice mode: Email"], "mode rows: \(vm.map(\.title))")
         check(vm[1].detail == "now" && vm[3].detail == "my mode" && vm[3].ref == "voice-mode:Email", "now and ref")

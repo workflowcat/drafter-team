@@ -94,7 +94,7 @@ class Language(unittest.TestCase):
             self.assertIsNone(voice.whisper_rejection(segment('Please send the meeting notes tomorrow'), 'en'))
             self.assertEqual(voice.whisper_rejection(segment('Thank you'), 'en', None, 'Дякую тобі'), 'translation')
             self.assertIsNone(voice.whisper_rejection(segment('OK'), 'en', None, 'Дякую тобі'))   # one word: a term
-            # a mixed answer (his Ukrainian words kept, English terms in English) is taken
+            # a mixed answer (the user's Ukrainian words kept, English terms in English) is taken
             whisper.transcribe.return_value = {'segments': [segment('Надішли notes із meeting завтра')]}
             self.assertEqual(voice.careful(audio, fast_text=fast, pin='en'), 'Надішли notes із meeting завтра')
             # no pin: as before, the fast text's own language

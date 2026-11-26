@@ -9,7 +9,7 @@ import SwiftUI
 final class DictStore: ObservableObject {
     static let shared = DictStore()
     var preview = false
-    /// The live windowshot draws the rows as grey bars: his words never land in a picture (numbers only).
+    /// The live windowshot draws the rows as grey bars: the user's words never land in a picture (numbers only).
     @Published var redact = false
     @Published var rows: [DictRules.Row] = []
     @Published var shown: [Int] = []

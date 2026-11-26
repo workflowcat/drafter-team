@@ -1,6 +1,6 @@
-"""The decision gate: a tiny model that says how likely the next grey word is right, so Drafter shows only what he
+"""The decision gate: a tiny model that says how likely the next grey word is right, so Drafter shows only what the user
 would take (GitHub Copilot's "contextual filter" idea). Trained on bench/typebench.py recordings of the fresh replay
-set: every position is one example, label = the model's next word is exactly what he wrote. Scored with held-out
+set: every position is one example, label = the model's next word is exactly what the user wrote. Scored with held-out
 folds (by line, no leak) through the same simulated typist as bench/typescore.py.
 
     .venv/bin/python bench/gate.py data/bench/<label>.jsonl [--save]     # --save writes data/gate.json for the engine

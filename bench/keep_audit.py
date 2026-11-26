@@ -1,15 +1,15 @@
-"""Keep-list audit (2026-11-13): which words in the autocorrect keep list look like typos of a word he writes?
+"""Keep-list audit (2026-11-13): which words in the autocorrect keep list look like typos of a word the user writes?
 
-A take-back (Backspace right after a fix, or a fix mark undone) counts the word he got back; two count as "keep it"
-(app/CorrectionRules.swift). Until 13 November a Backspace he meant for his own typo also counted, so the list can
+A take-back (Backspace right after a fix, or a fix mark undone) counts the word the user got back; two count as "keep it"
+(app/CorrectionRules.swift). Until 13 November a Backspace the user meant for their own typo also counted, so the list can
 hold typos. This lists every kept or counted word that is one edit (a missed, extra, wrong or swapped letter) from a
-word he writes often, with both counts, for Andrii to review. It changes nothing.
+word the user writes often, with both counts, for the user to review. It changes nothing.
 
   python3 bench/keep_audit.py              # the table (personal words: read it on this Mac only)
   python3 bench/keep_audit.py --summary    # numbers only
   python3 bench/keep_audit.py --data DIR   # another data folder (tests)
 
-Columns: take-backs, how often he wrote the kept word, the near word, how often he wrote that. "suspect" = he wrote
+Columns: take-backs, how often the user wrote the kept word, the near word, how often the user wrote that. "suspect" = the user wrote
 the near word at least 10 times as often as the kept word (or the kept word under 3 times).
 """
 import argparse, json, sys
@@ -47,8 +47,8 @@ def load(data):
 
 
 def audit(counts, used, mine, ratio=10):
-    """-> rows (word, take-backs, his uses, near word, its uses, suspect), suspects first."""
-    # words he writes: counted ones (5+ uses) and the 3+ list (no count there: taken as 3)
+    """-> rows (word, take-backs, the user's uses, near word, its uses, suspect), suspects first."""
+    # words the user writes: counted ones (5+ uses) and the 3+ list (no count there: taken as 3)
     known = dict(used)
     for w in mine: known.setdefault(w, 3)
     by_first = {}
@@ -79,7 +79,7 @@ def main(argv=None):
     kept = sum(1 for n in counts.values() if n >= 2)
     suspects = [r for r in rows if r[5]]
     print(f"keep list: {len(counts)} words counted, {kept} kept (2+ take-backs)")
-    print(f"one edit from a word he writes: {len(rows)}; suspect typos: {len(suspects)} "
+    print(f"one edit from a word the user writes: {len(rows)}; suspect typos: {len(suspects)} "
           f"({sum(1 for r in suspects if r[1] >= 2)} of them kept)")
     if a.summary: return 0
     print()

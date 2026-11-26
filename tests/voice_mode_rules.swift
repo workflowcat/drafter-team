@@ -11,7 +11,7 @@ struct VoiceModeChecks {
         typealias R = VoiceModeRules
         let modes = ["Email": "formal, short paragraphs", "Slack": "casual, no greetings"]
 
-        // the level per app: his pick for the app, the app's setting, its kind's, then Clean
+        // the level per app: the user's pick for the app, the app's setting, its kind's, then Clean
         check(R.pick(kind: "chat", bundle: "a.chat", byKind: [:], byApp: [:], modes: modes, picked: [:]) == VoiceChoice(), "default Clean")
         check(R.pick(kind: "chat", bundle: "a.chat", byKind: ["chat": "raw"], byApp: [:], modes: modes, picked: [:]).level == .raw, "kind")
         check(R.pick(kind: "chat", bundle: "a.chat", byKind: ["chat": "raw"], byApp: ["a.chat": "Slack"], modes: modes, picked: [:])

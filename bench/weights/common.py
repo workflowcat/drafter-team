@@ -8,7 +8,7 @@ share from data/gate.json, the per-chat lines when they belong to the set), benc
 gate refit on held-out folds, and `retrain.decide` says whether it would beat the live layer.
 
 Run from the main checkout (it has data/): `cd <repo> && .venv/bin/python -B bench/weights/<script>.py --smoke` first.
-Results: data/bench/weights/<name>.json (numbers only). His text in working files: data/bench/weights/work/ (data/ never
+Results: data/bench/weights/<name>.json (numbers only). The user's text in working files: data/bench/weights/work/ (data/ never
 goes to git). Candidate weights: bench/out/weights/ (git ignores it). Nothing here writes data/adapters*, gate.json or
 selector.json."""
 import json, os, re, subprocess, sys, time
@@ -194,7 +194,7 @@ def lang_of(text):
 
 
 def his_lines(set_path=None, per_kind=(("ai", 2000), ("chat", 1000)), seed=5, max_chars=400):
-    """His held-in lines (dated before the cut, no held line), as {"text", "app", "group", "lang"}, `n` per kind:
+    """The user's held-in lines (dated before the cut, no held line), as {"text", "app", "group", "lang"}, `n` per kind:
     ai = typed lines in AI apps, Claude Code and Codex prompts; chat = Beeper messages. Takes are left out."""
     import random
     import corpus as Corp

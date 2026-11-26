@@ -1,7 +1,7 @@
-// The stream's numbers on his own rows (review 25 November 2026, Gemini Carbon: a real-data check before release would
+// The stream's numbers on the user's own rows (review 25 November 2026, Gemini Carbon: a real-data check before release would
 // have caught the 1,365-row topic). `--stream-bench`: loads the journal as the window does, then prints counts, sizes and
-// times only, never a word of his. `--stream-bench --sample` runs on the preview's made-up rows instead (for tests and
-// agents, who never read data/). Draws the stream in a window off every screen to time each zoom step as he sees it.
+// times only, never a word of the user's. `--stream-bench --sample` runs on the preview's made-up rows instead (for tests and
+// agents, who never read data/). Draws the stream in a window off every screen to time each zoom step as the user sees it.
 // Never writes data/, never starts an engine or a hook; run it from any built copy.
 import AppKit
 import SwiftUI
@@ -73,7 +73,7 @@ enum StreamBench {
         for (_, items) in byDay where !StreamGroupRules.dayTopics(items).isEmpty { named += 1 }
         out("day lines", ms(t), "\(byDay.count) days, \(named) with a topic")
 
-        // drawn: each step as he takes it, rows -> weeks -> rows, then the topics view
+        // drawn: each step as the user takes it, rows -> weeks -> rows, then the topics view
         let host = NSHostingView(rootView: WindowView(titlebar: true).environmentObject(model))
         let w = PreviewKeyWindow(contentRect: NSRect(x: -9000, y: -9000, width: 1100, height: 900), styleMask: [.borderless], backing: .buffered, defer: false)
         w.contentView = host; host.frame = NSRect(x: 0, y: 0, width: 1100, height: 900); model.width = 1100

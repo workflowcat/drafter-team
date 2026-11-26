@@ -1,7 +1,7 @@
-// Pick parts (15 November 2026; Andrii: "when I have to copy a text, to just select the parts that I need from the
+// Pick parts (15 November 2026; the user: "when I have to copy a text, to just select the parts that I need from the
 // full thing and save it separately"). Pure: Foundation only, no AppKit, no files except `append` (a temp folder in
 // tests). One long text is cut into pieces at a level (paragraphs, lines, sentences, list items or table rows, things),
-// each piece keeps its exact range in the original (UTF-16, as NSRange), he picks pieces, and the pick becomes a new
+// each piece keeps its exact range in the original (UTF-16, as NSRange), the user picks pieces, and the pick becomes a new
 // text: joined in the original order, or "the rest" (the original without the pick). The panel is app/PickPanel.swift;
 // the state machine for its keys (`PickState`) lives here so it is tested without a screen. Tests: tests/pick_rules.swift.
 import Foundation
@@ -21,7 +21,7 @@ enum PickLevel: Int, CaseIterable {
     }
 }
 
-/// One piece of the original. `range`: the piece as he sees it (no spaces around it). `body`: the same without a list
+/// One piece of the original. `range`: the piece as the user sees it (no spaces around it). `body`: the same without a list
 /// mark (equal to `range` when it has none). `kind`: "text", "item", "row" (a table row), or a thing's kind ("link",
 /// "date", "amount", "email", ...). `label`: a thing's short name from the detector ("" otherwise).
 struct PickPiece: Equatable {
@@ -44,7 +44,7 @@ struct PickRecord: Equatable {
     let at: Double                // seconds since 1970
     var level = PickLevel.sentences
     var rest = false              // true: "the rest" was kept (the pick removed)
-    var mine = false              // the source was his own writing (a draft, a sent line, a voice take)
+    var mine = false              // the source was the user's own writing (a draft, a sent line, a voice take)
 
     /// The clipboard.jsonl row: a text clip like any other, plus `from`, `picked` ([[location, length], ...]),
     /// `pick` (the level) and `via` = "pick". `mine` only when true. Old readers ignore the extra keys.
@@ -520,7 +520,7 @@ enum PickKey: Equatable {
 enum PickEffect: Equatable {
     case none, redraw
     case save(String)          // Return: keep the pick as a new item and put it on the clipboard
-    case insert(String)        // ⌘Return: into the app he came from
+    case insert(String)        // ⌘Return: into the app the user came from
     case saveRest(String)      // ⌥Return: keep "the rest"
     case close                 // Esc: nothing changes
     case nothing(String)       // a word for the status line ("Nothing picked")
@@ -670,7 +670,7 @@ struct PickState {
 }
 
 /// A key event, as the panel gets it, to a `PickKey`. Commands go by the key's place (A, N, I, M, L, D, E, 1-5, /),
-/// so they work on the Ukrainian layout too; while he types after "/", letters are text.
+/// so they work on the Ukrainian layout too; while the user types after "/", letters are text.
 enum PickKeyMap {
     static let letters: [Int: String] = [0: "a", 45: "n", 34: "i", 46: "m", 37: "l", 2: "d", 14: "e",
                                          18: "1", 19: "2", 20: "3", 21: "4", 23: "5", 44: "/"]

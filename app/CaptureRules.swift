@@ -50,7 +50,7 @@ struct SideStats: Equatable {
 enum CallHealth {
     /// The line the recording strip shows in place of its second row when a side is not being heard, or nil.
     /// Shown while the call runs, not after it ended (2026-11-10: a call ended with "other side not recorded" and
-    /// nothing on his side either, and nothing said so during it).
+    /// nothing on the user's side either, and nothing said so during it).
     static func warning(_ s: SideStats) -> String? {
         if s.seconds >= 6, s.meSamples == 0 { return "Microphone gives no sound at all" }
         if s.call {

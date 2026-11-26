@@ -53,7 +53,7 @@ final class ClassicStrip: StripFace {
         return p
     }
 
-    /// Size and place (2026-10-20, Andrii: "jumpy, a bit too big"): a slim island just wider than the notch while there
+    /// Size and place (2026-10-20, the user: "jumpy, a bit too big"): a slim island just wider than the notch while there
     /// is no text (dot and meter on the left wing, status on the right), opening downward to a fixed number of lines
     /// when there is. The size changes only when that changes, never per word, and then it slides (0.2 s), pinned to the top.
     private var screen: NSScreen? {
@@ -202,7 +202,7 @@ final class ClassicStrip: StripFace {
 
     private func present() { if !previewing { panel?.orderFrontRegardless() } }
 
-    /// Sound levels: a short take shows a small meter beside the microphone that moves with his voice (14 November
+    /// Sound levels: a short take shows a small meter beside the microphone that moves with the user's voice (14 November
     /// 2026, look round: the strip should feel alive while it listens; 4 steps a second, never a glow); a long note or
     /// call shows small levels for me and for them (2026-10-30: is the other side being recorded? see it while it runs).
     private var heldMe: Float = 0, heldThem: Float = 0, levelAt = Date.distantPast
@@ -280,8 +280,8 @@ final class ClassicStrip: StripFace {
     }
 
     static let insertedNote = "✓ In the field · still listening"
-    /// Return while he speaks (round three): the segment so far is on its way; said quietly where the words were, until
-    /// his next words show. Its receipt replaces that line only while no new words came.
+    /// Return while the user speaks (round three): the segment so far is on its way; said quietly where the words were, until
+    /// the user's next words show. Its receipt replaces that line only while no new words came.
     private var bandLine = ""
     func segment(_ line: String) {
         guard panel?.isVisible == true, !box.long else { return }
@@ -363,7 +363,7 @@ final class ClassicStrip: StripFace {
         // the time on the right (and the screenshots taken, small); the kind shows in the levels: a call has "them"
         status.stringValue = String(format: "%d:%02d", seconds / 60, seconds % 60) + (shots > 0 ? " · ▣\(shots)" : "")
         let name = !event.isEmpty ? event : !title.isEmpty ? title : (call ? "Recording call" : "Recording note")
-        // two lines (1 November 2026, Andrii: "cleaner recording state"): the meeting or the outline's title, bright;
+        // two lines (1 November 2026, the user: "cleaner recording state"): the meeting or the outline's title, bright;
         // then the outline's first point, or what is recorded until there is one
         let point = warning.map { "⚠ " + $0 } ?? outline.first.map { $0.hasPrefix("→") ? $0 : "• " + $0 } ?? (call ? "Both sides, on this Mac" : "Your microphone, on this Mac")
         if warning != warned { warned = warning; if let warning { announce(warning) } }
@@ -377,8 +377,8 @@ final class ClassicStrip: StripFace {
 
     /// An offer that waits for an answer (a call started: record it?), shown for `seconds`. `kind` names it on the left,
     /// `side` on the right (the app); up to three one-line rows (the question, who or why, what is recorded), then the
-    /// keys as buttons that never get cut (2026-11-01, Codex notch review; Andrii: "not sure how to dismiss it"). A thin
-    /// line along the bottom runs out with the time left (2026-10-30, Andrii's plan).
+    /// keys as buttons that never get cut (2026-11-01, Codex notch review; the user: "not sure how to dismiss it"). A thin
+    /// line along the bottom runs out with the time left (2026-10-30, the user's plan).
     func offer(_ rows: [String], kind: String, side: String = "", controls list: [StripButton], seconds: Double) {
         if panel == nil { panel = make() }
         pin()

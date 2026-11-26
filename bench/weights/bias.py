@@ -1,4 +1,4 @@
-"""Item B2: a per-token logit bias learned from his held-in lines, applied as a bias on the model's output head
+"""Item B2: a per-token logit bias learned from the user's held-in lines, applied as a bias on the model's output head
 (engine/tweaks.py, DRAFTER_TWEAKS). One forward pass stores the model's distributions (collect.py), the fit needs no
 model (biasfit.py), then the held-out set is recorded with the bias and scored like the weekly retrain.
 

@@ -176,7 +176,7 @@ struct QuickRuleChecks {
         let a3 = item(.typed, "see you at the station tomorrow", now - 2 * h), b3 = item(.typed, "tomorrow I go to the station", now - 2 * h)
         check(top([b3, a3], "station tomorrow", QuickUses()) == a3.text, "the whole query beats its words")
         table.append("| 3 | `station tomorrow` | holds the phrase, 2 h | holds both words apart, 2 h | A \(s(a3, "station tomorrow", QuickUses())) · B \(String(format: "%.2f", QuickRules.score(match: 1.5, at: b3.at, now: now, item: [], app: []))) | A |")
-        // 4. equal matches; one from an app he puts things in from often
+        // 4. equal matches; one from an app the user puts things in from often
         let a4 = item(.copied, "room 4.12 second floor", now - 3 * h, app: "Mail"), b4 = item(.copied, "room 2.01 ground floor", now - 2 * h, app: "Notes")
         var u4 = QuickUses(); for k in 0..<6 { QuickRules.used(&u4, item(.copied, "other mail line \(k)", now - d, app: "Mail"), at: now - Double(k) * d) }
         check(top([b4, a4], "room", u4) == a4.text, "the app he pastes from often tips an equal match")

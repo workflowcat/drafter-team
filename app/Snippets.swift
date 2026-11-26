@@ -47,7 +47,7 @@ enum Snippets {
     /// Places to fill in a snippet (1 November 2026; TextExpander, Espanso, Raycast): {date} 01.11.2026, {date+2d},
     /// {date-1d}, {time} 14:05, {clipboard}, {cursor} where the caret stays, {;key} another snippet's text, and fields
     /// that Tab walks through: {name} (the word "name" selected, typing replaces it), {name=default}, {name:a|b|c} and
-    /// {a|b|c} (a choice: ↑ ↓ change it). A second {name} takes what he typed in the first.
+    /// {a|b|c} (a choice: ↑ ↓ change it). A second {name} takes what the user typed in the first.
     static func fill(_ raw: String, now: Date = Date(), clipboard: String? = nil, snippets: [String: String]? = nil, depth: Int = 0) -> Filled {
         guard raw.contains("{") else { return Filled(text: raw, back: 0) }
         var t = raw
@@ -149,7 +149,7 @@ enum Snippets {
 
     static var recent: [String: Date] = [:]          // texts Drafter put in lately, so they never count as typed by hand
     static var reminded: [String: Date] = [:]
-    /// Return: a line that holds a shortcut's text he typed himself gets one hint, once a day per shortcut.
+    /// Return: a line that holds a shortcut's text the user typed themselves gets one hint, once a day per shortcut.
     static func remind(_ line: String) {
         guard line.count >= 12 else { return }
         recent = recent.filter { Date().timeIntervalSince($0.value) < 600 }
@@ -172,7 +172,7 @@ enum Snippets {
         var h = hiddenIdeas; h.insert(text.lowercased())
         try? save("hidden", h.sorted().joined(separator: "\n"), file: "snippet-ideas.json")
     }
-    /// Sentences of 20-200 characters he sent three or more times (local typing history, last 3000 lines), not yet a
+    /// Sentences of 20-200 characters the user sent three or more times (local typing history, last 3000 lines), not yet a
     /// shortcut and not hidden: the Shortcuts page offers to make them shortcuts. Lines that look pasted (a chat export,
     /// a clipboard text, too long to be typed) are left out (`IdeaRules`). Slow: call off the main thread.
     static func ideas(limit: Int = 5) -> [Idea] {
@@ -232,7 +232,7 @@ enum Snippets {
         pendingSmart = nil
         Keys.shared.cancel()
         Focus.backspace(old.count)
-        // texts from the clipboard, his calendar or a lookup go in as they are
+        // texts from the clipboard, the user's calendar or a lookup go in as they are
         var f = plain ? Filled(text: new, back: 0) : fill(smart.map { SmartFields.apply(new, values: $0) } ?? new)
         let up = adapt(f.text, typed: old, key: key)
         if up.count == f.text.count { f.text = up }
@@ -250,7 +250,7 @@ enum Snippets {
     static var pendingSmart: PendingSmart?
     private static var smartSeq = 0
 
-    /// Look the smart fields up (the chat on screen through engine /fields, free slots from his calendars, the date
+    /// Look the smart fields up (the chat on screen through engine /fields, free slots from the user's calendars, the date
     /// here), then show the filled snippet as a card over the caret. Gaps stay as their field names.
     static func previewSmart(old: String, new: String, key: String, at s: Spot) {
         let wanted = SmartFields.wanted(new)
@@ -306,13 +306,13 @@ enum Snippets {
                 return
             }
             if LookupQuery.parse(s.before) != nil { return }
-            // keys he typed while the field was read wait in the event tap (this runs on its thread), so backspaces
+            // keys the user typed while the field was read wait in the event tap (this runs on its thread), so backspaces
             // posted now would land after them ("tommorow and" became "ttomorrow nd", 2026-11-01): let them through
             // first and act only if there were none
             func settled(_ go: @escaping () -> Void) {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.015) {
                     guard Keys.shared.inputRevision == revision, !IsSecureEventInputEnabled() else {
-                        if debugLog { log("after space: he typed on") }; return
+                        if debugLog { log("after space: the user typed on") }; return
                     }
                     go()
                 }

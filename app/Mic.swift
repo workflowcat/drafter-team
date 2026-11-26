@@ -22,8 +22,8 @@ final class MicCapture: NSObject, AVCaptureAudioDataOutputSampleBufferDelegate {
 
     /// The ready microphone for a take: `sink` gets its samples from now on (with the pre-roll first, when kept ready).
     /// `call`: a call recording takes the default input as it is. Its call app already opened a Bluetooth headset's
-    /// microphone (call quality, no switch to wait for), and the Mac's own microphone hears him only faintly
-    /// (18 November 2026, Andrii: with Bluetooth on the recording "is not actually recording what people are saying").
+    /// microphone (call quality, no switch to wait for), and the Mac's own microphone hears the user only faintly
+    /// (18 November 2026, the user: with Bluetooth on the recording "is not actually recording what people are saying").
     static func take(_ sink: @escaping ([Float], Float) -> Void, call: Bool = false) -> MicCapture? {
         // a new default microphone (headphones in or out), or a call after a take or the other way round: a fresh capture
         if shared == nil || shared?.plain != call || shared?.deviceID != device(plain: call)?.uniqueID {

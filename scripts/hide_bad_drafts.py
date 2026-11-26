@@ -11,13 +11,13 @@ The sidecar holds {"hidden": [{"kind": "draft"|"sent", "t": <row t>, "shape": "A
 History.read skips those rows when it lists (app/DraftCaptureRules.swift `DraftHide`). Output is numbers only.
 
 Shapes (rules as in docs/rounds/2026-11-14-capture.md):
-  A  not his writing: 150+ characters of web page text - 3+ footer/navigation words, or 10+ words run together
+  A  not the user's writing: 150+ characters of web page text - 3+ footer/navigation words, or 10+ words run together
      (a small letter then a capital, "HomeAbout"), or 3+ run together with 30%+ capitalised words.
   B  cut by the old tail window: a draft of 1990+ characters (suffix 2000) or a sent line of exactly 600 (suffix 600)
      that starts with a letter or digit (mid-word).
   C  the same text again (spaces and case aside) in the same app within --minutes (default 5) of the row before.
   D  a strict prefix of a later row of the same app within --minutes. Of C and D only the latest row of a chain stays.
-Hidden by default: C and D only (earlier copies; their text lives on in the longer row). B rows are his text with a cut
+Hidden by default: C and D only (earlier copies; their text lives on in the longer row). B rows are the user's text with a cut
 start: never hidden, the journal shows them from the first whole word (DraftCaptureRules.shownText). A is hidden only
 when named in --shapes, after the rows were checked by hand.
 """
@@ -175,7 +175,7 @@ def main(argv: list[str] | None = None) -> int:
     a = ap.parse_args(argv)
     a.shapes = a.shapes.upper()
     if "B" in a.shapes or set(a.shapes) - set("ACD"):
-        ap.error("--shapes takes A, C and D; B rows are his text and are never hidden")
+        ap.error("--shapes takes A, C and D; B rows are the user's text and are never hidden")
     side = a.data / "drafts-hidden.json"
 
     if a.undo:

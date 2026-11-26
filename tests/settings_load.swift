@@ -171,7 +171,7 @@ struct SettingsLoadChecks {
         let raw = (try? JSONSerialization.jsonObject(with: Data(oldFile.utf8))) as? [String: Any] ?? [:]
         check(raw.count == 114, "the old file holds 114 keys: \(raw.count)")
         guard let s = Settings.decode(Data(oldFile.utf8)) else { check(false, "the old file loads"); return }
-        // his choices on the main page and in Advanced come through
+        // the user's choices on the main page and in Advanced come through
         check(s.paused && !s.autocorrect && !s.layoutFix && !s.typography && !s.learn, "Typing switches decoded")
         check(!s.callScreenVideo, "old settings keep video off")
         check(Settings.decode(Data(#"{"callScreenVideo":true}"#.utf8))?.callScreenVideo == true, "video opt-in decodes")

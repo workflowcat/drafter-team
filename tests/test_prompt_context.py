@@ -1,6 +1,6 @@
 """Screen context in the prompt (engine/prompt.py, 2026-11-14): today's look stays the default, the app's speaker marks
 are taken off until the context sweep measures them, the structured tail keeps who said what under a budget, and the
-prompt order stays cache friendly (head, then the screen, his text last). Made-up text only.
+prompt order stays cache friendly (head, then the screen, the user's text last). Made-up text only.
 .venv/bin/python -B tests/test_prompt_context.py"""
 import sys, unittest
 from pathlib import Path

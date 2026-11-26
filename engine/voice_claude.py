@@ -1,8 +1,8 @@
 """Claude cleanup after a voice take (`voiceClaude`, off by default, 17 November 2026).
 
 Parakeet's text goes into the field at once; then Claude Haiku edits it with context (names from engine/whom.py and
-the chat's person card, the text on screen around the field, his writing note for the app, his mode's prompt) and the
-app swaps it in place only if he has not typed since. Raw never comes here (the app does not ask). Offline, off, over
+the chat's person card, the text on screen around the field, the user's writing note for the app, the user's mode prompt) and the
+app swaps it in place only if the user has not typed since. Raw never comes here (the app does not ask). Offline, off, over
 the cap, slow (DEADLINE) or a bad answer: '' and the app keeps Parakeet's text quietly.
 
 Cost goes under the daily Claude cap (`backOfficeCap`, USD a day): one ledger shared with the pause rewrite,
@@ -32,7 +32,7 @@ def estimate(prompt, text):
 
 
 def build(text, level="clean", mode="", note="", hint="", screen="", names=()):
-    """The one message to Claude. `hint`: whom.hint (keyboard line and the chat's person). Nothing else of his goes."""
+    """The one message to Claude. `hint`: whom.hint (keyboard line and the chat's person). Nothing else of the user's goes."""
     names = [n for n in names if isinstance(n, str) and n.strip()][:30]
     how = ("Fix only what speech recognition got wrong: names, terms, punctuation, capitals, obvious misheard words. "
            "Keep his words, order and language.") if level != "polished" else (

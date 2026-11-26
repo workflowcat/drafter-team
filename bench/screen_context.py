@@ -11,7 +11,7 @@ Variants (each one recording of the set; prompt knobs through env, engine/prompt
     none            no screen text (--ctx-chars 0)
     raw-1600        today's prompt: the last 1,600 characters as they came
     plain-800/1600/3000   the app's marks off (today's live look), the last N characters
-    tail-800/1600/3000    turns picked by engine/prompt.py pick_tail: the other side's last message whole, his last,
+    tail-800/1600/3000    turns picked by engine/prompt.py pick_tail: the other side's last message whole, the user's last,
                           then older ones while N lasts, WITH who-said-what marks
     tail-plain-1600       the same pick, marks off
 --marks runs the set whose screen text carries speaker marks (data/replay.json: 13 of 30 lines from Beeper history,

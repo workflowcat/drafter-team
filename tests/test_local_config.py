@@ -1,4 +1,4 @@
-"""The owner's local config (data/drafter.local.json, untracked): every Claude prompt and the local prompt head build
+"""The user's local config (data/drafter.local.json, untracked): every Claude prompt and the local prompt head build
 from it; with no file they are neutral and name nobody. Made-up config only.
 
     .venv/bin/python -B tests/test_local_config.py

@@ -28,7 +28,7 @@ enum ClipContext {
         guard !t.isEmpty else { return (nil, .empty) }
         guard !secret, !looksSecret(t) else { return (nil, .secret) }
         let flat = before.split(whereSeparator: { $0.isWhitespace }).joined(separator: " ")
-        if flat.contains(String(t.prefix(60))) { return (nil, .pasted) }   // he pasted it: the text already holds it
+        if flat.contains(String(t.prefix(60))) { return (nil, .pasted) }   // the user pasted it: the text already holds it
         return (String(t.prefix(maxChars)), nil)
     }
 
@@ -48,7 +48,7 @@ enum ClipContext {
     }
 }
 
-/// Writing instructions (settings `writingNote`, `appNotes`): one for every app and one per app (bundle id), his own
+/// Writing instructions (settings `writingNote`, `appNotes`): one for every app and one per app (bundle id), the user's own
 /// words. The engine shows them in the place line of the prompt. Empty = nothing sent (the prompt as before).
 enum WritingNotes {
     static let maxChars = 300
@@ -59,7 +59,7 @@ enum WritingNotes {
     }
 }
 
-/// Personal style (setting `personalStrength`, 0-100 %): how much of his trained layer the model uses. A change is
+/// Personal style (setting `personalStrength`, 0-100 %): how much of the user's trained layer the model uses. A change is
 /// sent once the slider settles, in steps of 10.
 enum Strength {
     static func clamp(_ v: Double) -> Int { Int((min(100, max(0, v)) / 10).rounded()) * 10 }

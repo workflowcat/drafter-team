@@ -90,7 +90,7 @@ final class JournalEngine {
 
 extension JournalEngine {
     /// One journal row as a document: a recording through `SearchDoc.call`, a copy, message or take through
-    /// `SearchDoc.entry`, a journal draft by its text. His change comes first (it is what the row shows); the stored
+    /// `SearchDoc.entry`, a journal draft by its text. The user's change comes first (it is what the row shows); the stored
     /// text stays searchable after it.
     static func doc(id: String, kind: SearchKind, at: Double, app: String, line: String, entry: Entry?, call: CallDoc?,
                     change: String?, pinned: Bool, shot: String = "") -> SearchDoc {

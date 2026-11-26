@@ -1,5 +1,5 @@
 // Background touch of Parakeet (voice warm round, 17 November 2026): the wired limit does not keep its weights paged
-// in (presses still paid 312-717 ms on the touch, docs/rounds/2026-11-17-voice-speed-two.md), so while he is active
+// in (presses still paid 312-717 ms on the touch, docs/rounds/2026-11-17-voice-speed-two.md), so while the user is active
 // the app sends a quiet touch every 4 min (engine frame 251). Pure rule; the timer is VoiceEngine.backgroundTouch.
 import Foundation
 

@@ -1,8 +1,8 @@
-// The journal's timeline in chunks that grow coarser with age (14 November 2026, Andrii: "whether something has been
+// The journal's timeline in chunks that grow coarser with age (14 November 2026, the user: "whether something has been
 // done today or last week, did like lunch, or very old"). Today and Yesterday by part of the day; the rest of this
 // week and last week by day; the rest of this month by week; each earlier month of this year by week; each earlier
 // year by month. Sessions (TapeRules.sessions) sit under the finest level; totals add up from them. Pure: `now` and
-// the calendar come in (Monday starts his week); tested in tests/time_chunk_rules.swift.
+// the calendar come in (Monday starts the user's week); tested in tests/time_chunk_rules.swift.
 import Foundation
 
 enum TimeChunks {

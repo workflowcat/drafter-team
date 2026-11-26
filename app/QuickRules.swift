@@ -8,7 +8,7 @@ enum QuickKind: String, CaseIterable {
     case copied, typed, voice
 }
 
-/// One row: a copied text, a message he typed (TypedList), or a voice take.
+/// One row: a copied text, a message the user typed (TypedList), or a voice take.
 struct QuickItem {
     let kind: QuickKind
     let text: String
@@ -70,7 +70,7 @@ struct QuickPin: Equatable {
     }
 }
 
-/// When he put items in, by item id and by app id (hashed): data/quick-stats.json holds numbers and ids only.
+/// When the user put items in, by item id and by app id (hashed): data/quick-stats.json holds numbers and ids only.
 struct QuickUses: Equatable {
     var items: [String: [Double]] = [:]
     var apps: [String: [Double]] = [:]
@@ -138,7 +138,7 @@ enum QuickRules {
     }
 
     /// A row's rank for a query: how it matches (3 the whole query, +1 at the start of its first line, 1.5 every word),
-    /// how fresh it is (2 now, half after 17 h), how often and how lately he put it in (1.5 a time, fading over a week,
+    /// how fresh it is (2 now, half after 17 h), how often and how lately the user put it in (1.5 a time, fading over a week,
     /// at most 6), and a little for the app it came from (0.2 a time, fading over a week, at most 1).
     /// So an item put in three times this week (≈ 3) beats a one-off copy of an hour ago (≈ 1.9) for the same words.
     static func score(match: Double, at: Double, now: Double, item: [Double], app: [Double]) -> Double {
@@ -149,7 +149,7 @@ enum QuickRules {
         return match + fresh + used + from
     }
 
-    /// He put `item` in at `t`: kept are its last 20 times and its app's last 50; at most 2,000 items (the least
+    /// The user put `item` in at `t`: kept are its last 20 times and its app's last 50; at most 2,000 items (the least
     /// recently used go).
     static func used(_ u: inout QuickUses, _ item: QuickItem, at t: Double) {
         u.items[item.id, default: []].append(t.rounded())
@@ -492,14 +492,14 @@ enum QuickKeyAction: Equatable {
     case toPanel(Int)                // a letter or digit (key code) while the switcher is held: into the panel with it; Space: into it empty
     case voiceAgain                  // `againKey` if set (keys round): the last voice take in again
     case swap                        // ⌘⇧V again right after a switcher paste: the next older copy replaces it
-    case openFull                    // ⌘⇧V (17 November 2026, Andrii: "always open the full version"): the full picker
+    case openFull                    // ⌘⇧V (17 November 2026, the user: "always open the full version"): the full picker
     case next                        // ⌘⇧V again while the full picker is open: the next row down
     case form(Int)                   // wire round: ← → step through the chosen clip's written forms before the paste
 }
 
 /// Which key does what. Before 14 November the switcher was marked open only once the main queue ran `open()`: a
 /// quick ⌘⇧V tap released ⌘ before that, the release was missed, the strip stayed open with nothing held, and the
-/// next key he typed - a letter, or ⌃⌥V itself, which the strip read as "V: next" whatever the modifiers - was taken by
+/// next key the user typed - a letter, or ⌃⌥V itself, which the strip read as "V: next" whatever the modifiers - was taken by
 /// it. So every panel open in the log came through the switcher, and ⌃⌥V never opened the panel while a strip hung.
 /// Here the state changes on the event itself, the modifiers are compared exactly, and a key that comes while the
 /// chord's modifiers are no longer down ends the switcher first (a missed release) and is then read afresh.

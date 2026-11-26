@@ -1,4 +1,4 @@
-"""An instant word finisher from his own writing only (no model): finish the word being typed with the word he
+"""An instant word finisher from the user's own writing only (no model): finish the word being typed with the word the user
 most often wrote after the same one or two words, when that is clear. Scored on the fresh replay set with the same
 simulated typist as bench/typescore.py, from text written BEFORE the fresh lines (no leak).
 
@@ -29,14 +29,14 @@ class Words(LiveWords):
 
 
 def corpus(cut):
-    """His words for a bench, as the live finisher reads them: the sources of engine/words.py Words.SOURCES from
+    """The user's words for a bench, as the live finisher reads them: the sources of engine/words.py Words.SOURCES from
     data/corpus.jsonl, dated before cut, minus the test lines, plus drafted lines from before cut (round four
     cleanup; before 2026-11-14 this read the old phrase file and typed lines only)."""
     return corpus_from(cut, LiveWords.SOURCES)
 
 
 def corpus_from(cut, srcs, newest_first=False):
-    """His lines from data/corpus.jsonl (bench/corpus.py) from these sources, dated before cut, minus the test lines,
+    """The user's lines from data/corpus.jsonl (bench/corpus.py) from these sources, dated before cut, minus the test lines,
     plus drafted lines from before cut. newest_first: the newest line first (phrase memory ties go to the newest)."""
     from held import Held
     import corpus as C
@@ -67,7 +67,7 @@ if __name__ == "__main__":
 
 
 def next_word(W, before, min_count=3, min_share=0.6):
-    """After a space: the word he most often wrote after the same two (or one) words."""
+    """After a space: the word the user most often wrote after the same two (or one) words."""
     line = before.split("\n")[-1]
     if not line.endswith(" "): return ""
     prev = [w.lower() for w in WORD.findall(re.split(r"[.!?]", line)[-1])]

@@ -1,4 +1,4 @@
-"""Quick inserts while typing (2026-10-21): his email, calendar link and other snippets from data/snippets.json
+"""Quick inserts while typing (2026-10-21): the user's email, calendar link and other snippets from data/snippets.json
 ({";key": "text"}, the same file the command panel saves to). Answered before phrase memory and the model, in well
 under a millisecond.
 

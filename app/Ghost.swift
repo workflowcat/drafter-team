@@ -83,7 +83,7 @@ final class Ghost {
     }
 
     /// Ghost-hide round (2026-11-18): the plain ghost's length as drawn (with every part added) and how many of its
-    /// letters he typed into it, for the "ghost gone" log line. Numbers only, never its words.
+    /// letters the user typed into it, for the "ghost gone" log line. Numbers only, never its words.
     private(set) var shownLen = 0
     private(set) var typedIn = 0
     /// Timestamp and reason when a visible plain ghost vanished involuntarily (used by KeyRules.tabHoldAfterVanish).
@@ -93,8 +93,8 @@ final class Ghost {
     var plainVisible: Bool { visible && action == nil && replace.isEmpty && !isDraft && !text.isEmpty }
 
     /// One line per plain ghost that leaves the screen: how ("vanished": nothing in its place; "shorter" / "longer":
-    /// other grey words took its place), why, its length, the letters he typed into it, what was left, and the new
-    /// ghost's length. `why` is a fixed word from the caller. Andrii, 18 November 2026: the ghost gets shorter, "but
+    /// other grey words took its place), why, its length, the letters the user typed into it, what was left, and the new
+    /// ghost's length. `why` is a fixed word from the caller. The user, 18 November 2026: the ghost gets shorter, "but
     /// sometimes it just disappears" - both show here.
     func gone(_ why: String, new: Int? = nil) {
         guard plainVisible else { return }
@@ -116,7 +116,7 @@ final class Ghost {
         text = suggestion; self.action = action; self.replace = replace; altHint = ""
         let c = cocoa(caret)
         // the grey words in the field's own font, as if already typed; no keycap after them since 1 November 2026
-        // (Andrii: "I know what tab does, clean it up")
+        // (The user: "I know what tab does, clean it up")
         let (font0, fieldColor) = fieldFont(c.height)
         let font = boxed ? Native.text(13) : font0
         let color = self.mid ? Native.muted : boxed ? Native.ink : fieldColor   // on the card's ground, not the field's: the card's own quiet ink
@@ -201,7 +201,7 @@ final class Ghost {
 
     /// Grey words show at full strength in their first frame (14 November 2026, speed first: a 90 ms fade from zero
     /// made the logged "shown" come before the words could be read). A new chip still fades in over 90 ms (none under
-    /// Reduce Motion); one that follows another while he types just changes, so nothing blinks.
+    /// Reduce Motion); one that follows another while the user types just changes, so nothing blinks.
     private func appear() {
         if panel.isVisible || action == nil || NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
             panel.alphaValue = 1; panel.orderFrontRegardless(); return
@@ -211,7 +211,7 @@ final class Ghost {
         NSAnimationContext.runAnimationGroup { ctx in ctx.duration = 0.09; panel.animator().alphaValue = 1 }
     }
 
-    /// His next message for an empty box (2026-10-20, like ChatGPT's suggested prompt): a small card just above the
+    /// The user's next message for an empty box (2026-10-20, like ChatGPT's suggested prompt): a small card just above the
     /// field (the app's placeholder stays uncovered). Several options: "‹ 2/5 · label ›" on top, the message in two
     /// lines under it; ←/→ flip, ↓ opens the whole message, ↑ folds it back, Tab puts the shown one in.
     private(set) var isDraft = false
@@ -354,7 +354,7 @@ final class Ghost {
         text.removeFirst(n)
         unsure = min(unsure, text.count); altHint = ""   // the other ideas were for the spot before these letters
         paint(text)
-        if boxed { fitBoxed(); return true }   // a chip stays put while he types into it
+        if boxed { fitBoxed(); return true }   // a chip stays put while the user types into it
         label.sizeToFit()
         var f = panel.frame
         // move right by the width of what was typed

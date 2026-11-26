@@ -1,26 +1,26 @@
 // What a typed draft is (2026-11-14, capture round; docs/rounds/2026-11-14-capture.md). Keys kept the field's whole
 // text before the caret (`lastBefore`) on every click and app switch: a rich web box read through text markers gave
-// the page's text with it, the 2000-character tail cut it mid-word, and a draft he went on typing was kept again as a
+// the page's text with it, the 2000-character tail cut it mid-word, and a draft the user went on typing was kept again as a
 // new row each time. The rules here, pure (no AppKit), tests/draft_capture_rules.swift:
-//  - a draft is what he wrote between his first and last key: the field's text minus what it held at his first key
+//  - a draft is what the user wrote between their first and last key: the field's text minus what it held at their first key
 //    (`start`); never the field's whole content;
-//  - a draft is never dropped (round two, lead review): when his keys, pastes, dictation and Drafter's writes
+//  - a draft is never dropped (round two, lead review): when the user's keys, pastes, dictation and Drafter's writes
 //    (`inserted`, Focus.wrote) cannot explain its length, the text after an anchor (the last 40 characters the field
-//    held before the caret at his first key) is the draft; with the anchor gone, the tail his keys explain, from a word
+//    held before the caret at the user's first key) is the draft; with the anchor gone, the tail their keys explain, from a word
 //    or sentence start, kept with "est": true (an estimate the journal can mark);
-//  - he came back to a draft he left in the same app within `window`: it grows that row (replace) or, the same text,
+//  - the user came back to a draft the user left in the same app within `window`: it grows that row (replace) or, the same text,
 //    adds nothing;
 //  - a row never starts inside a word: a cut moves back to the word's start, the tail window forward past the fragment.
 // `DraftHide`: rows listed in data/drafts-hidden.json (scripts/hide_bad_drafts.py) are skipped when History lists.
 import Foundation
 
 enum DraftCaptureRules {
-    /// A draft he comes back to within this time is the same message (the data: 70 of 98 bad rows within 5 minutes).
+    /// A draft the user comes back to within this time is the same message (the data: 70 of 98 bad rows within 5 minutes).
     static let window: TimeInterval = 10 * 60
     static let maxDraft = 2000, maxSent = 600
 
     /// A row kept before (this run): its text, when, and the app's name.
-    /// `t0`: his first key in it, when known.
+    /// `t0`: the user's first key in it, when known.
     struct Kept: Equatable {
         let text: String; let t: Double; let app: String; var t0: Double? = nil
     }
@@ -54,8 +54,8 @@ enum DraftCaptureRules {
         return String(c[k...])
     }
 
-    /// What he wrote: `end` (the field's text before the caret now) minus the start it shares with `start` (the same at
-    /// his first key; nil: not read, the whole of `end`). A draft of the same app he left here (`recent`) whose text
+    /// What the user wrote: `end` (the field's text before the caret now) minus the start it shares with `start` (the same at
+    /// the user's first key; nil: not read, the whole of `end`). A draft of the same app the user left here (`recent`) whose text
     /// the shared start ends with is carried into this one. -> the text and how many of its characters were carried.
     static func typedPart(start: String?, end: String, recent: [Kept] = [], app: String = "", now: Double = 0) -> (text: String, carried: Int) {
         let e = Array(end)
@@ -76,7 +76,7 @@ enum DraftCaptureRules {
         return (String(e[k...]), carried)
     }
 
-    /// What follows the last `anchorLength` characters of `start` (the field before the caret at his first key) inside
+    /// What follows the last `anchorLength` characters of `start` (the field before the caret at the user's first key) inside
     /// `end`, searched from the end; nil when they are gone or too short to find safely.
     static func anchored(start: String, end: String) -> String? {
         let s = Array(start)
@@ -102,7 +102,7 @@ enum DraftCaptureRules {
         return String(c[k...]).trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    /// His text in the field, never nothing: the shared-start part when his keys explain it, else the anchored part
+    /// The user's text in the field, never nothing: the shared-start part when their keys explain it, else the anchored part
     /// when they explain that, else the key-budget tail (est).
     static func resolve(start: String?, end: String, keys: Int, inserted: Int, recent: [Kept], app: String, now: Double) -> (text: String, est: Bool) {
         let part = typedPart(start: start, end: end, recent: recent, app: app, now: now)
@@ -117,7 +117,7 @@ enum DraftCaptureRules {
         return (estimate(base, budget: b), true)
     }
 
-    /// The draft row to keep when he leaves the field (Keys.keepDraft). `keys`: letters he typed there since his first
+    /// The draft row to keep when the user leaves the field (Keys.keepDraft). `keys`: letters the user typed there since their first
     /// key; `inserted`: characters pasted, dictated or put in by Drafter meanwhile; `recent`: rows kept this run, oldest
     /// first.
     static func record(start: String?, end: String, keys: Int, inserted: Int, recent: [Kept], app: String, now: Double) -> Record {
@@ -133,8 +133,8 @@ enum DraftCaptureRules {
         return .add(text, est: got.est)
     }
 
-    /// The times a new draft row carries (window round two reads "t0" as the start and "t" as the end): `t` his last
-    /// key (else now), `t0` his first key. A draft that replaces `continued` keeps that row's first start and moves the
+    /// The times a new draft row carries (window round two reads "t0" as the start and "t" as the end): `t` the user's last
+    /// key (else now), `t0` the user's first key. A draft that replaces `continued` keeps that row's first start and moves the
     /// end. A start is never after the end; unknown stays nil (old rows show no duration).
     static func stamps(firstKey: Double?, lastKey: Double?, now: Double, continued: Kept? = nil) -> (t0: Double?, t: Double) {
         let t = min(lastKey ?? now, now)
@@ -142,8 +142,8 @@ enum DraftCaptureRules {
         return (first.map { min($0, t) }, t)
     }
 
-    /// The line he sends with Return (Keys, /typed): the last line of what he wrote, at most `maxSent` characters, never
-    /// starting inside a word (`resolve`: never page text his keys cannot explain, never nothing).
+    /// The line the user sends with Return (Keys, /typed): the last line of what the user wrote, at most `maxSent` characters, never
+    /// starting inside a word (`resolve`: never page text the user's keys cannot explain, never nothing).
     static func sentLine(start: String?, end: String, keys: Int, inserted: Int, recent: [Kept], app: String, now: Double) -> String {
         let got = resolve(start: start, end: end, keys: keys, inserted: inserted, recent: recent, app: app, now: now)
         return tail(got.text.components(separatedBy: "\n").last ?? "", max: maxSent)

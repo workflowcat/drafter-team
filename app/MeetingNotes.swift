@@ -1,12 +1,12 @@
 // Meeting notes from the app (17 November 2026; rules and reasons: app/MeetingRules.swift). One start for the menu bar's
 // first item, the `;meet` / `;notes` quick start and the strip's calendar offer: a call app holding the microphone records
-// the call (both sides, CallWatch); otherwise an in-person note of his microphone, labelled "In person". The event comes
-// from his calendars through EventKit, the same set as `;free` and call names (Meeting.calendars, Settings › Calendars).
+// the call (both sides, CallWatch); otherwise an in-person note of the user's microphone, labelled "In person". The event comes
+// from the user's calendars through EventKit, the same set as `;free` and call names (Meeting.calendars, Settings › Calendars).
 import AppKit
 import EventKit
 
 enum MeetingNotes {
-    /// What the next recording's Spool takes: the event he started notes for, and in person or not. Set just before the
+    /// What the next recording's Spool takes: the event the user started notes for, and in person or not. Set just before the
     /// recording begins, taken (and cleared) by Spool.init.
     static var pending: (event: [String: Any]?, inPerson: Bool)?
     /// The recording running now was started as meeting notes or is a call (Spool.init sets it for every recording).
@@ -21,7 +21,7 @@ enum MeetingNotes {
 
     // MARK: the calendar
 
-    /// Events around now from his calendars: started up to 6 h ago, starting in the next 15 min. Empty without access.
+    /// Events around now from the user's calendars: started up to 6 h ago, starting in the next 15 min. Empty without access.
     static func events(_ now: Date = Date()) -> [(MeetEvent, EKEvent)] {
         guard EKEventStore.authorizationStatus(for: .event) == .fullAccess else { return [] }
         let cals = Meeting.calendars()
@@ -59,7 +59,7 @@ enum MeetingNotes {
     }
 
     /// Start meeting notes for `event`. A call app holding the microphone (offers on there): the call, both sides; else
-    /// in person, his microphone only.
+    /// in person, the user's microphone only.
     static func start(_ event: [String: Any]?, from: String) {
         guard Talk.shared.state == .idle else { Pill.shared.flash("Finish the voice take first"); return }
         let title = (event?["title"] as? String).map { " «\(MeetingRules.short($0))»" } ?? ""

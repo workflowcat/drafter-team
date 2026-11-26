@@ -1,12 +1,12 @@
-"""Item B3: steering vectors. The mean hidden state at a middle block (default 14 of 28) over his held-in lines minus
+"""Item B3: steering vectors. The mean hidden state at a middle block (default 14 of 28) over the user's held-in lines minus
 the same over a contrast set, added at inference with a strength knob (engine/tweaks.py, DRAFTER_TWEAKS; off unless
 the file is named). Per app kind it switches with no reload (Model.tweak_kind).
 
     .venv/bin/python -B bench/weights/steer.py --smoke                # a few lines, 3 held lines: checks the plumbing
     .venv/bin/python -B bench/weights/steer.py                        # all variants below
-    .venv/bin/python -B bench/weights/steer.py --only his-1.0 --layer 10
+    .venv/bin/python -B bench/weights/steer.py --only the user's-1.0 --layer 10
 Vectors (strength 1.0 = add the whole gap between the two means):
-  his   his lines minus the model's own lines in the same apps (written with his layer off and no head)
+  their   their lines minus the model's own lines in the same apps (written with their layer off and no head)
   kind  AI-app lines and chat lines, each minus the centre of the two (one vector per kind, picked by the app)
   lang  Ukrainian minus English lines: measured (how well it separates, how close to `kind`), not applied
 Output: data/bench/weights/steer-<variant>.json; vectors in bench/out/weights/steer-<variant>.npz."""

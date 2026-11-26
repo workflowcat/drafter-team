@@ -1,4 +1,4 @@
-// Contact mentions from the keyboard (17 November 2026, Andrii; `@` dropped the same day: it clashes with the mention
+// Contact mentions from the keyboard (17 November 2026, the user; `@` dropped the same day: it clashes with the mention
 // pickers of Notion, Claude, Slack and other apps), pure. Two ways in, both fully local (data/entities.json, the `;`
 // card's store of contacts and people cards); nothing is sent.
 // - `;ana` (3+ letters, the `;` family of `;docs` and `;free`): a small list of people; a number puts in one field of

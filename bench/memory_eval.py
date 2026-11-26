@@ -1,4 +1,4 @@
-"""Phrase memory, leave-one-out: 300 of his messages are taken out, cut mid-way, and the memory (without them) is asked
+"""Phrase memory, leave-one-out: 300 of the user's messages are taken out, cut mid-way, and the memory (without them) is asked
 to finish them. Prints how often it speaks, how often it is right, and its speed."""
 import json, random, re, sys, time
 from pathlib import Path

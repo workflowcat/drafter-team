@@ -235,7 +235,7 @@ struct TapeRuleChecks {
         check(facts.from == 6180 && facts.to == 7000 && facts.took == 820, "from the first key to the last row")
     }
 
-    /// Nouns for kinds, never a past participle as a label (Andrii, 14 November).
+    /// Nouns for kinds, never a past participle as a label (the user, 14 November).
     static func names() {
         check(TapeRules.one("spoken") == "Voice note" && TapeRules.one("typed") == "Draft" && TapeRules.one("copied") == "Clip", "one of a kind")
         check(TapeRules.one("copied", clip: "link") == "Link" && TapeRules.one("call") == "Recording", "clips by what they are")

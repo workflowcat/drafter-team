@@ -63,7 +63,7 @@ enum Typography {
             return
         }
         guard let w = decide(s, key: key) else { return }
-        // keys he typed meanwhile wait in the tap: let them through first, and swap only if there were none
+        // keys the user typed meanwhile wait in the tap: let them through first, and swap only if there were none
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.015) {
             guard Keys.shared.inputRevision == revision, !IsSecureEventInputEnabled() else { return }
             write(w, key: key, at: s, t0: t0)

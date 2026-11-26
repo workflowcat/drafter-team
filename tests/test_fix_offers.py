@@ -49,7 +49,7 @@ print("PASS app kinds")
 
     def test_take_back_counts_only_a_word_left_standing(self):
         source = (ROOT / 'app/Autocorrect.swift').read_text()
-        stands = source[source.index('    static func stands('):source.index('    /// His word, put back')]
+        stands = source[source.index('    static func stands('):source.index('    /// The user\'s word, put back')]
         program = 'import Foundation\nenum Autocorrect {\n' + stands + r'''}
 precondition(Autocorrect.stands("wrod", in: "so the wrod"))
 precondition(Autocorrect.stands("wrod", in: "so the wrod is, and more "))
@@ -75,7 +75,7 @@ class KeepAudit(unittest.TestCase):
             self.assertEqual(set(rows), {'tomorow', 'teh', 'recieve', 'datakit'})
             self.assertTrue(rows['tomorow'][5] and rows['teh'][5] and rows['recieve'][5])
             self.assertEqual(rows['teh'][3], 'the')                       # a swap counts as one edit
-            self.assertFalse(rows['datakit'][5])                          # his own word, written more than its neighbour
+            self.assertFalse(rows['datakit'][5])                          # the user's own word, written more than its neighbour
             self.assertEqual(rows['recieve'][1], 1)                        # the legacy list counts as one take-back
             self.assertEqual(keep_audit.main(['--data', str(data), '--summary']), 0)
 

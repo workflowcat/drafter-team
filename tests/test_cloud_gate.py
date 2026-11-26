@@ -1,4 +1,4 @@
-"""The engine never sends his text to a Claude worker unless the setting that owns that feature is on (Argon review
+"""The engine never sends the user's text to a Claude worker unless the setting that owns that feature is on (Argon review
 2026-11-14, findings 1 and 2). No model, no network, no `claude` process: server functions run from their source
 with stand-ins.
 
@@ -35,7 +35,7 @@ ENTRIES = {
     "claude_worker": ({"ask"}, {"call_notes", "voice_claude"}),
     "notes": ({"make"}, {"call_notes"}),
 }
-# called from the handler with no owning setting (AGENTS.md "What leaves the Mac": his own action)
+# called from the handler with no owning setting (AGENTS.md "What leaves the Mac": the user's own action)
 NO_OWNER = {("command", "plan"), ("notes_ask", "answer")}
 
 
@@ -139,7 +139,7 @@ class Gate(unittest.TestCase):
 
 
 class Server(unittest.TestCase):
-    """The gated server functions, run from source with stand-ins and his live-like settings."""
+    """The gated server functions, run from source with stand-ins and the user's live-like settings."""
     NAMES = ("claude_on", "rewrite", "outline", "rework")
 
     def setUp(self):

@@ -1,9 +1,9 @@
-// Pick parts, the panel (15 November 2026). One long text as pieces; he picks the ones he needs and keeps them as a
-// new clip (Return), puts them in where he was (⌘Return), or keeps the rest instead (⌥Return). The source is never
+// Pick parts, the panel (15 November 2026). One long text as pieces; the user picks the ones the user needs and keeps them as a
+// new clip (Return), puts them in where the user was (⌘Return), or keeps the rest instead (⌥Return). The source is never
 // changed. Rules and the key state machine: app/PickRules.swift. Saving: History.keepPick.
 //
 // The panel takes the keys itself: Drafter comes to the front while it is open (its own bundle is a skipped app, so
-// no ghost text, chips or autocorrect act on what he types here), and his app comes back when it closes. Insert goes
+// no ghost text, chips or autocorrect act on what the user types here), and their app comes back when it closes. Insert goes
 // through Capture.put, the Quick panel's way (never a skipped app, a password field or under secure input).
 import AppKit
 import Carbon
@@ -12,7 +12,7 @@ final class PickPanel {
     static let shared = PickPanel()
 
     /// Open on a text. `sourceId`: PickRules.sourceId(kind:text:) of the item it came from (QuickItem.id for a row
-    /// without a picture). `sourceApp`: the app that item came from (the new clip keeps it). `mine`: the text is his
+    /// without a picture). `sourceApp`: the app that item came from (the new clip keeps it). `mine`: the text is the user's
     /// own writing (a draft, a sent line, a voice take). `things`: a finder for the "things" level (nil: the
     /// detector, FoundRules.pickThings, with dates read against `written`, when the text was written).
     static func open(text: String, sourceId: String, sourceApp: String, mine: Bool = false, written: Date = Date(), things: PickThings? = nil) {
@@ -34,7 +34,7 @@ final class PickPanel {
         guard it.clip == .text, !it.image else { Pill.shared.flash("Only a text has parts to pick"); return }
         open(text: it.text, sourceId: it.id, sourceApp: it.app, mine: it.kind != .copied, written: Date(timeIntervalSince1970: it.at))
     }
-    /// A journal item: his change if he made one, else the stored text; the id is the stored text's.
+    /// A journal item: the user's change if the user made one, else the stored text; the id is the stored text's.
     static func open(_ it: TapeItem) {
         guard it.doc == nil, (it.entry?.clip ?? .text) == .text, !it.current.isEmpty else { Pill.shared.flash("Only a text has parts to pick"); return }
         open(text: it.current, sourceId: PickRules.sourceId(kind: it.quick?.rawValue ?? "copied", text: it.text), sourceApp: it.app, mine: it.kind != .copied,
@@ -88,7 +88,7 @@ final class PickPanel {
         log("pick: open, \(text.count) chars, \(state.pieces.count) \(PickRules.levelId(state.level)), \(Int(Date().timeIntervalSince(t0) * 1000)) ms")
     }
 
-    /// back: his app comes to the front again.
+    /// back: the user's app comes to the front again.
     func close(_ why: String, back: Bool = true) {
         guard isOpen else { return }
         isOpen = false
@@ -147,7 +147,7 @@ final class PickPanel {
         })
     }
 
-    /// Into the app he came from; nothing is kept.
+    /// Into the app the user came from; nothing is kept.
     private func insert(_ text: String) {
         guard !preview else { say("In the field"); return }
         guard let o = origin, !o.isTerminated else {

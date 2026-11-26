@@ -66,7 +66,7 @@ struct AddStyleApp: View {
     }
 }
 
-/// One of his voice modes: its prompt, saved on Return or when he leaves the field; empty removes the mode.
+/// One of the user's voice modes: its prompt, saved on Return or when the user leaves the field; empty removes the mode.
 struct ModeField: View {
     @EnvironmentObject var m: WindowModel
     let name: String

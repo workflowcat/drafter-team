@@ -54,7 +54,7 @@ enum Focus {
     /// Drafter's own windows answer Accessibility on Drafter's main thread. Asked from any other thread, the call waits
     /// for main; when main is itself waiting in an AX call (the HIServices lock that background call holds), both wait
     /// for good (3 November 2026: `Talk.readNames` -> `screenContext` read Drafter's own window from a background queue
-    /// while main sat in `Shots.tick` -> `windowTitle`; the call froze and his side of a 53-minute call was lost).
+    /// while main sat in `Shots.tick` -> `windowTitle`; the call froze and the user's side of a 53-minute call was lost).
     /// So off the main thread nothing here touches Drafter's own process, its elements or the system-wide element while
     /// Drafter is in front (that one is answered by the front app, which is then Drafter).
     static let ownPid = getpid()
@@ -407,7 +407,7 @@ enum Focus {
                 let m = markers(el)
                 if let (b, a, mrect) = m, a.isEmpty || a.hasPrefix("\n") || (a.components(separatedBy: "\n").first ?? "").trimmingCharacters(in: .whitespaces).isEmpty {
                     let squash = { (t: String) in String(t.filter { !$0.isWhitespace }.suffix(16)) }
-                    // at the very end: the plain value keeps his line breaks (markers may not), when both end alike
+                    // at the very end: the plain value keeps the user's line breaks (markers may not), when both end alike
                     let atEnd = a.isEmpty && squash(value) == squash(b)
                     var sp = Spot(app: app, el: el, value: atEnd ? value : b + a, caret: atEnd ? ns.length : (b as NSString).length,
                                   before: atEnd ? value : b, title: windowTitle(app), rect: mrect, role: role)
@@ -442,7 +442,7 @@ enum Focus {
         return sp
     }
 
-    /// The text on screen just before the field: the conversation he is answering (chat apps, Claude, mail).
+    /// The text on screen just before the field: the conversation the user is answering (chat apps, Claude, mail).
     /// Walks back from the field through earlier siblings and up the parents, nearest text first, so a long
     /// conversation is never read in full. Runs off the main thread; stops at `maxChars`, `maxNodes` or `budget` s.
     static func screenContext(_ el: AXUIElement, maxChars: Int = 2500, maxNodes: Int = 5000, budget: Double = 0.4) -> String {
@@ -551,7 +551,7 @@ enum Focus {
     // MARK: insert
 
     static let mark: Int64 = 0x7479_7069   // "typi": our own key events, the tap lets them pass
-    /// Characters put into fields other than by his letter keys (every write Drafter makes, and his ⌘V): a draft's
+    /// Characters put into fields other than by the user's letter keys (every write Drafter makes, and the user's ⌘V): a draft's
     /// length may come from them (DraftCaptureRules, Keys.keepDraft). Only `wrote` adds to it; every write path in the
     /// app goes through `setSelectedText`, `typeText` or `commandV`, which call it (tests/test_draft_writes.py).
     private(set) static var ownChars = 0
@@ -595,7 +595,7 @@ enum Focus {
         return v
     }
 
-    /// How long a paste keeps his clipboard swapped: a busy Electron app reads it late, and putting his own clipboard
+    /// How long a paste keeps the user's clipboard swapped: a busy Electron app reads it late, and putting their own clipboard
     /// back first pasted that instead (0.4 s was too short for Codex).
     static var restoreDelay: Double { NSWorkspace.shared.frontmostApplication.map { isWeb($0) } == true ? 1.0 : 0.4 }
 
@@ -697,7 +697,7 @@ enum Focus {
     }
 
     /// `restore: false` leaves the text on the clipboard (a fallback paste that may have missed: ⌘V still has it).
-    /// His clipboard while one of Drafter's pastes still sits on it, and that paste's change count.
+    /// The user's clipboard while one of Drafter's pastes still sits on it, and that paste's change count.
     private static var owed: (items: [NSPasteboardItem], count: Int)?
 
     /// `write`: puts other types instead of the text (a picture, a file URL; round three), the same way back.
@@ -706,7 +706,7 @@ enum Focus {
     static func paste(_ text: String, restore: Bool = true, write: ((NSPasteboard) -> Void)? = nil) {
         let pb = NSPasteboard.general
         if write == nil { pasted?(text) }   // the paste trail (soft round, PasteWatch.own): where Drafter put a text, no text kept
-        // a second paste before the first one put his clipboard back (Backspace right after a rework): what is on the
+        // a second paste before the first one put the user's clipboard back (Backspace right after a rework): what is on the
         // clipboard now is Drafter's own text, so the one to give back is still the first one's (Codex review 2026-11-01)
         let saved: [NSPasteboardItem]
         if let o = owed, pb.changeCount == o.count { saved = o.items }
@@ -725,11 +725,11 @@ enum Focus {
         if restore { owed = (saved, mine) }
         commandV()
         DispatchQueue.main.asyncAfter(deadline: .now() + restoreDelay) {
-            guard restore, pb.changeCount == mine else { return }   // he copied something meanwhile (or another paste came): keep that
+            guard restore, pb.changeCount == mine else { return }   // the user copied something meanwhile (or another paste came): keep that
             owed = nil
             pb.clearContents()
             if !saved.isEmpty { pb.writeObjects(saved) }
-            History.skipChange(pb.changeCount)   // his own clipboard back: not a new copy for the history
+            History.skipChange(pb.changeCount)   // the user's own clipboard back: not a new copy for the history
         }
     }
 

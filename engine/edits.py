@@ -1,5 +1,5 @@
-"""Learn from his edits (idea 6): when he sends a line that came from a voice take, the words he changed are
-"heard -> fixed" pairs. They wait in data/edits.jsonl until he accepts one in the menu; an accepted pair goes into the
+"""Learn from the user's edits (idea 6): when the user sends a line that came from a voice take, the words the user changed are
+"heard -> fixed" pairs. They wait in data/edits.jsonl until the user accepts one in the menu; an accepted pair goes into the
 shared dictionary (spelling fixes for Voice and Whisper's hint)."""
 import difflib, json, re, time
 from pathlib import Path
@@ -26,7 +26,7 @@ def recent_takes(minutes=30):
 
 
 def pairs(take, sent):
-    """Word changes between what Drafter put in and what he sent: 1-3 words each side, not just case or punctuation."""
+    """Word changes between what Drafter put in and what the user sent: 1-3 words each side, not just case or punctuation."""
     a, b = WORD.findall(take), WORD.findall(sent)
     out = []
     for op, i1, i2, j1, j2 in difflib.SequenceMatcher(None, [w.lower() for w in a], [w.lower() for w in b]).get_opcodes():
@@ -41,7 +41,7 @@ def pairs(take, sent):
 
 
 def sent(text):
-    """A line he sent: find the take it came from (most words shared) and keep its changed words as candidates."""
+    """A line the user sent: find the take it came from (most words shared) and keep its changed words as candidates."""
     best, score = None, 0.0
     tw = set(w.lower() for w in WORD.findall(text))
     for t in recent_takes():

@@ -1,5 +1,5 @@
 """Idle ghost (round "earlier", step 7): with the caret still in a chat box, empty or after a finished sentence, the
-loaded local model drafts his likely next message. Made-up conversations only (bench/idle_set.json: Ukrainian,
+loaded local model drafts the user's likely next message. Made-up conversations only (bench/idle_set.json: Ukrainian,
 English, mixed). The engine runs in this process (it loads the model the settings pick), under the guard:
 
     .venv/bin/python -B bench/weights/guarded.py 6 bench/idle.py --policy-mode current-2026-11-16 [--n 24]

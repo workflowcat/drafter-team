@@ -1,4 +1,4 @@
-"""Andrii's own writing, local only (data/ is not in git).
+"""The user's own writing, local only (data/ is not in git).
 
     .venv/bin/python engine/style.py      # reads Beeper (read-only), writes data/style.json
 
@@ -26,7 +26,7 @@ def messages(after="2026-07-01T00:00:00Z", limit=1500):
     for m in rows:
         if m.get("type") != "TEXT" or not m.get("text"): continue
         t = clean(m["text"])
-        if t.startswith(("клод:", "Клод:")) or len(t) > 400 or t in seen: continue   # pasted AI output is not his voice
+        if t.startswith(("клод:", "Клод:")) or len(t) > 400 or t in seen: continue   # pasted AI output is not the user's voice
         seen.add(t); res.append(t)
     return res
 
@@ -46,7 +46,7 @@ def build():
         words = list(re.finditer(r"\S+", t))
         k = max(2, min(len(words) - 2, int(len(words) * rnd.uniform(0.45, 0.7))))
         cut = words[k].start()
-        if rnd.random() < 0.35:                  # sometimes cut inside a word, as when he is still typing
+        if rnd.random() < 0.35:                  # sometimes cut inside a word, as when the user is still typing
             w = words[k]; cut = w.start() + max(1, (w.end() - w.start()) // 2)
         cases.append({"before": t[:cut], "truth": t[cut:], "app": "Beeper"})
     DATA.mkdir(exist_ok=True)

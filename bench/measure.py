@@ -1,23 +1,23 @@
 """The one replay (round four, 2026-11-14; the Codex design review's "measurement contract"). Every typing bench scores
 through `replay()`: bench/typescore.py and bench/lengths.py keep their own printouts on top of it.
 
-A simulated Andrii types each held-out line key by key. When no grey text is up, the policy is asked at that key; what
-it returns is shown (a new ghost). While he types the same letters the ghost stays (type-through, costs nothing, not
-a new ghost); Tab takes the next grey word when it is exactly his; anything else drops it.
+A simulated user types each held-out line key by key. When no grey text is up, the policy is asked at that key; what
+it returns is shown (a new ghost). While the user types the same letters the ghost stays (type-through, costs nothing, not
+a new ghost); Tab takes the next grey word when it is exactly the user's; anything else drops it.
 
 Measured, per app (claude = AI apps, beeper = chats) and per language (uk / en by the line's letters):
   keys       key spots where a new ghost could be asked (no ghost up)
   shown      new ghosts;  coverage = shown / keys
-  right      first word exactly his at first display, with a word-boundary check: a ghost word "plan" is wrong when
-             he wrote "planning" (the ghost's word must end where his word ends)
+  right      first word exactly the user's at first display, with a word-boundary check: a ghost word "plan" is wrong when
+             the user wrote "planning" (the ghost's word must end where the user's word ends)
   wrong/1k   wrong first words per 1,000 typed letters
   saved      net letters saved: letters Tab put in minus one key per Tab, share of all letters (the old `saved`)
-  taken      new ghosts he took at least one word of (typescore's old `right%`)
+  taken      new ghosts the user took at least one word of (typescore's old `right%`)
   new ms     engine time for a new ghost (p50 / p90 / p99); type-through updates are not in it
-  late       new ghosts that would come after his next key at `gap_ms` between keys (then not shown at that key)
+  late       new ghosts that would come after the user's next key at `gap_ms` between keys (then not shown at that key)
 
 Confidence: 95% intervals by resampling whole lines (bootstrap), since the spots of one line are not independent.
-Dates: `split()` cuts held lines into calibration and test by the date he sent them (data/typed.jsonl), after
+Dates: `split()` cuts held lines into calibration and test by the date the user sent them (data/typed.jsonl), after
 grouping versions of one message (a line and the same line longer or shorter, a dictated and a typed copy).
 """
 import json, random, re, statistics, sys
@@ -37,7 +37,7 @@ def lang(text):
 
 
 def first_right(ghost, truth):
-    """The ghost's first word is exactly his, the word boundary included."""
+    """The ghost's first word is exactly the user's, the word boundary included."""
     w = next_word(ghost)
     if not w.strip() or not truth.startswith(w.rstrip()): return False
     end = len(w.rstrip())
@@ -63,7 +63,7 @@ def replay(items, rows, policy, gap_ms=None, tab_cost=1, only=None):
                 s["keys"] += 1
                 g, ms = policy(row, text[:pos], it["src"])
                 g = clean(text[:pos], g)
-                if g and gap_ms is not None and ms > gap_ms:      # came after his next key: not shown here
+                if g and gap_ms is not None and ms > gap_ms:      # came after the user's next key: not shown here
                     s["late"] += 1; g = ""
                 if g:
                     ghost, took = g, False
@@ -193,7 +193,7 @@ def groups(texts):
 
 
 def dates(items, typed_path=None):
-    """When he sent each held line (data/typed.jsonl `t`), else 0; versions of one message take the earliest."""
+    """When the user sent each held line (data/typed.jsonl `t`), else 0; versions of one message take the earliest."""
     typed_path = Path(typed_path or ROOT / "data/typed.jsonl")
     sent = {}
     try:
@@ -264,7 +264,7 @@ if __name__ == "__main__":
     import typescore as ts
     ap = argparse.ArgumentParser(description="The one replay: live policy on a typebench recording")
     ap.add_argument("path")
-    ap.add_argument("--gap", type=float, default=None, help="ms between his keys: a ghost slower than that is late")
+    ap.add_argument("--gap", type=float, default=None, help="ms between the user's keys: a ghost slower than that is late")
     ap.add_argument("--no-memory", action="store_true")
     ap.add_argument("--gate", default="data/gate.json")
     a = ap.parse_args()

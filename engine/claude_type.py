@@ -39,7 +39,7 @@ class Worker:
         Worker.make_room()
         env = {k: v for k, v in os.environ.items() if not k.startswith(("CLAUDE", "ANTHROPIC"))}
         env.update(PATH=f"{Path.home()}/.local/bin:/usr/bin:/bin", CLAUDE_CODE_MAX_OUTPUT_TOKENS=str(max_tokens or 32 + 6 * MAX_WORDS))
-        # his text never goes on the command line (any process reads argv through `ps`; 2026-11-14): the system prompt
+        # the user's text never goes on the command line (any process reads argv through `ps`; 2026-11-14): the system prompt
         # goes in a 0600 file the CLI reads at start, deleted once the process answers anything (it reads the file once)
         self.system_file = prompt_file(system)
         self.p = subprocess.Popen(Worker.argv(model, self.system_file), stdin=subprocess.PIPE, stdout=subprocess.PIPE,

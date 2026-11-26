@@ -1,4 +1,4 @@
-// The journal adapts to its window (soft round, 14 November 2026; Andrii: "make it adaptable, like a resizable
+// The journal adapts to its window (soft round, 14 November 2026; the user: "make it adaptable, like a resizable
 // window", "more navigable, more movable"). Pure rules, tested in tests/journal_layout.swift:
 // - breakpoints: wide = three panes; under 900 pt the reader is a slide-over (Return opens it, Esc closes it); under
 //   640 pt the left pane is a strip of glyphs;
@@ -6,8 +6,8 @@
 //   its minimum it collapses;
 // - the gallery: columns from the pane's width and the card size, card heights per size step, the arrow keys in the
 //   grid (Up and Down keep the column across group labels and chunk headers, Left and Right wrap);
-// - back and forward through what he looked at, like a browser;
-// - the order of pinned items he dragged (the stored history never moves);
+// - back and forward through what the user looked at, like a browser;
+// - the order of pinned items the user dragged (the stored history never moves);
 // - the window frame restored inside the screen it opens on.
 import Foundation
 import CoreGraphics
@@ -19,7 +19,7 @@ enum JournalLayout {
     enum Side: Equatable { case full, strip, hidden }
     enum Reader: Equatable { case pane, over, closed }
 
-    /// The panes for a width. `sidebar`: he wants the left pane; `reader`: his choice for the reader (nil: the default,
+    /// The panes for a width. `sidebar`: the user wants the left pane; `reader`: the user's choice for the reader (nil: the default,
     /// open for the list, closed for the gallery so the cards get the room).
     static func panes(width: Double, sidebar: Bool, reader: Bool?, gallery: Bool) -> (side: Side, reader: Reader) {
         let side: Side = !sidebar ? .hidden : width < narrow ? .strip : .full
@@ -141,7 +141,7 @@ enum JournalLayout {
 
     // MARK: back and forward
 
-    /// One place he looked at: the chosen line, the filter, the grouping, the search, the view.
+    /// One place the user looked at: the chosen line, the filter, the grouping, the search, the view.
     struct Place: Equatable { var chosen: String?; var filter: String; var group: String; var query: String; var view: String }
     struct History: Equatable {
         var back: [Place] = [], forward: [Place] = []
@@ -178,7 +178,7 @@ enum JournalLayout {
 
     // MARK: pinned order
 
-    /// The pinned items in his order: the ones he placed, in that order, then new pins as they come (newest first).
+    /// The pinned items in the user's order: the ones the user placed, in that order, then new pins as they come (newest first).
     static func pinned(_ order: [String], pins: [String]) -> [String] {
         let set = Set(pins)
         let kept = order.filter { set.contains($0) }

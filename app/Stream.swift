@@ -1,4 +1,4 @@
-// The journal as one calm column, search first (stream round, 23 November 2026; Andrii chose direction C: "c feels
+// The journal as one calm column, search first (stream round, 23 November 2026; the user chose direction C: "c feels
 // right, but with some better controls over recording and editing especially"). A big search field on top, then the
 // items as one stream: newest first under day headings, or best first while words are searched (the journal's own
 // search, JournalSearch; scope words narrow it, app/StreamRules.swift). Each item is one row that opens in place to its
@@ -123,7 +123,7 @@ struct RecordControl: View {
     }
 }
 
-/// Two small bars: his microphone, and the other side on a call.
+/// Two small bars: the user's microphone, and the other side on a call.
 struct LevelMeter: View {
     @EnvironmentObject var m: WindowModel
     let call: Bool
@@ -421,7 +421,7 @@ struct StreamUnderField: View {
 struct StreamDayHead: View {
     let title: String
     let count: Int
-    var fold: (() -> Void)? = nil      // a past day he opened: fold it back into its summary line
+    var fold: (() -> Void)? = nil      // a past day the user opened: fold it back into its summary line
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 6) {
             Text(title).font(NativeFont.text(12.5, .semibold)).foregroundStyle(UIInk.muted)

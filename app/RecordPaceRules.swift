@@ -1,4 +1,4 @@
-// How often a recording's live values reach the screen (17 November 2026, Andrii mid-call: "recording feels a little
+// How often a recording's live values reach the screen (17 November 2026, the user mid-call: "recording feels a little
 // heavy"; measured: Drafter at 116% CPU, SwiftUI rebuilding the whole recording window for each level change, and the
 // journal rebuilt every 3 s because the live recording's length changed). Pure: no AppKit. Used by RecordLive
 // (app/RecordWindow.swift) and WindowModel.applyDocs (app/Recordings.swift). Test: tests/record_pace_rules.swift.

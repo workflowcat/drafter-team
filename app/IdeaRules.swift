@@ -1,7 +1,7 @@
-// Phrases he types often, for the Shortcuts page (13 November 2026, window round: it offered a pasted chat export
-// line, "[12/11/2026, 15:32:05] Name: …", as something he typed). Pure: Snippets.ideas reads the files off the main
+// Phrases the user types often, for the Shortcuts page (13 November 2026, window round: it offered a pasted chat export
+// line, "[12/11/2026, 15:32:05] Name: …", as something the user typed). Pure: Snippets.ideas reads the files off the main
 // thread and hands the texts here. A sent line that looks pasted gives no phrases: a chat-export time stamp at a line
-// start, a text found in his clipboard history, or a line longer than a typed message plausibly is.
+// start, a text found in the user's clipboard history, or a line longer than a typed message plausibly is.
 import Foundation
 
 enum IdeaRules {
@@ -38,7 +38,7 @@ enum IdeaRules {
         return marked.split(separator: "\u{1}").map { $0.split(whereSeparator: { $0.isWhitespace }).joined(separator: " ") }.filter { !$0.isEmpty }
     }
 
-    /// His clipboard history: every entry and every sentence or line in it, normalized, for a quick look-up.
+    /// The user's clipboard history: every entry and every sentence or line in it, normalized, for a quick look-up.
     struct Clips {
         let set: Set<String>
         init(_ texts: [String]) {

@@ -39,7 +39,7 @@ class Slips(unittest.TestCase):
 
     def test_his_words_stay(self):
         self.assertEqual(pairs("тіма норм, шо там по проєкту"), [])
-        self.assertEqual(pairs("рахунок звтра надішлю", keep={"звтра"}), [])   # a word he took back
+        self.assertEqual(pairs("рахунок звтра надішлю", keep={"звтра"}), [])   # a word the user took back
         self.assertEqual(pairs("Kyiv Mykola sqlite треба"), [])                 # names, new words: no target
         self.assertEqual(pairs("привіт як справи"), [])
 

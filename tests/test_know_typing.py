@@ -121,7 +121,7 @@ class Typing(unittest.TestCase):
         for name, other in (('Hanna', 'hand'), ('Назім', 'назад'), ('Straße', 'STRASSEn')):
             with self.subTest(name=name):
                 w = words.Words(); p = pack(entry(name)); before = name[:3]
-                # Keep his finisher silent to exercise only the knowledge fallback.
+                # Keep the user's finisher silent to exercise only the knowledge fallback.
                 def finish(): return words.finish_with_source(w, before, (99, .6, 1), p)
                 self.assertEqual(finish(), (name[3:], 'know'))
                 w.add(other)

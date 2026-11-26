@@ -1,6 +1,6 @@
 // Strip style "composer" (setting stripStyle, the default since 14 November 2026). StripRules.swift says where each
 // part goes and why; this file holds the state and draws it. One view draws everything (no text fields).
-// The band beside the camera housing says the state (left) and his level and the keys (right); the words sit under it,
+// The band beside the camera housing says the state (left) and the user's level and the keys (right); the words sit under it,
 // large and in the primary text colour, 1 line growing to 4, then the older lines scroll up. In `live` insert mode
 // (setting voiceInsert) the words go into the field, so the strip shows the band only: one place where words show.
 // Notch-black in both appearances (drawn in the dark tokens). Colour: coral only for live, mint only for "in the field",
@@ -21,13 +21,13 @@ struct StripContent {
     var rows: [String] = []           // an offer's rows, or a message
     var kind = "", side = ""
     var me: CGFloat = 0, them: CGFloat?
-    var wave: [CGFloat] = []          // his level, newest last, 0 ... 1
+    var wave: [CGFloat] = []          // the user's level, newest last, 0 ... 1
     var countdown: (Date, Double)?
     var lines = 0                     // lines of words shown (a note grows, never shrinks while it lasts)
-    // round three: Return while he speaks puts in what he said so far and the note goes on
+    // round three: Return while the user speaks puts in what the user said so far and the note goes on
     var band = ""                     // the quiet line in place of "Listening": "Inserting → Claude", "In the field"
     var bandOK = false                // the band says it is in the field (mint)
-    var waking = false                // the voice engine loads; his audio is kept and goes in when it is ready
+    var waking = false                // the voice engine loads; the user's audio is kept and goes in when it is ready
     var lang = ""                     // the language pin: "UK" / "EN" after the state word, "" unpinned
 }
 
@@ -53,7 +53,7 @@ final class ComposerStrip: StripFace {
     var previewLive: Bool?
 
     private var c: StripContent { get { view.c } set { view.c = newValue } }
-    /// Words show in the strip only when the field is not typed into while he speaks.
+    /// Words show in the strip only when the field is not typed into while the user speaks.
     private var wordsShow: Bool { !(previewLive ?? (Drafter.shared.settings.voiceInsert == "live")) }
 
     private func make() -> NSPanel {
@@ -246,7 +246,7 @@ final class ComposerStrip: StripFace {
         c.quiet = text != nil; say(text == nil ? "Listening" : "No microphone signal"); view.needsDisplay = true
     }
 
-    /// Return while he speaks: the segment so far is on its way to the field; the new segment's words start fresh, the
+    /// Return while the user speaks: the segment so far is on its way to the field; the new segment's words start fresh, the
     /// level goes on. The line says where it goes.
     func segment(_ line: String) {
         guard panel?.isVisible == true || previewing, c.phase == .listening || c.phase == .piece else { return }
@@ -256,8 +256,8 @@ final class ComposerStrip: StripFace {
         view.needsDisplay = true
     }
 
-    /// A segment's insert landed (or went to the clipboard). While he still speaks it is a short mark in the band that
-    /// never hides his live words; once the note is over it is the usual receipt.
+    /// A segment's insert landed (or went to the clipboard). While the user still speaks it is a short mark in the band that
+    /// never hides the user's live words; once the note is over it is the usual receipt.
     func segmentDone(ok: Bool, reason: String) {
         guard c.phase == .listening || c.phase == .piece || c.phase == .finishing else { ok ? inserted() : copied(reason); return }
         bandGen += 1; let gen = bandGen
@@ -312,7 +312,7 @@ final class ComposerStrip: StripFace {
         place()
     }
 
-    /// Where a draft goes if he presses Return now (Talk reads the focused field, at most 4 times a second).
+    /// Where a draft goes if the user presses Return now (Talk reads the focused field, at most 4 times a second).
     func target(_ place: String, button: String) {
         guard c.phase == .armed || previewing else { return }
         let relabel = c.button != button
@@ -637,7 +637,7 @@ final class ComposerView: NSView {
         }
         let ls = shownLines(c.words)
         guard !ls.isEmpty else { return }
-        // the newest line at the bottom of the room; while he speaks the newest two words, still changing, one step quieter
+        // the newest line at the bottom of the room; while the user speaks the newest two words, still changing, one step quieter
         let n = ls.count, top = r.minY + r.height - CGFloat(n) * StripRules.line
         let quietFrom = c.phase == .listening ? StripRules.newestFrom(ls[n - 1], words: 2) : ls[n - 1].count
         for (i, t) in ls.enumerated() {
@@ -652,7 +652,7 @@ final class ComposerView: NSView {
         }
     }
 
-    /// His level: small bars, the newest nearest the housing's side away from it (they run right to left).
+    /// The user's level: small bars, the newest nearest the housing's side away from it (they run right to left).
     private func drawLevel(_ lv: CGRect) {
         let r = R(lv)
         let live = c.phase == .listening && !c.quiet

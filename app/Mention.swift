@@ -68,7 +68,7 @@ final class MentionCard {
         }
     }
 
-    /// Field `k` of the chosen person replaces what he typed (`;ana`, `;ana `, `;ana 2`).
+    /// Field `k` of the chosen person replaces what the user typed (`;ana`, `;ana `, `;ana 2`).
     private func put(_ k: Int) {
         guard let e = current, let t = typed, let s = spot else { hide(); return }
         guard let text = MentionRules.text(e, key: k) else {

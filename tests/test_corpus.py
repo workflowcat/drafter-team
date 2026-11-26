@@ -1,4 +1,4 @@
-"""Round three (2026-11-13): his writing as one dated corpus (bench/corpus.py) and weighted training lines from it
+"""Round three (2026-11-13): the user's writing as one dated corpus (bench/corpus.py) and weighted training lines from it
 (bench/make_train.py --corpus). Made-up lines only; no model, no personal records.
 
     .venv/bin/python -B tests/test_corpus.py

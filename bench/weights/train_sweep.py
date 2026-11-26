@@ -1,4 +1,4 @@
-"""Item A: training variants of his layer through the installed mlx-lm (0.32.2): LoRA vs DoRA, rank, number of layers,
+"""Item A: training variants of the user's layer through the installed mlx-lm (0.32.2): LoRA vs DoRA, rank, number of layers,
 learning rate and schedule, iterations, recency weighting. Each variant is trained, recorded on the held-out set and
 scored like the weekly retrain, against the live layer.
 
@@ -20,7 +20,7 @@ import common as C
 import recency
 
 # the 14 November every-source mix (docs/rounds/2026-11-13-typing.md, round three): chats sampled at 0.1 so 60,000
-# Beeper lines do not drown his prompts; takes left out (they add fillers). corpus.WEIGHTS (the nightly) is the
+# Beeper lines do not drown the user's prompts; takes left out (they add fillers). corpus.WEIGHTS (the nightly) is the
 # same mix since 14 November (tests/test_corpus.py checks it).
 MIX = {"typed": 2, "cc": 1, "codex": 1, "fb": 0.5, "vault": 0.5, "beeper": 0.1, "import": 1}
 LIVE = {"fine_tune_type": "lora", "rank": 8, "scale": 20.0, "num_layers": 16, "lr": 1e-4, "iters": 1500, "batch": 4}

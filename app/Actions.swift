@@ -70,7 +70,7 @@ enum Actions {
         }
     }
 
-    /// Free time in his own calendars (all of them, busy events only), working hours, weekdays, from 15 min from now,
+    /// Free time in the user's own calendars (all of them, busy events only), working hours, weekdays, from 15 min from now,
     /// on quarter hours, spread out: up to `count` (default 3) slots of `minutes`. nil + reason when the calendar
     /// cannot be read; never invented slots.
     static func freeSlots(_ r: [String: Any], _ done: @escaping ([(start: String, end: String, chip: String)]?, String?) -> Void) {

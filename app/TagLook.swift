@@ -1,9 +1,9 @@
-// How a tag looks and what he set for it (tags round, 17 November 2026; rules: TagRules in app/TapeRules.swift).
-// - TagPrefs: the tags he hid or pinned (data/journal-tag-prefs.json, never in git), and how many items hold each tag,
+// How a tag looks and what the user set for it (tags round, 17 November 2026; rules: TagRules in app/TapeRules.swift).
+// - TagPrefs: the tags the user hid or pinned (data/journal-tag-prefs.json, never in git), and how many items hold each tag,
 //   so a guessed tag (TagRules.auto) shows only once it holds enough items. Main thread only.
 // - Favicons: a site tag's icon, asked for ONCE per site from the site itself (https://<site>/favicon.ico, then
 //   apple-touch-icon.png) and kept in data/favicons (a miss is kept too, so it is never asked again). Never in the
-//   preview or the tests; only the site's name leaves the Mac, as when he opens the link.
+//   preview or the tests; only the site's name leaves the Mac, as when the user opens the link.
 // - TagMark: the tag's mark in SwiftUI (site icon, app icon, initials, else the kind's glyph); TagLook.draw the same
 //   in the list's own drawing.
 import AppKit

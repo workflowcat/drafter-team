@@ -1,4 +1,4 @@
-// Screen reading (Andrii, 2026-10-19; Cotypist does the same): a picture of the window above the field, read on this
+// Screen reading (the user, 2026-10-19; Cotypist does the same): a picture of the window above the field, read on this
 // Mac with Vision (Ukrainian + English). The picture is never stored; only the text goes to the local engine. Needs
 // Screen Recording for Drafter (asked once). Since 14 November 2026 the capture, the reading as a conversation and the
 // cache live in app/ScreenContext.swift; this file keeps the permission state and the plain reading.

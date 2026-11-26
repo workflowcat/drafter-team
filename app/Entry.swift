@@ -75,8 +75,8 @@ struct Entry: Identifiable, Hashable {
 enum TypedList {
     static let window: TimeInterval = 30 * 60, sameDay: TimeInterval = 24 * 3600
 
-    /// Is `b` (later, same app) the same message as draft `a`? The same words within a day (he left the field and came
-    /// back); within 30 minutes also when it grew out of `a`, he cut it back (not to a stub), or most of it is the same
+    /// Is `b` (later, same app) the same message as draft `a`? The same words within a day (the user left the field and came
+    /// back); within 30 minutes also when it grew out of `a`, the user cut it back (not to a stub), or most of it is the same
     /// start with an edit near the end.
     static func same(_ a: String, _ b: String, _ dt: TimeInterval) -> Bool {
         if a == b { return dt <= sameDay }

@@ -4,7 +4,7 @@
 // hairlines with the hour in mono. The Quick panel, the switcher, the window and Settings draw with these pieces, so
 // they read as one tape. Drawing only (AppKit, flipped views); no state, no files.
 //
-// Second pass (same day; Andrii: "a little less blocky, less pixelated", "maybe not as blue"): line glyphs for every
+// Second pass (same day; the user: "a little less blocky, less pixelated", "maybe not as blue"): line glyphs for every
 // interface mark, no sprocket holes, no
 // colour bands on every row, 1 pt hairlines, rounder corners, more air. Blue stays for the caret and focus only; the
 // panel reads in grey alone.
@@ -21,7 +21,7 @@ enum TapeKind: CaseIterable {
     var color: NSColor {
         switch self { case .copied: return Native.blue; case .typed: return Native.mint; case .said: return Native.violet; case .call: return Native.coral }
     }
-    /// The kind's name for people: a noun (Andrii, 14 November: no past-tense verbs as names).
+    /// The kind's name for people: a noun (the user, 14 November: no past-tense verbs as names).
     var name: String {
         switch self { case .copied: return "Clips"; case .typed: return "Drafts"; case .said: return "Voice notes"; case .call: return "Recordings" }
     }

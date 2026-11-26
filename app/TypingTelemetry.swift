@@ -23,7 +23,7 @@ enum Caret {
     }
 }
 
-/// Keystroke-to-ghost time as Andrii sees it (after the debounce), written every 20 shows to data/latency.json.
+/// Keystroke-to-ghost time as the user sees it (after the debounce), written every 20 shows to data/latency.json.
 enum Stats {
     static var app: [Double] = [], engine: [Double] = [], n = 0
     static func add(ms: Double, engineMs: Double) {

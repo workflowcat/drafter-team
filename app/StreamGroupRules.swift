@@ -1,4 +1,4 @@
-// Topics and daily summaries in the stream (topics round, 24 November 2026; Andrii: "some kind of sorting by topic and
+// Topics and daily summaries in the stream (topics round, 24 November 2026; the user: "some kind of sorting by topic and
 // grouping, easier to view" and "a daily summary rather than this infinite journal of stuff I will likely never go back
 // to"). Built on TopicClusterRules (local: shared people and projects, shared words, bursts in one app); no model, no
 // network, nothing stored. Pure (Foundation), tests/stream_group_rules.swift.
@@ -7,10 +7,10 @@ import Foundation
 enum StreamGroupRules {
     /// The topics of a set of rows: clusters of two or more, biggest last-touched first; the rest are loose ends.
     static func topics(_ items: [TopicInput]) -> (topics: [TopicCluster], loose: [String]) {
-        // First look at his real rows (25 November 2026): one company tag on most rows pulled 1,365 rows into one
+        // First look at the user's real rows (25 November 2026): one company tag on most rows pulled 1,365 rows into one
         // "topic", and pairs of copies or screenshots made dozens of two-row topics. So a tag on more than a quarter
         // of the rows (and over 40 of them) is home, not a topic, and does not join rows; and a topic needs three rows,
-        // or two sharing a person or project, with at least one he typed, said or recorded.
+        // or two sharing a person or project, with at least one the user typed, said or recorded.
         let all = TopicClusterRules.cluster(withoutHomeTags(items), untaggedBursts: true, commonShare: commonShare).filter { keeps($0, of: items.count) }.map(stableId)
         let at = Dictionary(items.map { ($0.id, $0.at) }, uniquingKeysWith: { a, _ in a })
         let text = Dictionary(items.map { ($0.id, $0.text) }, uniquingKeysWith: { a, _ in a })
@@ -93,7 +93,7 @@ enum StreamGroupRules {
             return keys.intersection(w).count
         }
         // a sentence beats a file path or a link; a path alone is named by its file
-        // a picture's line ("Screen · ...") is the classifier's words, not his: it names a topic only as a last resort
+        // a picture's line ("Screen · ...") is the classifier's words, not the user's: it names a topic only as a last resort
         let pictureHeads = PictureLookRules.Kind.allCases.map { PictureLookRules.word($0) + " · " }
         func isPath(_ t: String) -> Bool {
             t.hasPrefix("/") || t.hasPrefix("~/") || t.contains("://") || pictureHeads.contains { t.hasPrefix($0) }
@@ -128,7 +128,7 @@ enum StreamGroupRules {
         return out
     }
 
-    /// Whether a day shows as one summary line: on with `foldPast`, never today or yesterday, never a day he opened,
+    /// Whether a day shows as one summary line: on with `foldPast`, never today or yesterday, never a day the user opened,
     /// never the day holding the chosen row (the arrows open the day they walk into), never in best-first order.
     static func folded(day: String, today: String, yesterday: String, foldPast: Bool, ranked: Bool,
                        opened: Set<String>, chosenDay: String?) -> Bool {

@@ -14,7 +14,7 @@ enum Home {
     }()
     static let data = root.appendingPathComponent("data")
     static let settings = data.appendingPathComponent("settings.json")
-    /// The live dictionary (his contacts and projects): untracked in data/ since 2026-11-14. Moved once from the old
+    /// The live dictionary (the user's contacts and projects): untracked in data/ since 2026-11-14. Moved once from the old
     /// tracked dictionary/words.json, a link left there for Voice Notes; the engine does the same (engine/dictionary.py).
     static let words: URL = {
         let new = data.appendingPathComponent("words.json"), old = root.appendingPathComponent("dictionary/words.json")
@@ -94,7 +94,7 @@ final class Drafter {
     static let shared = Drafter()
     var settings = Settings.load()
     var lowBattery = false
-    /// Low battery no longer pauses (Andrii, 2026-11-16: "should keep running, just stay under limit"): the engine
+    /// Low battery no longer pauses (the user, 2026-11-16: "should keep running, just stay under limit"): the engine
     /// already drops look-ahead work under 30 % and the guard keeps its memory cap. `lowBattery` only labels the menu.
     var active: Bool { !settings.paused }
 
@@ -218,13 +218,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // speed plan's item 5: a deck after a long idle took up to 1.1 s)
         DispatchQueue.main.asyncAfter(deadline: .now() + 3) { Capture.shared.prewarm(); CaptureNote.shared.prewarm() }
         MeetingNotes.watch()   // the strip offers notes 1 min before an event with a video link (app/MeetingNotes.swift)
-        // words to learn change only after a take he edits; the menu also asks when it opens (2026-11-14: was every 15 s)
+        // words to learn change only after a take the user edits; the menu also asks when it opens (2026-11-14: was every 15 s)
         Timer.scheduledTimer(withTimeInterval: 120, repeats: true) { _ in Learn.refresh() }.tolerance = 20
         Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { _ in History.watchClipboard() }.tolerance = 0.1
         Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
             if Engine.shared.ready { Actions.poll(); Budget.idleCheck() }
         }.tolerance = 0.3
-        // background touch of Parakeet every 4 min while he is active (app/VoiceWarmRules.swift); checked each 30 s
+        // background touch of Parakeet every 4 min while the user is active (app/VoiceWarmRules.swift); checked each 30 s
         Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { _ in VoiceEngine.shared.backgroundTouch() }.tolerance = 5
         Budget.watchPressure()   // memory pressure: the idle text model sleeps first, voice keeps its pages (app/PressureRules.swift)
         Drafter.shared.watchSettings()   // settings changed from outside: file events (was a 1 s check)
@@ -233,7 +233,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             Ghost.shared.hide("app switch")
             if let app = n.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication {
                 Focus.wake(app)
-                if app.processIdentifier != getpid() { Capture.lastOther = app }   // his last app, never Drafter (keyApp)
+                if app.processIdentifier != getpid() { Capture.lastOther = app }   // the user's last app, never Drafter (keyApp)
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { Keys.shared.warmField() }
         }

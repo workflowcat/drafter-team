@@ -1,6 +1,6 @@
 // Calls (Granola-style, 2026-10-19): when another app opens the microphone and a call app is running, Drafter offers
 // "record this call?" in the strip and waits for Tab (it never starts by itself: other people are on the call).
-// Recording keeps both sides apart: his microphone, and the Mac's own sound (the other side) through ScreenCaptureKit.
+// Recording keeps both sides apart: the user's microphone, and the Mac's own sound (the other side) through ScreenCaptureKit.
 // A mix of the two feeds the live transcript and outline; at the end Whisper reads each side on its own and the
 // transcript says who spoke.
 import AppKit
@@ -157,7 +157,7 @@ final class SysAudio: NSObject, SCStreamOutput, SCStreamDelegate {
 
     /// The Mac's sound for the next `n` microphone samples (zeros when it has none yet). Called on the microphone's queue.
     /// More than 5 s waiting means the microphone stalled (a route change, a reopen): then all of it comes back at once,
-    /// longer than `n`, and the tape puts silence on his side for the gap (Argon 6: it was thrown away).
+    /// longer than `n`, and the tape puts silence on the user's side for the gap (Argon 6: it was thrown away).
     func take(_ n: Int) -> [Float] {
         lock.lock(); defer { lock.unlock() }
         if live.count > n + 16000 * 5 { let out = live; live.removeAll(keepingCapacity: true); return out }
@@ -227,7 +227,7 @@ final class Tape {
         // a call keeps its other side on the same timeline even while the Mac's sound is not coming (silence there)
         let other = sy?.take(s.count) ?? (call ? [Float](repeating: 0, count: s.count) : nil)
         sy?.micHeard(secs: Double(s.count) / 16000, loud: peak > 0.03)
-        // the other side waited through a microphone stall: his side gets silence for the gap, before this chunk
+        // the other side waited through a microphone stall: the user's side gets silence for the gap, before this chunk
         let gap = max(0, (other?.count ?? 0) - s.count)
         sp.add(me: gap > 0 ? [Float](repeating: 0, count: gap) + s : s, them: other)
         if sy != nil, let other, other.contains(where: { abs($0) > 0.02 }) { lock.lock(); themLoud = Date(); lock.unlock() }
@@ -272,7 +272,7 @@ final class Spool {
     init?(call: Bool, app: String) {
         dir = Spool.root.appendingPathComponent(ISO8601DateFormatter().string(from: Date()).replacingOccurrences(of: ":", with: "-"))
         do { try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true) } catch { return nil }
-        // meeting notes (app/MeetingNotes.swift): the event he started them for, and "In person" without a call app
+        // meeting notes (app/MeetingNotes.swift): the event the user started them for, and "In person" without a call app
         let meet = MeetingNotes.pending; MeetingNotes.pending = nil
         MeetingNotes.active = call || meet != nil
         let inPerson = !call && meet?.inPerson == true
@@ -449,7 +449,7 @@ enum Offer {
     }
     static func clear() { action = nil; until = .distantPast; app = nil; forms = 0; step = nil; noTab = false }
 
-    /// Esc (or he types on): the offer goes, nothing starts (2026-11-01, Andrii: "I'm not sure how to dismiss it").
+    /// Esc (or the user types on): the offer goes, nothing starts (2026-11-01, the user: "I'm not sure how to dismiss it").
     static func dismiss(_ why: String) {
         guard active else { return }
         clear()
@@ -632,7 +632,7 @@ enum CallWatch {
         guard Talk.shared.state == .idle, let busy = busyNow else { return }
         if !busy { offeredFor = nil; busyTicks = 0; event = nil; loggedOff = nil; return }
         // a call holds the mic for a while; Drafter's own takes (and the moment after them) do not count
-        // (2026-10-20: ten offers in Slack after his own voice takes)
+        // (2026-10-20: ten offers in Slack after the user's own voice takes)
         guard Date() > ownUntil else { return }
         busyTicks += 1
         // the app that really holds the mic names the offer (2026-10-21: Zoom held it, the offer said Slack); a call app
@@ -701,7 +701,7 @@ enum CallWatch {
         Talk.shared.beginCall()
     }
 
-    /// ⇧ right ⌥ while another app holds the microphone for a call: record the call (both sides), not a note of his
+    /// ⇧ right ⌥ while another app holds the microphone for a call: record the call (both sides), not a note of the user's
     /// microphone only. -> true when it started one.
     static func startIfCall() -> Bool {
         guard Talk.shared.state == .idle else { return false }
@@ -710,7 +710,7 @@ enum CallWatch {
             guard let app = pick().app else { return false }   // offers off in every call app holding it: a long note
             offeredFor = app
         }
-        guard let app = offeredFor, on(app) else { return false }   // offers off there: a long note of his mic instead
+        guard let app = offeredFor, on(app) else { return false }   // offers off there: a long note of the user's mic instead
         if event == nil { event = Meeting.now() }
         log("call: started with ⇧ right ⌥ in \(offeredFor ?? "?")")
         accept()
@@ -721,7 +721,7 @@ enum CallWatch {
 /// The calendar event a call belongs to (EventKit, Drafter's own calendar access): one going on now or starting in the
 /// next 10 minutes, a video link or other people first. -> {title, people, start, end}
 enum Meeting {
-    /// The calendars he lets Drafter read (Settings › Calendars); nil = all of them.
+    /// The calendars the user lets Drafter read (Settings › Calendars); nil = all of them.
     static func calendars() -> [EKCalendar]? {
         let off = Drafter.shared.settings.calendarsOff
         guard !off.isEmpty else { return nil }
@@ -734,8 +734,8 @@ enum Meeting {
         guard EKEventStore.authorizationStatus(for: .event) == .fullAccess else { return nil }
         let s = Actions.store, cals = calendars()
         if cals?.isEmpty == true { return nil }   // every calendar switched off
-        // only his chosen calendars, and only a meeting (other people or a video link): a block of time from another
-        // tool's calendar named the Slack offer before (2026-11-01, Andrii: "pulling too much from my other tools")
+        // only the user's chosen calendars, and only a meeting (other people or a video link): a block of time from another
+        // tool's calendar named the Slack offer before (2026-11-01, the user: "pulling too much from my other tools")
         let evs = s.events(matching: s.predicateForEvents(withStart: at.addingTimeInterval(-6 * 3600), end: at.addingTimeInterval(10 * 60), calendars: cals))
             .filter { !$0.isAllDay && $0.startDate <= at.addingTimeInterval(10 * 60) && $0.endDate > at && $0.status != .canceled }
             .filter { !others($0).isEmpty || (!needPeople && link($0)) }

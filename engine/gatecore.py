@@ -1,4 +1,4 @@
-"""The decision gate (2026-10-31): how likely the model's next grey word is exactly what Andrii types next. A plain
+"""The decision gate (2026-10-31): how likely the model's next grey word is exactly what the user types next. A plain
 logistic model over a few numbers the engine already has (token probabilities, mid-word or not, app, language, does
 the instant word finisher agree), so it costs a dot product. Trained by bench/gate.py on recordings of the fresh
 replay set; weights in data/gate.json. GitHub Copilot's "contextual filter" works the same way.
@@ -68,8 +68,8 @@ WORD_NAMES = ["bias", "level2", "level1", "log_n", "share", "second", "prefix", 
 
 
 def word_features(cand, before, claude):
-    """The word gate (round four, 2026-11-14): how likely his own finish of the word being typed (Words.candidate) is
-    exactly his word, from counts alone, so it can answer before the model is asked."""
+    """The word gate (round four, 2026-11-14): how likely the user's own finish of the word being typed (Words.candidate) is
+    exactly their word, from counts alone, so it can answer before the model is asked."""
     if not cand or not cand["rest"].strip(): return None
     line = before.split("\n")[-1]
     return [1.0, float(cand["level"] == 2), float(cand["level"] == 1), math.log1p(cand["n"]), cand["share"], cand["second"],
@@ -82,7 +82,7 @@ SEL_NAMES = ["bias", "words", "memory", "model_p", "model_low", "word_p", "mem_h
 
 
 def sel_features(kind, ghost, before, claude, **f):
-    """The selector (round four, bench/selector.py): one chance that the first word of a ghost is his, whichever
+    """The selector (round four, bench/selector.py): one chance that the first word of a ghost is the user's, whichever
     source offers it (kind "model", "words" or "memory"); f: model_p, model_low, word_p, mem_hits."""
     line = before.split("\n")[-1]
     v = dict.fromkeys(SEL_NAMES, 0.0)
@@ -115,7 +115,7 @@ def letters(s):
 
 
 def grow(toks, out, more, max_words, min_letters):
-    """A ghost whose sure words add fewer than `min_letters` (2026-11-13: under 5 letters he takes one 3% of the
+    """A ghost whose sure words add fewer than `min_letters` (2026-11-13: under 5 letters the user takes one 3% of the
     time): the next words follow while each of their tokens is at least `more`, up to `max_words` words in all, and
     stop as soon as it is long enough. -> the longer ghost, or `out` as it was when it never got there."""
     if letters(out) >= min_letters: return out
@@ -211,14 +211,14 @@ def settled(raw, shown, min_letters=0):
     return bool(m) and (bool(m.group(2)) or bool(END_RE.search(m.group(1))))
 
 
-# Sentence-length ghosts (long round, 2026-11-14, Andrii: "it also gotta suggest more words ... full sentences i could
+# Sentence-length ghosts (long round, 2026-11-14, the user: "it also gotta suggest more words ... full sentences i could
 # finish quickly"). The show decision stays on the first word (the gate); after it the ghost runs on while the running
-# chance that he gets that far (the product of each later word's probability, the first word left out: the gate
+# chance that the user gets that far (the product of each later word's probability, the first word left out: the gate
 # already judged it) stays at or above a floor, to the end of the sentence or clause, a line end, or a word cap. One
 # unsure function word does not cut it (a per-token bar did); a run of weak words does. bench/long_ghosts.py picked
 # the numbers.
 SENT_END = re.compile(r"[.!?…][\"'»”)\]]*$")
-# "words" (earlier round, 2026-11-16, Andrii: "lets do 3-5 words and lessen the confidence"): at least `min_words`
+# "words" (earlier round, 2026-11-16, the user: "lets do 3-5 words and lessen the confidence"): at least `min_words`
 # words when the model has them, whatever their chance, at most `words`; between the two the running chance decides;
 # only a sentence end or a line break ends it sooner (no clause or comma stop).
 RUN_MODES = {"phrase": {"words": 6, "stops": ",;:", "comma_words": 0},
@@ -314,11 +314,11 @@ def extend(toks, first, more, max_words):
 
 # The lower gate's bar per model (earlier round, 2026-11-16, bench/earlier.py on held-137 with each model's own refit
 # gate): a guess band [bar, the gate's own threshold). 0.3 on both until 17 November. More-bold round (2026-11-17,
-# Andrii: "a bit less sureness in the guesses and suggest more"; bench/guess_sweep.py, the live order with the shipped
+# The user: "a bit less sureness in the guesses and suggest more"; bench/guess_sweep.py, the live order with the shipped
 # selector and the early notch, later half by date, no lines newer than the held ones in the word corpus): 0.15 with
 # the selector's bar half a step lower (0.65 -> 0.575): qwen3-4b-mine shown 35.7 -> 47.6% (1.33x), kept 363.0 -> 374.8
 # per 1,000 letters, wrong offers 75.3 -> 111.6 (1.48x); live 1.7B 33.3 -> 45.2% (1.36x), wrong 77.4 -> 116.3 (1.50x).
-# His setting `guessBar` (Settings > Typing, "Bolder / Careful") comes with each request as "guess_bar".
+# The user's setting `guessBar` (Settings > Typing, "Bolder / Careful") comes with each request as "guess_bar".
 # A gate file may carry its own "guess"; DRAFTER_GUESS overrides all.
 GUESS = {"live": 0.15, "qwen3-4b-mine": 0.15}
 GUESS_DEFAULT = 0.15
@@ -327,7 +327,7 @@ SEL_REF, SEL_STEP = 0.3, 0.5  # the guess bar the shipped selector bar was set w
 
 
 def guess_bar(g, model_id="live", env=None, req=None):
-    """The lower gate for the model loaded now: env, else the request's "guess_bar" (his setting), else the gate
+    """The lower gate for the model loaded now: env, else the request's "guess_bar" (the user's setting), else the gate
     file's "guess", else the catalog id's, else GUESS_DEFAULT. The request's is kept inside GUESS_RANGE."""
     if env:
         try: return float(env)
@@ -339,14 +339,14 @@ def guess_bar(g, model_id="live", env=None, req=None):
     return GUESS.get(model_id or "live", GUESS_DEFAULT)
 
 
-# Earlier round step 6 (2026-11-16, Andrii: "the lower confidence and longer completion is definitely working
+# Earlier round step 6 (2026-11-16, the user: "the lower confidence and longer completion is definitely working
 # better"): one notch lower, and lower still right after a space, where the gate said no 89% of the time
 # (bench/earlier6.py: a place bar is the gate refit with a place intercept). App switch `earlyStart`.
 EARLY_GUESS, EARLY_SPACE = 0.25, 0.2
 
 
 def bolder_sel(th, g, step=SEL_STEP):
-    """The selector's bar (his word, phrase memory, the model's sure words) moved with the guess bar (more-bold round,
+    """The selector's bar (the user's word, phrase memory, the model's sure words) moved with the guess bar (more-bold round,
     2026-11-17): down by `step` of how far `g` sits under SEL_REF, up when over it; kept in 0.3-0.9."""
     if g is None: return th
     return round(min(0.9, max(0.3, th - step * (SEL_REF - g))), 3)
@@ -360,7 +360,7 @@ def early_bar(low, before, on):
     return min(low, EARLY_SPACE) if before[-1:].isspace() else low
 
 
-# Idle ghost (step 7, 2026-11-16, Andrii: "start predicting and suggesting the next message even when the cursor is
+# Idle ghost (step 7, 2026-11-16, the user: "start predicting and suggesting the next message even when the cursor is
 # just blinking"): the caret rests in a chat box, empty or after a finished sentence; the local model drafts the next
 # message, shown when its first word scores at least IDLE_BAR (bench/idle.py on made-up chats). Step 7b: with the chat
 # prompt for an empty box (engine/idle_prompt.py) 0.2 shows 14 of 18 empty boxes, first word right 4/14, close 7/14;
@@ -400,8 +400,8 @@ def keeps(old_before, new_before, most=KEEP_LETTERS, written=""):
     line; the app then shows its rest if those characters are its start (app/Keys.swift answer, typedSince).
     bench/earlier.py waits --keep: qwen3-4b-mine shown 21.9 -> 26.6 %, kept letters 306 -> 320 per 1,000, key to ghost
     p50 / p95 68 / 151 -> 60 / 134 ms.
-    Short-ghost round (2026-11-18): also any length when what he typed is the start of what the running answer has
-    written so far (`written`, its raw text after old_before): he is typing the ghost through, so its rest still comes.
+    Short-ghost round (2026-11-18): also any length when what the user typed is the start of what the running answer has
+    written so far (`written`, its raw text after old_before): the user is typing the ghost through, so its rest still comes.
     Before, a first part of one word typed to its end hid the ghost, and the next ask (over 4 letters) stopped the rest."""
     if not old_before or not new_before.startswith(old_before): return False
     typed = new_before[len(old_before):]

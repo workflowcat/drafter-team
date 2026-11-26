@@ -16,7 +16,7 @@ struct ScreenContextChecks {
         print("screen context rules: all passed")
     }
 
-    /// A chat: the other side on the left, his bubbles on the right, a sidebar outside the field's column.
+    /// A chat: the other side on the left, the user's bubbles on the right, a sidebar outside the field's column.
     static func chat() {
         let lines = [
             L("Inbox", 0.01, 0.02, 0.12), L("Олена Мельник", 0.01, 0.08, 0.15), L("Pinned notes", 0.01, 0.14, 0.15),   // sidebar
@@ -30,12 +30,12 @@ struct ScreenContextChecks {
         let want = "Вони: Привіт! Ти бачив новий draft of the zebra plan?\nЯ: Так, глянув вчора ввечері\nВони: Окей, тоді коли зідзвонимось? Може у четвер після обіду"
         check(c.text == want, "chat: two sides, wrapped lines joined, sidebar, time and button dropped -> \(c.text.debugDescription)")
         check(c.blocks == 3 && c.marked == 3, "chat: three marked messages")
-        // the same conversation with no column known: the sidebar is in, but it is not called his
+        // the same conversation with no column known: the sidebar is in, but it is not called the user's
         let bs = R.speakers(R.blocks(R.clean(lines)), kind: "chat")
         check(bs.contains { $0.text.hasPrefix("Так") && $0.who == .me }, "chat without a column: his right bubble is still his")
     }
 
-    /// An AI app: his prompt as a narrow bubble on the right, the answer across the column.
+    /// An AI app: the user's prompt as a narrow bubble on the right, the answer across the column.
     static func ai() {
         let lines = [
             L("Draft a short note to the landlord about the boiler", 0.45, 0.05, 0.50),
@@ -113,7 +113,7 @@ struct ScreenContextChecks {
             if R.when(.request, now: s, lastCapture: last, lastKey: key) == .now { captures += 1; last = s }
         }
         check(captures <= 6 && captures >= 5, "a bursty typing minute: 5-6 looks, \(captures)")
-        // without pauses (keys every 0.2 s all minute): no look until he stops
+        // without pauses (keys every 0.2 s all minute): no look until the user stops
         captures = 0; last = -100
         for i in 0..<300 { let s = Double(i) * 0.2; if R.when(.poll, now: s + 0.1, lastCapture: last, lastKey: s) == .now { captures += 1; last = s } }
         check(captures == 0, "typing without a pause: no looks, \(captures)")

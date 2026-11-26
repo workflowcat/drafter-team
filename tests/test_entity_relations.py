@@ -1,5 +1,5 @@
 """Relations and ambiguous name forms (engine/entities.py, 14 November 2026): typed weighted edges, the floor, the
-broad-note damping, co-mentions by NPMI, the context decision for shared / ordinary / short forms, and his fixes.
+broad-note damping, co-mentions by NPMI, the context decision for shared / ordinary / short forms, and the user's fixes.
 Made-up entities only, in a temporary folder.
 
     .venv/bin/python -B tests/test_entity_relations.py
@@ -76,7 +76,7 @@ class Ambiguity(unittest.TestCase):
         self.assertEqual(E.form_flags('anvil', [[2, 'name']], {'anvil'}, set(), names), ['ordinary'])
         self.assertEqual(E.form_flags('kite', [[3, 'name']], set(), set(), names), ['short'])
         self.assertEqual(E.form_flags('kite', [[3, 'name']], set(), {'kite'}, names), ['ordinary', 'short'])
-        # his lower-case habit does not make a lower-case slug ordinary: that is how the slug is written
+        # the user's lower-case habit does not make a lower-case slug ordinary: that is how the slug is written
         self.assertEqual(E.form_flags('deploy-kit', [[4, 'name']], set(), {'deploy-kit'}, names), [])
         self.assertEqual(E.form_flags('vera stone', [[0, 'name']], {'vera'}, set(), names), [])
         # a project and its repo with one name: one thing, not a guess between two
@@ -160,7 +160,7 @@ class Fixes(unittest.TestCase):
 
 
 class Build(unittest.TestCase):
-    """A made-up vault: people, an org, a story with a short list, an epic that lists many, and lines he typed."""
+    """A made-up vault: people, an org, a story with a short list, an epic that lists many, and lines the user typed."""
 
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory(); self.addCleanup(self.tmp.cleanup)
@@ -261,7 +261,7 @@ def src(system, rid, name, kind='person', aliases=(), handles=None, vlinks=()):
 
 
 class Review(unittest.TestCase):
-    """The lead's review of 14 November: twins, ranking ties, duplicates, his own name, apps as people, ordinary first
+    """The lead's review of 14 November: twins, ranking ties, duplicates, the user's own name, apps as people, ordinary first
     words, chat placeholders."""
 
     # 1 -------------------------------------------------------------------------------------------------------------
@@ -310,12 +310,12 @@ class Review(unittest.TestCase):
         self.assertEqual(len(out), len(groups) - 3)   # two merges, one own name
         self.assertIn(['Dana B.', 'Dana Brook'], names)
         self.assertEqual(n['merged'], 2)
-        self.assertEqual(n['own_dropped'], 1)                                   # his own name in another case is no entity
+        self.assertEqual(n['own_dropped'], 1)                                   # the user's own name in another case is no entity
         self.assertNotIn(['VERA stone'], names)
         q = {tuple(sorted((x['a'], x['b']))): x for x in queue}
         self.assertEqual(q[('contacts:c2', 'vault:People/Kit Fox.md')]['why'], ['same full name'])
         self.assertIn(('contacts:c3', 'vault:People/Kit Fox.md'), q)                     # initials: asked, not merged
-        self.assertNotIn(('board:person:mira2', 'vault:People/Mira Volk.md'), q)          # his "not the same" holds
+        self.assertNotIn(('board:person:mira2', 'vault:People/Mira Volk.md'), q)          # the user's "not the same" holds
         self.assertIn('different usernames', q[('board:person:rex', 'contacts:c5')]['why'])
         self.assertEqual(queue[0]['score'], max(x['score'] for x in queue))       # best first
 
@@ -335,7 +335,7 @@ class Review(unittest.TestCase):
                    rec('a:3', 'person', 'Vera Stone', handles={'email': ['v@example.test']}),
                    rec('a:4', 'person', 'Quillbot'),
                    rec('a:5', 'person', 'Codex')]
-        records[7]['kind_by'] = 'me'                                             # his own kind wins
+        records[7]['kind_by'] = 'me'                                             # the user's own kind wins
         self.assertEqual(sorted(E.apps_as_people(records)), ['a:1', 'a:4'])
         self.assertEqual(records[3]['kind'], 'tool')
         self.assertEqual(records[4]['kind'], 'person')                          # a name that is no app stays a person
@@ -351,7 +351,7 @@ class Review(unittest.TestCase):
         self.assertNotIn('ukrainian', forms)
         self.assertIn('okafor', forms)
         forms = E.surfaces_for({'kind': 'person', 'name': 'Лава Окафор', 'aliases': []}, set(), set(), {'лава'})
-        self.assertNotIn('лава', forms)                                          # his own lower-case word, Ukrainian side
+        self.assertNotIn('лава', forms)                                          # the user's own lower-case word, Ukrainian side
 
     # 7 -------------------------------------------------------------------------------------------------------------
     def test_chat_placeholder_names_the_person(self):

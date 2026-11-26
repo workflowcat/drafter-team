@@ -1,17 +1,17 @@
-"""Cadence round (2026-11-17, Andrii: "even less confidence and earlier start... a combo of models and algorithms as
-long as stuff works better"). Two models, one GPU, one model per key: the fast one (1.7B) answers while he types
-fast, the 4B in longer gaps; the 4B may extend a shown 1.7B ghost in the time left before his next key, only when its
+"""Cadence round (2026-11-17, the user: "even less confidence and earlier start... a combo of models and algorithms as
+long as stuff works better"). Two models, one GPU, one model per key: the fast one (1.7B) answers while the user types
+fast, the 4B in longer gaps; the 4B may extend a shown 1.7B ghost in the time left before their next key, only when its
 text starts with the whole ghost on screen. Offline on the recordings of the held set (bench/big/run.py rec), each
-model under its own out-of-fold gate, the waits of bench/earlier.py (his live key-gap histograms, seeds 1-3).
+model under its own out-of-fold gate, the waits of bench/earlier.py (the user's live key-gap histograms, seeds 1-3).
 Loads no model. Numbers only.
 
     .venv/bin/python -B bench/cadence_replay.py data/bench/big-live.jsonl data/bench/big-q4b-lr5-s10.jsonl \
         [--policy-mode current-2026-11-16] [--early] [--out bench/out/cadence.json]
 
-Routing reads only what the app knows at the key: the gap before it (and the one before that for "mean2"), never his
+Routing reads only what the app knows at the key: the gap before it (and the one before that for "mean2"), never the user's
 next key. The first key of a line (no gap yet) goes to the 4B.
-Columns as bench/earlier.py waits; key-to-ghost "first" is the first grey text at the key, "final" the ghost he has
-at his next key (an extension that came in time). A cut extension costs the next ask up to `contend` ms (it stops at
+Columns as bench/earlier.py waits; key-to-ghost "first" is the first grey text at the key, "final" the ghost the user has
+at their next key (an extension that came in time). A cut extension costs the next ask up to `contend` ms (it stops at
 its next 4B token, server.run stale)."""
 import argparse, json, sys
 from pathlib import Path
@@ -25,7 +25,7 @@ CONTEND_MS = 15.0   # one 4B token on this Mac (13.3 ms quiet, docs/rounds/2026-
 
 
 def fast_cadence(g1, g2, th, signal="last"):
-    """True when he is typing fast: the gap before this key (signal "last") or the mean of the last two ("mean2") is
+    """True when the user is typing fast: the gap before this key (signal "last") or the mean of the last two ("mean2") is
     under `th` ms. No gap yet (the line's first key, after a Tab) -> False: the 4B answers."""
     if g1 is None or th <= 0: return False
     if signal == "mean2" and g2 is not None: return (g1 + g2) / 2 < th
@@ -39,7 +39,7 @@ def agrees(before, shown, longer):
 
 
 class Cadence:
-    """One model per key by his typing cadence, the 4B extension in the time left (see the module doc)."""
+    """One model per key by the user's typing cadence, the 4B extension in the time left (see the module doc)."""
     firsts = True
 
     def __init__(self, fast, big, rows_big, th, signal="last", extend=True, contend=CONTEND_MS):

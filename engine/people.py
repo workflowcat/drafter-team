@@ -1,19 +1,19 @@
-"""Per-person memory (2026-11-01, Andrii: "per-person memory of past replies"). In a Beeper chat the model also reads
-his own older messages in THAT chat (names, projects, "ти" or "ви", how he writes to this person), above the screen
+"""Per-person memory (2026-11-01, the user: "per-person memory of past replies"). In a Beeper chat the model also reads
+the user's own older messages in THAT chat (names, projects, "ти" or "ви", how the user writes to this person), above the screen
 (prompt.tail "mine"): on the fresh Beeper replies letters saved went 11.3% -> 12.4%. Weighting that chat's words
-higher in the word booster was tried too and did nothing (his writing overall already holds them).
+higher in the word booster was tried too and did nothing (the user's writing overall already holds them).
 
 Which chat is on screen: the Beeper window title never changes, so the lines of the chat above the caret are matched
 against fingerprints (6-byte hashes) of each chat's recent lines. The other person's text is never stored, only those
-fingerprints; his own messages per chat are kept in data/people.json (local only, like data/phrases.jsonl).
+fingerprints; the user's own messages per chat are kept in data/people.json (local only, like data/phrases.jsonl).
 
 Who a chat is with (2026-11-16): each chat also keeps the display names of the other people who wrote there
 (`who`, at most WHO_KEPT, most messages first) and its title when Beeper lists it, so engine/whom.py can match the
 chat to the names reference. Names only, never their text.
 
 Built from the Beeper CLI (read only, BEEPER_READONLY=1) in the background: at start when the file is older than
-REFRESH, then every REFRESH; lines he sends while Drafter runs are added at once (/typed). Messages signed
-"Claude:" are Claude's, not his, and stay out.
+REFRESH, then every REFRESH; lines the user sends while Drafter runs are added at once (/typed). Messages signed
+"Claude:" are Claude's, not the user's, and stay out.
 """
 import calendar, hashlib, json, os, re, subprocess, threading, time
 from collections import Counter
@@ -36,7 +36,7 @@ def beeper_bin(path=None):
 
 
 REFRESH = 1800          # seconds between Beeper reads
-KEEP = 600              # his lines kept per chat
+KEEP = 600              # the user's lines kept per chat
 MARK_LINES = 80         # the last messages of a chat whose lines are fingerprinted
 MAX_EMPTY_MARKS = 4096  # retain recent collision protection without unbounded tombstones
 MIN_MARK = 8            # shorter lines ("ок", "дякую!") are in every chat and say nothing
@@ -74,7 +74,7 @@ def find(marks, context, min_votes=2, last=None):
 
 
 def earlier(mine, context, n=12, line_max=160, total=700):
-    """His older messages in a chat for the prompt: the latest n that are not on screen already, newest last."""
+    """The user's older messages in a chat for the prompt: the latest n that are not on screen already, newest last."""
     # Compare full messages before shortening them for the prompt. Bench contexts label our lines "Я:".
     normalize = lambda t: " ".join(t.lower().split())
     lines = [normalize(re.sub(r"^\s*Я:\s*", "", l)) for l in (context or "").splitlines() if l.strip()]
@@ -117,7 +117,7 @@ class People:
     def __init__(self, path=PATH):
         self.path, self.lock = Path(path), threading.Lock()
         self.chats, self.marks, self.t, self.dirty, self.tried = {}, {}, 0.0, False, 0.0
-        self.blocks, self.last = {}, None     # chat -> (when, his older lines for the prompt); the chat found last
+        self.blocks, self.last = {}, None     # chat -> (when, the user's older lines for the prompt); the chat found last
         try:
             d = json.loads(self.path.read_text())
             self.chats, self.marks, self.t = d.get("chats", {}), d.get("marks", {}), d.get("t", 0.0)
@@ -128,8 +128,8 @@ class People:
         with self.lock: return find(self.marks, context, last=self.last)
 
     def block(self, context, ttl=3600, min_lines=3, remember=True):
-        """His older messages in the chat on screen, for the prompt (prompt.tail "mine"), or "". Fixed per chat for
-        ttl seconds, so the prompt above the screen stays the same and the cache keeps it; lines he sends meanwhile
+        """The user's older messages in the chat on screen, for the prompt (prompt.tail "mine"), or "". Fixed per chat for
+        ttl seconds, so the prompt above the screen stays the same and the cache keeps it; lines the user sends meanwhile
         are on the screen anyway."""
         with self.lock:
             chat = find(self.marks, context, last=self.last)
@@ -145,7 +145,7 @@ class People:
         return earlier(mine, context) if len(mine) >= min_lines else ""
 
     def info(self, chat):
-        """-> {"who": [their display names], "title", "group", "mine": [his lines]} for a chat id, or None."""
+        """-> {"who": [their display names], "title", "group", "mine": [the user's lines]} for a chat id, or None."""
         with self.lock:
             c = self.chats.get(chat)
             if not c: return None
@@ -155,7 +155,7 @@ class People:
 
     # -- learning --------------------------------------------------------------------------------------------------
     def add(self, context, text):
-        """A line he just sent in Beeper: it joins that chat's lines now (the prompt block takes it at its next turn),
+        """A line the user just sent in Beeper: it joins that chat's lines now (the prompt block takes it at its next turn),
         and marks the chat for the next screen."""
         text = clean(text)
         if not text or signed(text): return None
@@ -185,7 +185,7 @@ class People:
         tmp = self.path.with_suffix(".tmp"); tmp.write_text(data); os.replace(tmp, self.path)
 
     def refresh(self, days=60):
-        """Read Beeper: chats he wrote in since the last read (60 days the first time), his lines there, and
+        """Read Beeper: chats the user wrote in since the last read (60 days the first time), the user's lines there, and
         fingerprints of their latest lines. -> chats read."""
         t0 = self.t or time.time() - days * 86400
         after = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(t0 - 3600))
@@ -222,7 +222,7 @@ class People:
                     for l in clean(h["text"]).splitlines():
                         m = mark(l)
                         if m: self._mark(m, chat)
-                if not c["mine"]: del self.chats[chat]          # a chat he only reads
+                if not c["mine"]: del self.chats[chat]          # a chat the user only reads
         with self.lock: self.t = started
         self.save()
         return len(todo)

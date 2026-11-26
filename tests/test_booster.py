@@ -1,4 +1,4 @@
-"""The word booster: his own next words (Words.dist) mixed into the model's token probabilities (Model.booster)."""
+"""The word booster: the user's own next words (Words.dist) mixed into the model's token probabilities (Model.booster)."""
 import math, sys, unittest
 import numpy as np
 from types import SimpleNamespace

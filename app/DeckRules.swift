@@ -1,6 +1,6 @@
-// The capture deck's rules (17 November 2026; Andrii: "we build a deck of screenshots that are explainable"). After a
+// The capture deck's rules (17 November 2026; the user: "we build a deck of screenshots that are explainable"). After a
 // capture one floating strip holds the pictures taken so far as cards, each with its caption under it, and a + card.
-// The mic starts with each shot (`captureTalk`): what he says until the next shot is that card's caption. ⌘N or +
+// The mic starts with each shot (`captureTalk`): what the user says until the next shot is that card's caption. ⌘N or +
 // takes the next one without closing the deck; ↵ puts the whole deck in as one pack; esc stops the caption take, else
 // makes the deck passive (round 3); Cancel drops the shot (10 s Undo in the pill, then the pack goes to the Trash). Pure (Foundation and CoreGraphics only), tested in tests/deck_rules.swift. The strip: app/CaptureNote.swift.
 import Foundation
@@ -72,7 +72,7 @@ enum DeckRules {
         return out
     }
     /// While a caption take listens: the caption's last words under the card, so the newest spoken words show there
-    /// (17 November 2026, Andrii: the live words belong in the card, not the strip up top). At most `lines` lines of
+    /// (17 November 2026, the user: the live words belong in the card, not the strip up top). At most `lines` lines of
     /// `width` characters, the first one starting with "…" when cut. Each line with the index of its first word.
     static func labelTail(_ text: String, width: Int, lines: Int = 2) -> [(line: String, firstWord: Int)] {
         let words = text.split(whereSeparator: { $0.isWhitespace }).map(String.init)
@@ -123,8 +123,8 @@ enum DeckRules {
     static func takes(code: Int, cmd: Bool) -> Bool { !cmd || cmdCodes.contains(code) }
 
     // MARK: passive and active (round 3)
-    // Round 3 (18 November 2026, Andrii: "it doesn't hijack my typing and controls at the same time, unless I
-    // specifically click it"). The deck opens passive: his keys, ↵, esc and Right Option voice go to his app. A click on
+    // Round 3 (18 November 2026, the user: "it doesn't hijack my typing and controls at the same time, unless I
+    // specifically click it"). The deck opens passive: the user's keys, ↵, esc and Right Option voice go to their app. A click on
     // the deck (a card, its caption, a button, its background) makes it active: typing edits the caption and the deck
     // keys work. A click outside it, or esc with no caption take listening, makes it passive again.
 
@@ -138,16 +138,16 @@ enum DeckRules {
     enum Esc: Equatable { case stopTalk, gather, passive }
     static func esc(listening: Bool, spread: Bool = false) -> Esc { listening ? .stopTalk : spread ? .gather : .passive }
     /// A Right Option take is the deck's caption only while it is active, or while the screen is dimmed for its next
-    /// shot (he asked for that shot); passive, the take goes to his app as text.
+    /// shot (the user asked for that shot); passive, the take goes to their app as text.
     static func takesVoice(open: Bool, hold: Hold, collecting: Bool) -> Bool { open && (hold == .active || collecting) }
-    /// The caption mic starting by itself with a shot (`captureTalk`): only when the deck is active. Passive, he is
-    /// talking or typing to his app; the card's mic or Caption by voice starts it on a click.
+    /// The caption mic starting by itself with a shot (`captureTalk`): only when the deck is active. Passive, the user is
+    /// talking or typing to the user's app; the card's mic or Caption by voice starts it on a click.
     static func autoTalk(setting: Bool, hold: Hold) -> Bool { setting && hold == .active }
 
     // MARK: round 4 "Hand" (18 November 2026)
-    // Andrii: the shot "in the middle of the caret and with smaller controls below ... a card deck that gather together
-    // and can then organize ... send it all to the chat or one by one". He picked the "Hand" mockup: a small fan of
-    // cards just above the caret, one pill under it (round 4b: a row; "Insert", not "Put in"). The deck never takes his keys; its only active state is
+    // The user: the shot "in the middle of the caret and with smaller controls below ... a card deck that gather together
+    // and can then organize ... send it all to the chat or one by one". The user picked the "Hand" mockup: a small fan of
+    // cards just above the caret, one pill under it (round 4b: a row; "Insert", not "Put in"). The deck never takes the user's keys; its only active state is
     // a voice caption on one card.
 
     /// An AX rect (top-left origin, y down) in AppKit points (bottom-left origin), by the main screen's height.
@@ -161,11 +161,11 @@ enum DeckRules {
         return nil
     }
 
-    // Round 4b (18 November 2026). Andrii's first live try of the 96 pt fan: "it is too tiny and now there are
+    // Round 4b (18 November 2026). The user's first live try of the 96 pt fan: "it is too tiny and now there are
     // basically no controls"; then "hand is the way to go but make it better". A design review found: a card click
     // pasted (twice, before the check ended), small hover targets pasted on a miss, mark up / retake / pin out of reach,
     // no close, no Undo for one card, click, reorder and drop on one press, targets moving under the mouse, and a deck
-    // placed once over his lines on the old app's screen. Now: a click selects, the row acts, nothing moves under him.
+    // placed once over the user's lines on the old app's screen. Now: a click selects, the row acts, nothing moves under the user.
     static let handBox = CGSize(width: 360, height: 190), handMin = CGSize(width: 150, height: 110)
     static let behindScale: CGFloat = 0.85, peekStep: CGFloat = 28, peekDrop: CGFloat = 5, peekDegrees: CGFloat = 3
     static let handMax = 3, hoverLift: CGFloat = 6, handGap: CGFloat = 8, handTabW: CGFloat = 34
@@ -173,7 +173,7 @@ enum DeckRules {
     /// 700 ms (the top card is already large).
     static let slideSeconds = 0.12, flySeconds = 0.18, peekPreviewDelay = 0.7
     static let previewW: CGFloat = 480
-    /// Round 4c (Andrii: "the controls to be a little neater"): one bar under the fan, 8 pt below it, 32 pt high, its
+    /// Round 4c (the user: "the controls to be a little neater"): one bar under the fan, 8 pt below it, 32 pt high, its
     /// buttons divided by hairlines, 12 pt words; one spacing (8 pt) and one corner (10 pt) for the bar and the cards.
     /// A button shows pressed at least 80 ms and acts on mouse up inside it.
     static let rowGap: CGFloat = 8, rowH: CGFloat = 32, rowFontSize: CGFloat = 12, rowSpacing: CGFloat = 8, pressSeconds = 0.08
@@ -184,7 +184,7 @@ enum DeckRules {
     static let dragStart: CGFloat = 8
     static func reorders(dx: CGFloat, dy: CGFloat) -> Bool { abs(dx) >= dragStart && abs(dx) >= abs(dy) }
 
-    /// The selected card: the one he clicked while it is still in the deck, else the newest.
+    /// The selected card: the one the user clicked while it is still in the deck, else the newest.
     static func selected(_ s: Int?, count: Int) -> Int? {
         guard count > 0 else { return nil }
         if let s, s >= 0, s < count { return s }
@@ -283,12 +283,12 @@ enum DeckRules {
         y = min(max(y, s.minY + margin), s.maxY - margin - size.height)
         return CGRect(x: x.rounded(), y: y.rounded(), width: size.width, height: size.height)
     }
-    // Round 5 "Stack" (23 November 2026; Andrii: the deck "must not wander", one column instead of a long strip,
+    // Round 5 "Stack" (23 November 2026; the user: the deck "must not wander", one column instead of a long strip,
     // larger images, Insert / Copy / Delete on each shot, Insert all / Copy all at the foot). One column of shots,
     // newest at the bottom, each 272 pt wide in its own shape (left edges aligned, 10 pt apart); the column scrolls
     // up and down only once it is taller than 70% of its screen. Placed once when it opens, next to the caret (else the
     // field's line, else the mouse pointer), whole on that screen; then it stays: a new shot never moves it (the edge
-    // toward the caret stays put and the column grows away from it), only his drag does.
+    // toward the caret stays put and the column grows away from it), only the user's drag does.
     static let stackW: CGFloat = 272, stackMinH: CGFloat = 120, stackMaxCardH: CGFloat = 360, stackGap: CGFloat = 10
     static let stackPad: CGFloat = 12, stackHeadH: CGFloat = 28, stackFootH: CGFloat = 30, stackShare: CGFloat = 0.7
     /// The panel's parts round the list: pad, head, 8, the list, 10, foot, pad.
@@ -381,12 +381,12 @@ enum DeckRules {
     static func mayInsert(busy: Bool, count: Int) -> Bool { !busy && count > 0 }
     /// A card back after a failed insert: where it was, or the end if the deck got shorter.
     static func backAt(_ k: Int, count: Int) -> Int { Swift.max(0, Swift.min(k, count)) }
-    /// The deck never takes his keys (round 4); his voice is a caption only while the selected card's Voice opens a take.
+    /// The deck never takes the user's keys (round 4); their voice is a caption only while the selected card's Voice opens a take.
     static let takesKeys = false
-    /// Round 4c (Andrii: "many times enter just did not react"; his habit is ↵ = put in): Return or keypad Enter inserts
+    /// Round 4c (the user: "many times enter just did not react"; the user's habit is ↵ = put in): Return or keypad Enter inserts
     /// all, swallowed by the key tap (the deck still never becomes key), but only while the deck is up and ready, no
-    /// key went to his app since it opened or since the last card was added, and no ⌘ ⌃ ⌥ ⇧ is held (the keypad and fn
-    /// bits do not count). After one key he typed, ↵ is his app's again: never a message he is writing.
+    /// key went to the user's app since it opened or since the last card was added, and no ⌘ ⌃ ⌥ ⇧ is held (the keypad and fn
+    /// bits do not count). After one key the user typed, ↵ is their app's again: never a message the user is writing.
     static func returnInserts(deckOpen: Bool, keysSinceOpen: Int, mods: CGEventFlags) -> Bool {
         deckOpen && keysSinceOpen == 0 && mods.intersection([.maskCommand, .maskControl, .maskAlternate, .maskShift]).isEmpty
     }
@@ -400,7 +400,7 @@ enum DeckRules {
     /// A card's caption take ends on its mic again or a click outside the deck.
     static func endsCaption(clickInside: Bool, onMic: Bool) -> Bool { !clickInside || onMic }
 
-    // MARK: motion (round 3, Andrii: "a little more animated visually")
+    // MARK: motion (round 3, the user: "a little more animated visually")
     /// The deck's arrival: 180 ms, rising 10 pt and growing from 97% while it fades in. Close has no motion: AppKit's
     /// fade held a closed deck on the screen 0.38 s (app/DeckBench.swift).
     static let arriveSeconds = 0.18, arriveRise: CGFloat = 10, arriveScale: CGFloat = 0.97, closeSeconds = 0.0
@@ -474,7 +474,7 @@ enum DeckRules {
         }
         return out
     }
-    /// How long the last picture stays on the clipboard after its ⌘V before his clipboard comes back: Electron and
+    /// How long the last picture stays on the clipboard after its ⌘V before the user's clipboard comes back: Electron and
     /// Chromium apps read a big picture late.
     static let pictureHold = 1.6
     /// The wait after a step's ⌘V before the next step overwrites the clipboard (speed round, 17 November 2026: was
@@ -532,7 +532,7 @@ enum DeckRules {
         return CGPoint(x: x, y: y)
     }
     static func save(_ p: CGPoint) -> String { "\(Int(p.x.rounded())),\(Int(p.y.rounded()))" }
-    /// Where the deck's card sits: at the place he dragged it to (kept inside the screen that holds it), else at the
+    /// Where the deck's card sits: at the place the user dragged it to (kept inside the screen that holds it), else at the
     /// bottom centre of `screen` (the visible part of the mouse's screen). `screens`: every screen's visible part.
     static func place(_ size: CGSize, saved: CGPoint?, screens: [CGRect], screen: CGRect, margin: CGFloat = 8, foot: CGFloat = 24) -> CGRect {
         func inside(_ o: CGPoint, _ s: CGRect) -> CGRect {

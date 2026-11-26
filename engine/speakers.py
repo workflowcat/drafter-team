@@ -1,18 +1,18 @@
-"""Who said each line of a recorded call (17 November 2026: a client demo call came out with every line his).
+"""Who said each line of a recorded call (17 November 2026: a client demo call came out with every line the user's).
 
 Local only: a speaker-embedding model (3D-Speaker ERes2Net, 512 numbers per voice, ONNX through sherpa-onnx, about
 0.3 GB) under the memory guard. Nothing leaves the Mac.
 
-A call folder holds me.wav (his mic), them.wav (the Mac's sound: the other side), lines.json [{who, start, end?,
+A call folder holds me.wav (the user's mic), them.wav (the Mac's sound: the other side), lines.json [{who, start, end?,
 text, track?}] and meta.json. For each line this cuts its stretch from its track, keeps the frames above -40 dB and
 turns them into one voice vector, then:
-- a mic line ("track": "me") is his when it sounds like his voice print (data/voiceprint.json, built from his own
-  dictation takes in data/audio, takes recorded during a call left out). Without a print, a mic line is his while the
-  other side's track is alive (it was transcribed separately and his mic's echo of it taken out), else "unknown".
-- every other voice (them.wav lines, and mic lines that are not his: the laptop speakers heard by the mic) is grouped
+- a mic line ("track": "me") is the user's when it sounds like their voice print (data/voiceprint.json, built from their own
+  dictation takes in data/audio, takes recorded during a call left out). Without a print, a mic line is the user's while the
+  other side's track is alive (it was transcribed separately and its echo on the user's mic taken out), else "unknown".
+- every other voice (them.wav lines, and mic lines that are not the user's: the laptop speakers heard by the mic) is grouped
   by likeness into "Speaker 2", "Speaker 3"... in order of first appearance. A group gets a person's name only when the
   match is clear: one group on the other side and one other person in the meeting (meta.json "participants", else
-  the calendar event's "people", minus him).
+  the calendar event's "people", minus the user).
 - a line too short or too quiet to place says "unknown" (a them.wav line stays "Вони": its side is known).
 A mic line placed on the other side that repeats a them.wav line said within 20 s is dropped (the echo).
 
@@ -36,9 +36,9 @@ MODEL_URL = ("https://github.com/k2-fsa/sherpa-onnx/releases/download/speaker-re
              "3dspeaker_speech_eres2net_base_sv_zh-cn_3dspeaker_16k.onnx")
 CAP_GB = 1.2
 ME, THEM, UNKNOWN, OTHER = "Я", "Вони", "unknown", "Speaker"
-# Measured on the 17 November call with this model: his takes against his print p10 0.44; the other side's 10 s
-# pieces against his print p90 0.20; his takes with each other median 0.57, him against them 0.09.
-HIS = 0.33            # a mic line at or above this cosine to his print is his
+# Measured on the 17 November call with this model: the user's takes against their print p10 0.44; the other side's 10 s
+# pieces against the user's print p90 0.20; the user's takes with each other median 0.57, the user against them 0.09.
+HIS = 0.33            # a mic line at or above this cosine to the user's print is the user's
 NOT_HIS = 0.22        # below this it is someone else; between the two it is "unknown"
 SAME = 0.28           # two groups of the other side join while their average cosine is at least this (through the
                       # laptop speakers and the mic, one voice scores lower with itself: 0.25-0.30 gave 3 groups for 3 people)
@@ -151,7 +151,7 @@ def cluster(vecs, same=SAME):
 
 
 def build_print(embed, audio_dir, calls_dir=None, most=80, log=print):
-    """His voice print: the mean voice of up to `most` of his newest dictation takes with 3 s of speech or more,
+    """The user's voice print: the mean voice of up to `most` of the user's newest dictation takes with 3 s of speech or more,
     takes made during a recorded call left out (the mic hears the other side there), then only takes close to that
     mean kept (another voice in a take does not pull it). -> (vector, takes used) or (None, 0)."""
     spans = []
@@ -251,11 +251,13 @@ def ends(rows):
 
 
 def me_names(meta):
-    names = {"andrii", "андрій", "andrew"}
+    """The user's own names, lower case, from the local config (user.name, user.short_name, user.own_names)."""
+    names = set()
     try:
         import local
-        s = (local.short_name() or "").strip().lower()
-        if s: names.add(s)
+        for n in [local.user("name"), local.short_name(), *(local.user("own_names") or [])]:
+            n = str(n or "").strip().lower()
+            if n and n != "the user": names |= {n, n.split()[0]}
     except Exception:
         pass
     return names
@@ -279,7 +281,7 @@ def label(rows, me, them, embed, his=None, people=(), log=print):
     for r in rows: r["track"] = track_of(r, me, them)
     stop = ends(rows)
     blocks = alive_blocks(them)
-    vec, share = [], []              # one voice per line; for a long line, the share of its windows that are his
+    vec, share = [], []              # one voice per line; for a long line, the share of its windows that are the user's
     for r, e in zip(rows, stop):
         st = float(r.get("start") or 0)
         src = me if r["track"] == "me" else them
@@ -306,7 +308,7 @@ def label(rows, me, them, embed, his=None, people=(), log=print):
         if r["track"] == "them":
             if v is not None: remote.append(i)
             continue
-        if share[i] is not None:     # a long mic line: his when 70% of its windows are, someone else's when 30% or less
+        if share[i] is not None:     # a long mic line: the user's when 70% of its windows are, someone else's when 30% or less
             if share[i] >= MOSTLY: who[i] = ME
             elif share[i] <= 1 - MOSTLY: remote.append(i)
             else: who[i] = UNKNOWN
@@ -316,7 +318,7 @@ def label(rows, me, them, embed, his=None, people=(), log=print):
             elif c < NOT_HIS: remote.append(i)
             else: who[i] = UNKNOWN
         elif (his is None or v is None) and alive_at(blocks, float(r.get("start") or 0)) and heard(i):
-            who[i] = ME              # the other side was recorded and read apart (his mic's echo of it taken out)
+            who[i] = ME              # the other side was recorded and read apart (the user's mic's echo of it taken out)
         else:
             who[i] = UNKNOWN
     groups = cluster([vec[i] for i in remote])

@@ -8,12 +8,12 @@ The first recording is the baseline for the paired 95 % intervals (whole lines r
 The default historical-big preserves this table. --policy-mode current-2026-11-16 changes the replay's
 request flags only; gates remain out-of-fold, and static replay cannot exercise keep-in-flight.
 Per app kind (claude = AI apps, beeper = chats) and language:
-  first right %   at every key: the model's first word is his next word (no gate)
+  first right %   at every key: the model's first word is the user's next word (no gate)
   run all         at every key: words right in a row from the caret (mean, p50, p90, 3+ %, 5+ %), as Tab, Tab, Tab
-  run gated       the same at the keys its own gate says yes to (th 0.4): what he would see
+  run gated       the same at the keys its own gate says yes to (th 0.4): what the user would see
   saved/1k        letters saved per 1,000 in sentence mode (gatecore.run_words, floor 0.1, cap 24) with the gate,
-                  in the replay (a new ghost after the words he took: the rolling ghost)
-  wrong/1k        grey words shown that were not his, per 1,000 letters (same replay)
+                  in the replay (a new ghost after the words the user took: the rolling ghost)
+  wrong/1k        grey words shown that were not the user's, per 1,000 letters (same replay)
   shown, right %  ghosts shown and first word right among them
   word ms         ms to the first whole word (the token that ends it: when the gate can decide) p50, p90, p95
   token ms        ms per token after the first, p50

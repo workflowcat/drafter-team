@@ -1,4 +1,4 @@
-// History, on this Mac only (Andrii, 2026-10-19): every voice take (text + its recording) and every text copied to
+// History, on this Mac only (the user, 2026-10-19): every voice take (text + its recording) and every text copied to
 // the clipboard, so nothing is wiped and anything can be picked up again from the menu bar. Recordings are kept
 // 14 days (as Voice Notes did). Items from password managers (concealed or transient pasteboard types) are never kept,
 // nor Drafter's own pastes (marked with its own pasteboard type). Since 14 November 2026 (Quick panel) the clipboard
@@ -97,14 +97,14 @@ enum History {
 
     // MARK: typing
 
-    static let typedFile = Home.data.appendingPathComponent("typed.jsonl")     // lines he sent (Return), written by the engine
-    static let draftsFile = Home.data.appendingPathComponent("drafts.jsonl")   // text he typed and left without sending
+    static let typedFile = Home.data.appendingPathComponent("typed.jsonl")     // lines the user sent (Return), written by the engine
+    static let draftsFile = Home.data.appendingPathComponent("drafts.jsonl")   // text the user typed and left without sending
 
     static let hiddenFile = Home.data.appendingPathComponent("drafts-hidden.json")   // rows the window skips
 
-    /// `t`: his last key in this text (DraftCaptureRules.stamps), `started` ("t0"): his first key, so the window shows
+    /// `t`: the user's last key in this text (DraftCaptureRules.stamps), `started` ("t0"): the user's first key, so the window shows
     /// how long it took; nil keeps the row as before. `replacing`: the t of the row this draft continues
-    /// (DraftCaptureRules.record); that row goes, this one is added. `est`: his keys did not explain the field's text,
+    /// (DraftCaptureRules.record); that row goes, this one is added. `est`: the user's keys did not explain the field's text,
     /// this is the estimate ("est": true; absent on other rows).
     static func draft(_ text: String, app: String, at t: Double = Date().timeIntervalSince1970, started: Double? = nil, est: Bool = false, replacing: Double? = nil) {
         var row: [String: Any] = ["t": t, "text": text, "app": app]
@@ -192,7 +192,7 @@ enum History {
             if ClipRules.link(s) != nil {
                 row["kind"] = "link"
                 // the title only from what the copy carried (the browser's link name, the anchor's words), else one
-                // he copied before for the same address; nothing is fetched
+                // the user copied before for the same address; nothing is fetched
                 var title = pb.string(forType: NSPasteboard.PasteboardType("public.url-name"))?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
                 if title.isEmpty || title == s, let html { title = ClipKindRules.anchorTitle(html: html, url: s) ?? "" }
                 if title.isEmpty || title == s { title = Quick.shared.knownTitle(s) }
@@ -240,7 +240,7 @@ enum History {
 
     /// A pick kept as its own clip: a text row in clipboard.jsonl like a copy, plus `from` (the source's id),
     /// `picked` (its ranges) and `via` = "pick" (PickRecord.row). The source row is never touched. A clipboard row is
-    /// never learned as his writing (the corpus uses copies only to leave lines out); `mine` marks a pick from his own
+    /// never learned as the user's writing (the corpus uses copies only to leave lines out); `mine` marks a pick from the user's own
     /// draft, take or sent line. `remove`: its Undo, that one row. Read side: `PickRecord.read(row)`.
     static func keepPick(_ rec: PickRecord, app: String, remove: Bool = false, file: URL = clipFile) {
         let row = rec.row(app: app)

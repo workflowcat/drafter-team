@@ -1,4 +1,4 @@
-"""One forward pass over lines with the model as Drafter runs it (base + his layer merged, the engine's prompt head
+"""One forward pass over lines with the model as Drafter runs it (base + the user's layer merged, the engine's prompt head
 warm), storing what the bias fit or the steering vectors need. A model step: run it only through guarded.py (the
 orchestrators bias.py and steer.py do). One model, this process only.
 
@@ -10,7 +10,7 @@ then "[App] (style)\\n" + the line; only the line's own tokens count.
 logits: for every position, the log-probability (after the engine's Russian-letter mask) of each candidate token (the
   tokens written >= min-count times in the lines), the token written and its log-probability.
 hidden: per line, the mean output of block `layer` over the line's tokens; plus the mean norm of one token's state.
-  --generic N first writes N lines with his layer off and no head (the model's own voice, same app tags, sampled at
+  --generic N first writes N lines with the user's layer off and no head (the model's own voice, same app tags, sampled at
   temperature 0.8), group "generic"; their text is never stored."""
 import argparse, json, os, sys, time
 from pathlib import Path

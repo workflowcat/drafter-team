@@ -1,5 +1,5 @@
 // The voice strip under the notch, in the style picked in Settings > Look > Strip (setting `stripStyle`, 14 November
-// 2026: the owner found the two-line strip "a little weird" and asked for one place where the words show):
+// 2026: the user found the two-line strip "a little weird" and asked for one place where the words show):
 //   composer  the default: a band beside the camera housing (state left, level and keys right), the words under it
 //             (app/ComposerStrip.swift, layout in app/StripRules.swift)
 //   classic   the one-row strip from before the Tape round, restored as it was (app/ClassicStrip.swift)
@@ -30,7 +30,7 @@ protocol StripFace: AnyObject {
     func inserted()
     func copied(_ reason: String)
     func target(_ place: String, button: String)
-    // round three: Return while he speaks puts in what he said so far and the note goes on
+    // round three: Return while the user speaks puts in what the user said so far and the note goes on
     func segment(_ line: String)                       // "Inserting → Claude": the closed segment is on its way
     func segmentDone(ok: Bool, reason: String)         // it is in the field, or on the clipboard (reason)
     func waking(_ on: Bool)                            // the voice engine loads; the audio is kept meanwhile
@@ -120,7 +120,7 @@ final class Pill {
 /// A quiet button in the strip's last row: its label, then its key in faint mono ("Record  tab").
 final class StripButton: NSButton {
     /// primary: the answer most people pick, filled light; plain: a soft dark capsule; quiet: text only (a setting
-    /// change); stop: coral, ends a recording (1 November 2026, Andrii: "nicer buttons").
+    /// change); stop: coral, ends a recording (1 November 2026, the user: "nicer buttons").
     enum Style { case primary, plain, quiet, stop }
     let label: String, key: String
     let style: Style

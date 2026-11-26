@@ -7,7 +7,7 @@ import Foundation
 
 struct EntityFact: Codable, Equatable { let text: String; let source: String; let date: String; let quote: Bool }
 struct EntityPointer: Codable, Equatable { let label: String; let value: String; let path: Bool }
-/// One kept relation (2026-11-14 relations round): the other record, a reason he can read ("works at", "in the same
+/// One kept relation (2026-11-14 relations round): the other record, a reason the user can read ("works at", "in the same
 /// note: story", "often together in chats"), its weight 0..1 and where the evidence came from. `related` keeps the
 /// same ids in the same order for older readers.
 struct EntityRelation: Codable, Equatable {
@@ -239,7 +239,7 @@ enum EntityRules {
     // MARK: ambiguous forms (twin of entities.decide; tests/entity_cases.json "decide" holds cases both sides run)
 
     static let need: [String: Double] = ["shared": 1, "short": 1, "ordinary": 2, "twins": 0]
-    /// What kind of thing he names where (the destinations of RefRules.dest).
+    /// What kind of thing the user names where (the destinations of RefRules.dest).
     static func expect(dest: String) -> [String] {
         switch dest { case "agent": return ["tool", "project"]; case "ai": return ["project", "tool"]
         case "chat": return ["person", "project", "org"]; case "mail": return ["person", "org"]; default: return [] }
@@ -313,7 +313,7 @@ enum EntityRules {
         return (top.i, false)
     }
 
-    /// His corrections (data/entity-fixes.json), the twin of entities.add_fix: a new dictionary with one fix added.
+    /// The user's corrections (data/entity-fixes.json), the twin of entities.add_fix: a new dictionary with one fix added.
     /// related / not_related / same / not_same: two record ids (order does not matter); not_this: a name form and the
     /// record it never means. A fix replaces its opposite. nil for an unknown kind.
     static let fixKinds = ["related", "not_related", "not_this", "same", "not_same"]
@@ -369,7 +369,7 @@ enum EntityRules {
 
     /// The name that ends right before the caret (after a space or a mark), the longest of the last 1-3 words that the
     /// map knows. `context`: the last few hundred characters and the window title, folded, for the related-entity
-    /// bonus; `picks`: folded name -> record id he picked here before (decides). nil when nothing matches.
+    /// bonus; `picks`: folded name -> record id the user picked here before (decides). nil when nothing matches.
     static func mention(before: String, store: EntityStore, context: String = "", picks: [String: String] = [:]) -> EntityMention? {
         mention(before: before, store: store, context: context, picks: picks, expect: [])
     }

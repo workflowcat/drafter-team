@@ -1,5 +1,5 @@
 // What kind of app a field is in (13 November 2026), for features that only make sense where a person will read the
-// text. Proofread: a week of the live log (6-13 November) had 393 runs, 91% of them in the Claude app, where he writes a
+// text. Proofread: a week of the live log (6-13 November) had 393 runs, 91% of them in the Claude app, where the user writes a
 // prompt to an AI that does not need clean spelling; 32 found a fix and 2 fixes were used. Pure: the app lists come
 // from Keys (aiApps, chatApps, browsers, aiTitle), so this file compiles alone in tests.
 import Foundation

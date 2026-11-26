@@ -120,7 +120,7 @@ struct KeyRuleChecks {
         check(!t(-0.1), "a clock going back: never")
     }
 
-    /// Keys round two: an old settings file moves to the new defaults; his own keys stay.
+    /// Keys round two: an old settings file moves to the new defaults; the user's own keys stay.
     static func keysRoundTwo() {
         let old: [String: Any] = ["captureKey": "⌃⌥S", "captureCmdShiftS": true, "quickKey": "⌃⌥V", "againKey": "⌃⌥R", "voice": true]
         let n = KeyRules.keysRoundTwo(old)

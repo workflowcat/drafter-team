@@ -1,7 +1,7 @@
-"""Big-model round (2026-11-15), item C: his layer trained on what he was answering. Each of his lines comes with the
+"""Big-model round (2026-11-15), item C: the user's layer trained on what the user was answering. Each of the user's lines comes with the
 screen text that stood above it (data/typed.jsonl `context`), in exactly the form the engine builds at typing time
 (engine/prompt.py `tail`, after engine/server.py `normal_space` and `window` cut the screen text, CTX_CHARS), and the
-loss is on his line only (the prompt is masked), to its real end. The rest of the mix is bench/corpus.py WEIGHTS (the
+loss is on the user's line only (the prompt is masked), to its real end. The rest of the mix is bench/corpus.py WEIGHTS (the
 mix fixed on 14 November), in the same `tail` form without screen text.
 
     .venv/bin/python -B bench/big/ctx_train.py build --out data/bench/big/work/ctx-<tag> [--ctx-weight 2] [--no-ctx]
@@ -9,12 +9,12 @@ mix fixed on 14 November), in the same `tail` form without screen text.
     (training: bench/big/run.py train, which runs `train` below under the guard)
 
 Strict time split: only lines dated before the held set's cut (the last retrain, before every held line) are used;
-rows whose screen text holds a held line are left out too. No head (rules, his words, examples) in the training rows,
+rows whose screen text holds a held line are left out too. No head (rules, the user's words, examples) in the training rows,
 as for the live layer: the head is the same at every key and is not trained on.
 
 The prompt/completion rows are read by mlx-lm's CompletionsDataset, which would wrap them in a chat template; `train`
 replaces its `process` with plain text: the ids of prompt + line tokenised as one string (as the engine does), the
-masked part the shared start with the prompt tokenised alone, and the end-of-text token after his line."""
+masked part the shared start with the prompt tokenised alone, and the end-of-text token after the user's line."""
 import argparse, ast, json, random, re, sys
 from collections import Counter
 from pathlib import Path

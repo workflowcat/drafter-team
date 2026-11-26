@@ -1,5 +1,5 @@
-// Screenshots while a long note or call records (2026-10-29, Andrii: "talking, showing my screen, then pass it over to
-// the AI"). Granola's Snapshots keep only what other people share; this keeps his own screen too. A shot is kept when
+// Screenshots while a long note or call records (2026-10-29, the user: "talking, showing my screen, then pass it over to
+// the AI"). Granola's Snapshots keep only what other people share; this keeps the user's own screen too. A shot is kept when
 // the screen changed and then stood still (or kept moving for 6 s), at most one per 5 s and 300 per recording, from the
 // display under the mouse, without Drafter's own strip. Files sit next to the audio: <recording>/shots/*.jpg and
 // shots.json (time on the audio timeline, app, window title). Local only; the brief (brief.md) points at them.

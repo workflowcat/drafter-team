@@ -28,11 +28,11 @@ extension SettingsView {
     }
 }
 
-/// Personal style: 0-100 % of his trained layer. Sent once the slider is let go; the engine merges the layer again
-/// (a few seconds, typing answers from his words meanwhile) and the time shows beside it.
+/// Personal style: 0-100 % of the user's trained layer. Sent once the slider is let go; the engine merges the layer again
+/// (a few seconds, typing answers from the user's words meanwhile) and the time shows beside it.
 struct StrengthSlider: View {
     @EnvironmentObject var m: WindowModel
-    @ObservedObject var cat = ModelCatalog.shared      // model catalog: a model without his layer has no style to scale
+    @ObservedObject var cat = ModelCatalog.shared      // model catalog: a model without the user's layer has no style to scale
     let initial: Int
     @State private var value = 100.0
     @State private var status = ""
@@ -62,7 +62,7 @@ struct StrengthSlider: View {
     }
 }
 
-/// Bolder / Careful (more-bold round, 17 November 2026, Andrii: "a bit less sureness in the guesses and suggest
+/// Bolder / Careful (more-bold round, 17 November 2026, the user: "a bit less sureness in the guesses and suggest
 /// more"): the bar a guess must clear, 0.05 at Bolder to 0.35 at Careful (default 0.15, bench/guess_sweep.py). The
 /// slider runs Bolder on the left, so its position is the bar turned around. Saved when let go; the next request sends it.
 struct BoldSlider: View {
@@ -87,7 +87,7 @@ struct BoldSlider: View {
     }
 }
 
-/// One writing instruction: for every app (bundle nil) or for one app. Saved when he presses Return or leaves the
+/// One writing instruction: for every app (bundle nil) or for one app. Saved when the user presses Return or leaves the
 /// field; an empty app instruction removes its row.
 struct NoteField: View {
     @EnvironmentObject var m: WindowModel

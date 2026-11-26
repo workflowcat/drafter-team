@@ -44,7 +44,7 @@ struct KeyMapChecks {
         for k in KeyMap.all where k.on && k.surface == .global {
             check(!KeyMap.retired.map(KeyMap.norm).contains(KeyMap.norm(k.keys)), "\(k.id): a retired chord is on by default")
         }
-        // the global chords he can set are all different
+        // the global chords the user can set are all different
         let chords = ["picker", "quickKey", "capture", "captureFallback", "captureSaveAs", "pick", "againKey"].compactMap { KeyMap.entry($0)?.keys }
         check(Set(chords.map(KeyMap.norm)).count == chords.count, "settable global chords are all different: \(chords)")
         check(KeyMap.entry("alternatives")?.on == false && KeyMap.entry("swap")?.on == false, "⌥1-3 and the ⌘⇧V swap are opt-in")

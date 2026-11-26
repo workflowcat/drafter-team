@@ -1,15 +1,15 @@
 // Edit mode (roadmap item 8, "side cursors"; 17 November 2026, docs/rounds/2026-11-17-editing.md; setting `editMarks`).
-// When he edits rather than writes (a selection of 20+ characters, or the caret moved inside a 40+ character field and
+// When the user edits rather than writes (a selection of 20+ characters, or the caret moved inside a 40+ character field and
 // no letter typed for 1.5 s), the paragraph goes to the engine's `/marks` (engine/marks.py, local, no model). Each mark
 // is a place where one key applies a fix: Tab or a click puts its new text in, Esc puts it away (twice: all of them).
-// ⌥⇧Tab (or the "my style" pill) asks `/mystyle` for the paragraph in his own voice from the local model.
+// ⌥⇧Tab (or the "my style" pill) asks `/mystyle` for the paragraph in the user's own voice from the local model.
 // Pure, so it compiles alone in tests (tests/edit_rules.swift); the UI is app/EditMarks.swift.
 import Foundation
 
 enum EditRules {
     static let marker = "⟦drafter-test⟧"
     static let minSelection = 20     // UTF-16 units selected before a selection counts as "a paragraph to look at"
-    static let minField = 40         // a field this long, caret not at its end: he is editing, not writing on
+    static let minField = 40         // a field this long, caret not at its end: the user is editing, not writing on
     static let rest = 1.5            // seconds after the last move with no letter typed
     static let maxSpan = 3000        // the engine looks at this much at most
     static let escTwice = 0.6        // a second Esc within this: every mark goes
@@ -40,7 +40,7 @@ enum EditRules {
             return t.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : Span(text: t, offset: caret, trigger: .selection)
         }
         guard selLen == 0, ns.length >= minField else { return nil }
-        // the caret at the end (only spaces or line breaks after it): he is writing on, not editing
+        // the caret at the end (only spaces or line breaks after it): the user is writing on, not editing
         if ns.substring(from: caret).trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return nil }
         let (t, at) = paragraph(value, caret: caret)
         let body = t.replacingOccurrences(of: marker, with: "").trimmingCharacters(in: .whitespacesAndNewlines)
@@ -133,7 +133,7 @@ enum EditRules {
         return "⇥ " + (one.count > 76 ? String(one.prefix(75)) + "…" : one)
     }
 
-    /// A key that ends edit mode: a letter or a line break typed (he is writing again). Arrows, Tab, Esc, shift and
+    /// A key that ends edit mode: a letter or a line break typed (the user is writing again). Arrows, Tab, Esc, shift and
     /// command keys do not.
     static func writes(code: Int, typed: String, command: Bool) -> Bool {
         if command { return false }

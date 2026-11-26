@@ -1,4 +1,4 @@
-"""Round four (2026-11-14): his own word first (engine/words.py Words.candidate, engine/gatecore.py word_features and
+"""Round four (2026-11-14): the user's own word first (engine/words.py Words.candidate, engine/gatecore.py word_features and
 extends, bench/wordgate.py). Made-up lines only.
 
     .venv/bin/python -B tests/test_wordgate.py
@@ -141,7 +141,7 @@ class Server(unittest.TestCase):
     def test_selector_his_word_answers_at_once(self):
         go, _ = self.build("anch", sel=self.sel(-2.0, {"word_p": 4.0}))
         res = go({"before": "please check the bu", "min_letters": 5})
-        self.assertEqual((res["text"], res["src"]), ("ild", "words"))      # 3 letters is enough for his word
+        self.assertEqual((res["text"], res["src"]), ("ild", "words"))      # 3 letters is enough for the user's word
 
     def test_selector_memory_first_when_sure(self):
         go, _ = self.build("anch", sel=self.sel(-2.0, {"memory": 4.0}), said=("check the build", 3))

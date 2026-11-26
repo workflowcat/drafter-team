@@ -1,14 +1,14 @@
 """Item B2, the pure part: fit a per-token additive logit bias b on stored next-token distributions, by gradient
 descent (one step size per token), with no model.
 
-bench/weights/collect.py first tokenises the fitting lines and picks the candidate tokens F: the ones he wrote at
+bench/weights/collect.py first tokenises the fitting lines and picks the candidate tokens F: the ones the user wrote at
 least `min_count` times (at most a few thousand). It then stores, for every position, the model's log-probability of
-each token in F, plus the token he wrote and its log-probability. Only tokens in F get a bias; every other token keeps
+each token in F, plus the token the user wrote and its log-probability. Only tokens in F get a bias; every other token keeps
 b = 0, so the mass outside F needs no detail and the fit is exact:
     Z = sum over t in F of p_t e^{b_t}  +  (1 - sum over t in F of p_t)
     loss = - mean over positions of (log p_y + b_y - log Z)  +  lam/2 |b|^2       (b_y = 0 when y is outside F)
-    d loss / d b_t = (expected count of t under the biased model - count of t he wrote) / positions + lam b_t
-At the optimum the model offers each token of F as often as he writes it, in context: a calibrated prior toward his
+    d loss / d b_t = (expected count of t under the biased model - count of t the user wrote) / positions + lam b_t
+At the optimum the model offers each token of F as often as the user writes it, in context: a calibrated prior toward their
 words, names and language mix. lam is picked on held-out positions."""
 import numpy as np
 
@@ -23,7 +23,7 @@ def candidates(token_lists, min_count=5, most=3000):
 
 
 def pack(cand, cand_lp, y, y_lp):
-    """cand (F,) ids, cand_lp (N, F) log-probabilities, y (N,) the token he wrote, y_lp (N,) its log-probability."""
+    """cand (F,) ids, cand_lp (N, F) log-probabilities, y (N,) the token the user wrote, y_lp (N,) its log-probability."""
     cand = np.asarray(cand, np.int64)
     p = np.exp(np.asarray(cand_lp, np.float32))     # float32: 32,000 positions x 2,000 candidates is 256 MB
     y = np.asarray(y, np.int64)

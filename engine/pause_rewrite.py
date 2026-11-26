@@ -1,9 +1,9 @@
-"""Pause rewrite (17 November 2026, Andrii's design; docs/research/2026-11-17-claude-writer.md "Build: the pause rewrite").
+"""Pause rewrite (17 November 2026, the user's design; docs/research/2026-11-17-claude-writer.md "Build: the pause rewrite").
 
 After a typing pause in a field that holds at least one finished sentence, the app sends the paragraph before the caret
-(app/PauseRewrite.swift). Claude rewrites it the way he would send it after one more read, through the ⌥Tab rework
-path (engine/rework.py, command "polish") with the same context: the person card and his last lines for the chat on
-screen (engine/whom.py), his writing notes and the keyboard language. The app shows the rewrite as a chip with the
+(app/PauseRewrite.swift). Claude rewrites it the way the user would send it after one more read, through the ⌥Tab rework
+path (engine/rework.py, command "polish") with the same context: the person card and the user's last lines for the chat on
+screen (engine/whom.py), their writing notes and the keyboard language. The app shows the rewrite as a chip with the
 changed words marked; Tab puts it in, Backspace right after takes it back. Nothing is sent and Return is never pressed.
 
 Setting `pauseRewrite` (off, the cloud mark; engine/cloud.py). Under the daily Claude cap (`backOfficeCap`, USD):
@@ -25,7 +25,7 @@ DATA = ROOT / "data"
 MODEL = "haiku"
 MIN_WORDS = 6            # shorter than this there is little to rewrite and the chip would only cover the field
 MAX_CHARS = 800          # the app's span (app/Proof.swift span): the paragraph before the caret, at most 800 characters
-SIMILAR = 0.5            # a rewrite that keeps fewer than half his words is a new message, not his after one more read
+SIMILAR = 0.5            # a rewrite that keeps fewer than half the user's words is a new message, not their after one more read
 PRICE = (0.10, 0.50)     # Haiku, USD per million tokens in / out (checked 2026-11-17)
 PROMPT_CHARS = 2600      # the rework system prompt, the task line and the person block, roughly
 FINISHED = re.compile(r"\S[.!?…](?=[\s\"'»”)]|$)")
@@ -68,7 +68,7 @@ def similar(old, new):
 
 
 def estimate(text, extra=""):
-    """USD for one call: the prompt (rework's system, task, the person block, his notes) in, about the text again out."""
+    """USD for one call: the prompt (rework's system, task, the person block, the user's notes) in, about the text again out."""
     tin = (PROMPT_CHARS + len(extra) + len(text)) / 3.5
     tout = len(text) * 1.2 / 3.5
     return (tin * PRICE[0] + tout * PRICE[1]) / 1e6

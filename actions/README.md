@@ -11,4 +11,4 @@ A file defines:
 - `run(fields) -> str` - only for `run.kind == "python"`; returns the line shown after it ran.
 
 App-side kinds (the Mac app does them, with its own permission): `eventkit.event` {title, start, minutes, notes},
-`eventkit.reminder` {title, due}. Nothing runs until Andrii presses Tab on the chip. Never send a message: drafts only.
+`eventkit.reminder` {title, due}. Nothing runs until the user presses Tab on the chip. Never send a message: drafts only.

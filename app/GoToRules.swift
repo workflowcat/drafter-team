@@ -1,5 +1,5 @@
 // "Go to" (⌘T, soft round, 14 November 2026): one small palette that jumps to a left-pane entry, a person, project or
-// tool, an app, or a date said the way he says it, in English or Ukrainian ("last Tuesday", "3 Oct", "October",
+// tool, an app, or a date said the way the user says it, in English or Ukrainian ("last Tuesday", "3 Oct", "October",
 // "минулого вівторка", "3 жовтня", "жовтень"). Pure: `now` and the calendar come in; tested in tests/goto_rules.swift.
 import Foundation
 
@@ -34,7 +34,7 @@ enum GoTo {
 
     // MARK: dates
 
-    /// A date in his words, or nil. A month or a day without a year is the latest one not after `now`.
+    /// A date in the user's words, or nil. A month or a day without a year is the latest one not after `now`.
     static func date(_ q: String, now: Double, cal: Calendar) -> Span? {
         let w = clean(q)
         guard !w.isEmpty else { return nil }
@@ -111,7 +111,7 @@ enum GoTo {
 
     // MARK: the list
 
-    /// The candidates for what he typed, best first: a date (when it reads as one), then names that start with it,
+    /// The candidates for what the user typed, best first: a date (when it reads as one), then names that start with it,
     /// then names with a word that starts with it, then names that hold it. Empty: everything, as given.
     static func rank(_ q: String, _ all: [Candidate], limit: Int = 12) -> [Candidate] {
         let t = q.lowercased().trimmingCharacters(in: .whitespaces)

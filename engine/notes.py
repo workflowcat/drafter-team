@@ -50,7 +50,7 @@ def seen(name, text):
     return re.search(r"(?<![\w])" + re.escape(stem) + r"\w{0,3}(?![\w])", low) is not None
 
 
-OWN = tuple(local.user("own_stems") or ()) or ("\0",)   # the user's own name stems (local config): in his notes that is him, never a namesake (2026-10-30)
+OWN = tuple(local.user("own_stems") or ()) or ("\0",)   # the user's own name stems (local config): in the user's notes that is the user, never a namesake (2026-10-30)
 
 
 def forms(name, text):
@@ -66,8 +66,8 @@ def forms(name, text):
 
 def clear(found, text):
     """Drop first-name guesses that are not evidence. The 22 October call (re-read 2026-10-30) linked Andrew P., Andrés
-    and Andy because they said «Андрій» (him), and Marko because of «Марта»: a word a whole name explains, his own
-    name, or a word that fits two or more people links nobody by its first letters."""
+    and Andy because the other side said the user's own first name, and Marko because of «Марта»: a word a whole name
+    explains, the user's own name, or a word that fits two or more people links nobody by its first letters."""
     whole = [n for n, st in found if st == n.lower()]
     taken = {n.lower() for n in whole} | {latin(n) for n in whole}
     partial = {n: {w for w in forms(n, text) if w.lower() not in taken and latin(w) not in taken and not latin(w).startswith(OWN)}
@@ -128,7 +128,9 @@ def summary(text, ask, cloud=False):
     if d and (d.get("points") or d.get("todos")):
         return [str(x) for x in d.get("points") or []][:6], [str(x) for x in d.get("todos") or []][:6]
     try:
-        t = ask("Ось розшифровка дзвінка (Я — Андрій; Вони, Speaker 2, Speaker 3 або ім'я — співрозмовники; unknown — не визначено хто). Мовою розмови дай JSON: points (до 6 головних "
+        me = local.short_name()
+        me = "користувач" if me == "the user" else me
+        t = ask("Ось розшифровка дзвінка (Я — " + me + "; Вони, Speaker 2, Speaker 3 або ім'я — співрозмовники; unknown — не визначено хто). Мовою розмови дай JSON: points (до 6 головних "
                 "пунктів і рішень), todos (до 6 справ: хто що робить). Лише JSON.\nРозшифровка:\n" + text[-9000:], 420)
         m = re.search(r"\{.*\}", t, re.S)
         d = json.loads(m.group(0)) if m else {}

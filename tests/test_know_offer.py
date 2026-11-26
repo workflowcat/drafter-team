@@ -40,7 +40,7 @@ class KnowOnly(unittest.TestCase):
         self.assertEqual(words.know_only(finisher(), "ask Zo", pack(entry("Zorvaldine"), entry("Zolmira"))), "")
 
     def test_his_other_words_with_these_letters_win(self):
-        # he writes other words starting with these letters and never the name: no offer
+        # the user writes other words starting with these letters and never the name: no offer
         self.assertEqual(words.know_only(finisher({"zorvex": 5, "zorvy": 4}), "ask Zor", pack(entry("Zorvaldine"))), "")
 
 

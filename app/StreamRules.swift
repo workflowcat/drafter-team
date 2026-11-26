@@ -1,4 +1,4 @@
-// The stream (one calm column, search first; chosen 23 November 2026, Andrii: "c feels right, but with some better
+// The stream (one calm column, search first; chosen 23 November 2026, the user: "c feels right, but with some better
 // controls over recording and editing especially"). Pure rules, tested in tests/stream_rules.swift; the views are
 // app/Stream.swift, the model's side app/StreamModel.swift.
 // - The field: scope words ("@mila", "links", "calls", "screens", "in:slack", "today", "pinned", ...) narrow the
@@ -207,7 +207,7 @@ enum StreamRules {
         guard let b = before, b != original else { return .original }
         return .change(b)
     }
-    /// The bullet points as he typed them in the editor: one per line, list marks and blank lines dropped.
+    /// The bullet points as the user typed them in the editor: one per line, list marks and blank lines dropped.
     static func points(_ text: String) -> [String] {
         text.split(whereSeparator: \.isNewline).map { l in
             var s = l.trimmingCharacters(in: .whitespaces)

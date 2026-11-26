@@ -1,4 +1,4 @@
-"""The prompt: a fixed head (how the user writes, their words, their messages) and a moving tail (where he types, what is typed)."""
+"""The prompt: a fixed head (how the user writes, their words, their messages) and a moving tail (where the user types, what is typed)."""
 import json, os, re, sys
 from pathlib import Path
 
@@ -35,7 +35,7 @@ def head(n_examples=12, n_words=40):
     return "\n\n".join(parts) + "\n###\n"
 
 
-# per-app voice (2026-10-20): how he writes where; the trained layer knows [Beeper] / [Claude] / [Voice Notes] already,
+# per-app voice (2026-10-20): how the user writes where; the trained layer knows [Beeper] / [Claude] / [Voice Notes] already,
 # this line adds the rest
 STYLE = {"Beeper": "коротко, розмовно, як у чаті", "WhatsApp": "коротко, розмовно, як у чаті", "Telegram": "коротко, розмовно",
          "Slack": "коротко, по справі", "Mail": "повними реченнями, ввічливо, без води", "Outlook": "повними реченнями, ввічливо",
@@ -44,13 +44,13 @@ STYLE = {"Beeper": "коротко, розмовно, як у чаті", "WhatsA
 
 
 # Screen context as a conversation (2026-11-14, app/ScreenContext.swift): the app marks who wrote each message it read
-# from the picture ("Я: " his, "Вони: " the other person, "Асистент: " an AI app's answer, one message per line; the
+# from the picture ("Я: " the user's, "Вони: " the other person, "Асистент: " an AI app's answer, one message per line; the
 # bench replay sets mark the other side with a first name). The trained layer saw no screen text at all (bench/
-# make_train.py: "[App]\n" + his line), so the default stays today's look until the context sweep measures the marks
+# make_train.py: "[App]\n" + the user's line), so the default stays today's look until the context sweep measures the marks
 # (bench/screen_context.py): CTX_FORM "plain" = the marks taken off, the last CTX_BUDGET characters.
 #   plain   today's form: the app's marks removed, the last CTX_BUDGET characters (text without them: as before)
 #   raw     exactly as it came (the bench's old baseline: replay sets keep their "Я:" / name marks)
-#   tail    who said what kept, the tail picked by turns: the other side's last message whole, his last, then older
+#   tail    who said what kept, the tail picked by turns: the other side's last message whole, the user's last, then older
 #   tail-plain  the same pick, marks taken off
 CTX_FORM = os.environ.get("DRAFTER_CTX_FORM", "plain")
 CTX_BUDGET = int(os.environ.get("DRAFTER_CTX_BUDGET", "1600"))
@@ -77,7 +77,7 @@ def turns(context):
 
 
 def pick_tail(ts, budget):
-    """The turns the model reads, oldest first: the other side's last message whole when it fits (else its end), his
+    """The turns the model reads, oldest first: the other side's last message whole when it fits (else its end), the user's
     own last message, then older ones from the newest back while `budget` characters last (app/ScreenContextRules.tail)."""
     if not ts or budget <= 0: return []
     size = lambda i: len(ts[i][1]) + 1 + (0 if ts[i][0] is None else 7)
@@ -158,7 +158,7 @@ def clip_safe(text):
 
 def clip_text(clip, before="", budget=None):
     """The copy as the prompt shows it: one line, the first `budget` characters (the start of a copy says what it is),
-    nothing when it is unsafe or already in the text he types (he pasted it)."""
+    nothing when it is unsafe or already in the text the user types (the user pasted it)."""
     budget = CLIP_CHARS if budget is None else budget
     c = re.sub(r"\s+", " ", clip or "").strip()
     if not c or budget <= 0 or not clip_safe(c): return ""
@@ -166,10 +166,10 @@ def clip_text(clip, before="", budget=None):
     return c if len(c) <= budget else c[:budget].rsplit(" ", 1)[0] + "…"
 
 
-# Writing instructions (parity round): one global and one per app, his own words (Settings > Typing). The model is a
-# completion model with his layer, not a chat model, so an instruction is shown as part of the place line: after the
+# Writing instructions (parity round): one global and one per app, the user's own words (Settings > Typing). The model is a
+# completion model with the user's layer, not a chat model, so an instruction is shown as part of the place line: after the
 # app's own style in brackets, which the prompt already had (STYLE). NOTES_FORM "line" puts it on its own line above,
-# "near" in brackets right above his line.
+# "near" in brackets right above the user's line.
 NOTES_CHARS = 300
 NOTES_FORM = os.environ.get("DRAFTER_NOTES_FORM", "paren")
 
@@ -180,8 +180,8 @@ def notes_text(notes):
 
 # Mid-line (fill in the middle, 2026-11-15, docs/rounds/2026-11-15-fim.md): the app sends the rest of the caret's line
 # (and up to 2 lines after it) when the caret sits mid-line (setting midLine). The live model is a plain completion
-# model with no FIM tokens. MID_FORM "after" shows the text after the caret as one line right above his text, after
-# the screen text (it stays put while he types in the gap, so the cache keeps it). Default "none" (plain continuation,
+# model with no FIM tokens. MID_FORM "after" shows the text after the caret as one line right above the user's text, after
+# the screen text (it stays put while the user types in the gap, so the cache keeps it). Default "none" (plain continuation,
 # engine/fim.py ends it): on 2,065 mid-line keys "after" filled the gap no better (exact 25.2 vs 25.7 per 1,000 keys,
 # first word 67.2 vs 68.0 % of shown) and cost 17 ms p50 (bench/fim.py). With no `after`, the prompt is as before.
 MID_FORM = os.environ.get("DRAFTER_MID_FORM", "none")
@@ -204,16 +204,16 @@ def tail(before, app="", title="", context="", mine="", clip="", notes="", after
     elif notes and NOTES_FORM == "paren": style = f"{style}; {notes}" if style else notes
     t += (f"[{where}]" + (f" ({style})" if style else "") + "\n") if where else (f"({notes})\n" if notes and NOTES_FORM == "paren" else "")
     if mine:
-        # his own older messages in this chat (people.People.earlier), above the screen and fixed per chat, so the cache keeps it
+        # the user's own older messages in this chat (people.People.earlier), above the screen and fixed per chat, so the cache keeps it
         t += "Мої раніші повідомлення в цьому чаті:\n" + mine.strip() + "\n"
     clip = clip_text(clip, before)
     if clip: t += f"{CLIP_LABEL} {clip}\n"
     if context:
-        # the text on screen above the field (the message he answers); it changes rarely, so it stays in the cache
+        # the text on screen above the field (the message the user answers); it changes rarely, so it stays in the cache
         # (the engine trims it to a window whose start stays put, up to 1.5 x 1,000 characters: server.window)
         shown = screen_text(context)
         if shown: t += "На екрані перед цим:\n" + shown + "\n---\n"
-    # "near": the instruction right above his line, after the screen text (the closest place to what it steers)
+    # "near": the instruction right above the user's line, after the screen text (the closest place to what it steers)
     if notes and NOTES_FORM == "near": t += f"({notes})\n"
     after = mid_text(after) if MID_FORM == "after" else ""
     if after.strip(): t += f"{MID_LABEL} {after.lstrip()}\n"
@@ -233,11 +233,11 @@ class Builder:
     def _wrap_head(self, h):
         if self.fmt == "bare": return "\n"   # one token, so the engine still warms up on its own thread
         if self.fmt == "raw": return h
-        # chat: the fixed part (how he writes, his messages) opens the user turn; chat_tail adds the rest
+        # chat: the fixed part (how the user writes, their messages) opens the user turn; chat_tail adds the rest
         return "<|im_start|>user\n" + h.rstrip("#\n") + "\n\n"
 
     def chat_tail(self, before, app="", title="", context=""):
-        """Chat shape (Qwen template): the conversation goes in the user turn, his text starts the answer."""
+        """Chat shape (Qwen template): the conversation goes in the user turn, their text starts the answer."""
         where = " · ".join(x for x in (app, title) if x)
         u = (f"Де він пише: {where}\n" if where else "") + (f"На екрані перед цим:\n{screen_text(context)}\n" if screen_text(context) else "")
         u += "Продовж його текст кількома словами, тією ж мовою."
@@ -250,8 +250,8 @@ class Builder:
         return ids, heal
 
     def ids_stable(self, before, app="", title="", context="", mine="", clip="", notes="", after=""):
-        """(prompt ids, heal, stable): as ids(), plus where the part that stays put while he types ends ([app ·
-        title], his chat lines, the screen text): ids[:stable] are the same at every key of this screen, so a cache
+        """(prompt ids, heal, stable): as ids(), plus where the part that stays put while the user types ends ([app ·
+        title], their chat lines, the screen text): ids[:stable] are the same at every key of this screen, so a cache
         that cannot be cut back (Qwen3.5, Gemma 4) keeps a copy there and reads only the typed line at each key
         (big-model round, 2026-11-15). The ids are exactly those of ids(): `stable` is the shared start of the tail
         tokenised alone and the stable text tokenised alone, so a token that joins the two parts is never split."""

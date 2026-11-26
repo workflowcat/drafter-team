@@ -1,12 +1,12 @@
 // Reader check before sending (roadmap item 4, 17 November 2026; docs/rounds/2026-11-17-reader.md): when to ask the
 // engine's `/reader` for a last look at a chat message, and what the one chip says. Pure, so it compiles alone in tests.
 // It never holds or delays Enter, never sends, never edits by itself: the chip is shown only when the answer comes
-// before his next key, and any key but Tab drops it (Keys: any other key drops the ghost and goes to the app).
+// before the user's next key, and any key but Tab drops it (Keys: any other key drops the ghost and goes to the app).
 import Foundation
 
 enum ReaderRules {
     static let marker = "⟦drafter-test⟧"
-    static let budget = 1.0          // an answer later than this is not shown (he may be pressing Enter by then)
+    static let budget = 1.0          // an answer later than this is not shown (the user may be pressing Enter by then)
     static let rest = 1.0            // a pause this long after 3+ words counts as finished
     static let ended = 0.15          // after . ! ? … : almost at once
 
@@ -43,7 +43,7 @@ enum ReaderRules {
     struct Edit: Equatable { let at: Int; let len: Int; let old: String; let new: String }
 
     /// Fixes the Mac does not call right already: a one-word fix of a word the spellchecker knows is dropped (as
-    /// app/Fixer.swift does); splits and joins stay (the engine checked them against his own word pairs).
+    /// app/Fixer.swift does); splits and joins stay (the engine checked them against the user's own word pairs).
     static func keep(_ e: Edit, known: (String) -> Bool) -> Bool {
         if e.old.contains(" ") || e.new.contains(" ") { return true }
         return !known(e.old)

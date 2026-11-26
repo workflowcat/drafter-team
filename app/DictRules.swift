@@ -9,9 +9,9 @@ enum DictRules {
 
     struct Row: Equatable {
         var group: Group
-        var text: String          // the word, or what he meant
+        var text: String          // the word, or what the user meant
         var heard: [String] = []  // what voice heard for it
-        var count = 0             // Words to learn: how often he made this change
+        var count = 0             // Words to learn: how often the user made this change
         var source = ""           // where the word came from (menu, edits, typing, dictionary)
         var loose = false         // a heard -> meant pair with no word of its own
 
@@ -71,7 +71,7 @@ enum DictRules {
         }
     }
 
-    /// The heard field as he typed it ("brum blocks, brumbl") into the dictionary's list: lower case, trimmed, once
+    /// The heard field as the user typed it ("brum blocks, brumbl") into the dictionary's list: lower case, trimmed, once
     /// each, never the word itself.
     static func heard(_ field: String, word: String) -> [String] {
         var out: [String] = []

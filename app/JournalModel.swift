@@ -1,8 +1,8 @@
 // The journal's state and actions, as one stream (stream round, 23 November 2026; before it: the outline of time,
 // the sidebar, the gallery and the reader, 14-22 November). The build off the main thread; the search through the
 // journal's index (JournalSearch, with its ranking) under the stream's scope words (StreamRules); the stream's lines in
-// time order, or best first while words are searched; the keys (StreamKeys.route decides, this file does); and what he
-// does to an item: Insert, Copy, Edit, Pin, Combine, Revert, Delete, Undo. The stored history is never rewritten: his
+// time order, or best first while words are searched; the keys (StreamKeys.route decides, this file does); and what the user
+// does to an item: Insert, Copy, Edit, Pin, Combine, Revert, Delete, Undo. The stored history is never rewritten: the user's
 // changes and drafts go to JournalStore (data/journal.json); Delete goes through the history's own forget, after 8
 // seconds in which ⌘Z (or the notice's Undo) brings the item back. Editing, Combine, the player, Go to:
 // app/StreamModel.swift.
@@ -88,7 +88,7 @@ extension WindowModel {
         let at: Double? = preview ? now : nil
         let pq = JournalSearch.parse(q, now: at)
         let full = query
-        if openedAt != nil, !preview { firstAnswer = (firstAnswer?.from ?? Date(), full) }   // from his first key
+        if openedAt != nil, !preview { firstAnswer = (firstAnswer?.from ?? Date(), full) }   // from the user's first key
         JournalSearch.run(q, rows, version: v, engine: eng, now: at) { [weak self] hits, r in
             guard let self, self.query == full, self.rowsVersion == rv else { return }   // the indices still point at these rows
             if let fa = self.firstAnswer, fa.query == full, self.openedAt != nil {
@@ -125,7 +125,7 @@ extension WindowModel {
     func flushSearch() { if let w = searchSide.pending { searchSide.pending = nil; w.perform() } }
 
     /// The index gets the rows as soon as they are built, off the main thread, so the first key after an open is
-    /// answered by it (speed round, 15 November 2026: it was made at the first search, a cold build under his key).
+    /// answered by it (speed round, 15 November 2026: it was made at the first search, a cold build under the user's key).
     /// Only what changed since the last hand-over is indexed again (JournalEngine.update).
     func warmSearch() {
         guard !preview else { return }
@@ -286,7 +286,7 @@ extension WindowModel {
         status = "\(picked.count) picked · ⌘⇧E Combine"
     }
 
-    // MARK: what he does to an item
+    // MARK: what the user does to an item
 
     /// An item's actions, each a verb with its key (the open row's buttons, the right-click menu).
     func actions(_ it: TapeItem, inPlace: Bool = true) -> [RowAction] {
@@ -335,7 +335,7 @@ extension WindowModel {
     }
     func togglePin(_ it: TapeItem) { choose(it.id); pin() }
 
-    /// ⌘↵: the text (his change, or the editor's) into the app he came from: that app comes to the front and the text
+    /// ⌘↵: the text (the user's change, or the editor's) into the app the user came from: that app comes to the front and the text
     /// goes in at its caret through the Quick panel's way (Capture.put: never a skipped app, a password field or under
     /// secure input; there it goes on the clipboard).
     func insert() {
@@ -656,7 +656,7 @@ extension WindowModel {
     }
 }
 
-// MARK: tags he hid or pinned (tags round, 17 November 2026)
+// MARK: tags the user hid or pinned (tags round, 17 November 2026)
 extension WindowModel {
     private func tagsChanged(_ p: TagRules.Prefs) {
         TagPrefs.shared.set(p)

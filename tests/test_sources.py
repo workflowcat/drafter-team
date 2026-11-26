@@ -109,7 +109,7 @@ class Beeper(Base):
         self.assertEqual(r3['title'], 'Demo group'); self.assertFalse(r3['mine'])
         self.assertEqual(r3['links'], ['https://example.test/x'])
         signed = next(r for r in rows.values() if r['text'].startswith('Claude'))
-        self.assertFalse(signed['mine'])                                # Claude's lines are not his
+        self.assertFalse(signed['mine'])                                # Claude's lines are not the user's
         cur = self.state.read()['beeper']['cursor']
         self.assertEqual(cur['after'], NOW); self.assertLess(cur['oldest'], NOW - 3 * 86400)
         # keeps going back on the next runs until the horizon

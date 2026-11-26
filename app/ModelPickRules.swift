@@ -1,6 +1,6 @@
 // Model catalog (Cotypist parity round 2, 15 November 2026): the pure rules of Settings > Typing > Model. The engine's
 // GET /models answer becomes rows; each row says what a press on it does (pick, download, cancel) or that it is
-// loading. The personal-style slider is off for a model without his trained layer. View: app/ModelSettings.swift.
+// loading. The personal-style slider is off for a model without the user's trained layer. View: app/ModelSettings.swift.
 import Foundation
 
 struct ModelRow: Equatable {
@@ -50,10 +50,10 @@ enum ModelPick {
         }
     }
 
-    /// Without his layer the personal-style slider has nothing to scale: off, with this one word beside it.
+    /// Without the user's layer the personal-style slider has nothing to scale: off, with this one word beside it.
     static func styleReason(layer: Bool) -> String? { layer ? nil : "untrained" }
 
-    /// Whether the picked model has his layer; before the first answer only live has one.
+    /// Whether the picked model has the user's layer; before the first answer only live has one.
     static func hasLayer(_ rows: [ModelRow], id: String) -> Bool { rows.first { $0.id == id }?.layer ?? (id == "live") }
 
     /// Ask the engine again in a second: a download runs or a model loads.

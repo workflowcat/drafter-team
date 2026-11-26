@@ -1,10 +1,10 @@
 // ⌥Tab on a selection (1 November 2026; Apple Writing Tools, Raycast AI; item 7 in docs/typing-models-research.md).
-// He selects text in any field and presses ⌥Tab: a small list opens under the selection - Shorter, Fix, Clearer,
-// Warmer, Formal, List, Translate - or he types what to do. 1-7, or ↑ ↓ and Tab / Return, picks; the text goes to
-// engine `/rework` (Claude through his `claude` sign-in, the local model offline) and the new text shows in the list.
+// The user selects text in any field and presses ⌥Tab: a small list opens under the selection - Shorter, Fix, Clearer,
+// Warmer, Formal, List, Translate - or the user types what to do. 1-7, or ↑ ↓ and Tab / Return, picks; the text goes to
+// engine `/rework` (Claude through the user's `claude` sign-in, the local model offline) and the new text shows in the list.
 // Tab or Return puts it over the selection (a paste, so line breaks never send a chat message); a digit tries another
-// command; Esc keeps his text. Backspace as the very next key after Tab brings his text back (⌘Z in the app works too).
-// Nothing leaves the Mac before he picks a command. Not in skipped apps, password fields or under secure input.
+// command; Esc keeps the user's text. Backspace as the very next key after Tab brings the user's text back (⌘Z in the app works too).
+// Nothing leaves the Mac before the user picks a command. Not in skipped apps, password fields or under secure input.
 // Synonyms (2026-11-15): on one word or a 2-3 word phrase the list starts with up to 6 offline synonyms from engine
 // `/synonyms` (a thesaurus on this Mac, nothing sent); 1-6 pick them and the commands follow (SynonymRules).
 import AppKit
@@ -27,7 +27,7 @@ final class Rework {
         Cmd(id: "translate", name: "Translate", hint: "→ English"),
     ]
     var sel = 0
-    var typed = ""                  // his own instruction
+    var typed = ""                  // the user's own instruction
     private(set) var original = "", result = "", ran = "", by = "", ms = 0
     private var el: AXUIElement?, pid: pid_t = 0, app = "", bundle = "", anchor = CGRect.zero, seq = 0
     private var screen = "", kb = ""   // the chat above and the keyboard when it opened (engine/whom.py; context stays on the Mac)
@@ -140,13 +140,13 @@ final class Rework {
                 return true
             default:
                 if let p = digit { pick(p); return true }
-                close("typed"); return false          // he types on: his key goes to the app as usual
+                close("typed"); return false          // the user types on: their key goes to the app as usual
             }
         case .closed: return false
         }
     }
 
-    /// A row he picked: a synonym goes over the selection at once, a command runs.
+    /// A row the user picked: a synonym goes over the selection at once, a command runs.
     func pick(_ p: SynonymRules.Pick) {
         switch p {
         case .command(let i): run(cmds[i].id)
@@ -190,7 +190,7 @@ final class Rework {
         }
     }
 
-    /// Tab on the result: pasted over the selection, if it is still his selection; else it goes to the clipboard.
+    /// Tab on the result: pasted over the selection, if it is still the user's selection; else it goes to the clipboard.
     func apply() {
         let new = result, old = original
         guard let el else { close("no field"); return }
@@ -205,7 +205,7 @@ final class Rework {
         log("rework applied \(ran), \(old.count) → \(new.count) chars")
     }
 
-    /// Backspace as the very next key after Tab: his own text comes back.
+    /// Backspace as the very next key after Tab: the user's own text comes back.
     static func takeBack() -> Bool {
         guard let d = last, Keys.shared.inputRevision == d.revision + 1, Date().timeIntervalSince(d.at) < 60 else { last = nil; return false }
         last = nil

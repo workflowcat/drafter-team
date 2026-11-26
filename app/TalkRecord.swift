@@ -116,7 +116,7 @@ extension Talk {
     }
 
     /// A finished long note or call (or one recovered after a crash): each side read again with times (Parakeet, else
-    /// Whisper), merged as "Я" / "Вони" for calls with his mic's echo of them taken out, then a note. Screenshots
+    /// Whisper), merged as "Я" / "Вони" for calls with the user's mic's echo of them taken out, then a note. Screenshots
     /// taken meanwhile go into brief.md beside the transcript, and the line to hand it to an agent goes on the
     /// clipboard. The live text is the fallback when the reading gives nothing.
     func transcribe(dir: URL, me: URL, them: URL?, call: Bool, live: String, done: ((Bool) -> Void)? = nil) {
@@ -126,7 +126,7 @@ extension Talk {
         let event = meta["event"] as? [String: Any]
         Pill.shared.show(String(format: call ? "Call %.0f min: transcribing both sides…" : "Note %.0f min: transcribing…", mins), seconds: 900)
         log(String(format: "%@ ended: %.1f min, other side %@, in %@", call ? "call" : "long note", mins, them == nil ? "not recorded" : "recorded", dir.lastPathComponent))
-        // the people of the meeting and the speakers he named, with their nicknames and name forms (the people book)
+        // the people of the meeting and the speakers the user named, with their nicknames and name forms (the people book)
         let named = Array(((meta["speakers"] as? [String: String]) ?? [:]).values)
         let names = screenNames + PeopleBook.load(WindowModel.bookURL).expected(((event?["people"] as? [String]) ?? []) + named)
         let lang = Transcript.language(live)
@@ -145,11 +145,11 @@ extension Talk {
                 if call, them != nil, b.isEmpty {   // them.wav is only kept when it had sound (Spool.wavs)
                     log("call: the other side's sound was recorded but its reading gave no lines; mic lines will be placed by voice")
                 }
-                // a transcribed file has one speaker label he can name on the page (no diarisation yet)
+                // a transcribed file has one speaker label the user can name on the page (no diarisation yet)
                 let solo = meta["file"] != nil ? "Speaker 1" : ""
                 let rows = mine.map { (call ? "Я" : solo, "me", $0) } + b.map { ("Вони", "them", $0) }
                 let ordered = rows.sorted { ($0.2["start"] as? Double ?? 0) < ($1.2["start"] as? Double ?? 0) }
-                // the lines with their times and track (me: his mic, them: the Mac's sound), for the Recordings view
+                // the lines with their times and track (me: the user's mic, them: the Mac's sound), for the Recordings view
                 // (play from a line, screenshots in place) and for speakers.py
                 let timed: [[String: Any]] = ordered.map { r in
                     var row: [String: Any] = ["who": r.0, "start": r.2["start"] as? Double ?? 0, "text": (r.2["text"] as? String) ?? ""]

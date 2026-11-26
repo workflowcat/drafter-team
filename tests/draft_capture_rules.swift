@@ -14,7 +14,7 @@ struct DraftCaptureChecks {
         let page = "HomeAboutPricingBlogContact Welcome to the Example Store Privacy Terms of use Cookie settings\nAsk anything\n"
         let now = 1_000_000.0
 
-        // A: a web box read whole: only what he typed after his first key is the draft
+        // A: a web box read whole: only what the user typed after their first key is the draft
         let typed = "can you check the order for friday please"
         check(R.typedPart(start: page, end: page + typed).text == typed, "page text before his first key is not his draft")
         check(R.record(start: page, end: page + typed, keys: typed.count, inserted: 0, recent: [], app: "Dia", now: now) == .add(typed, est: false),
@@ -23,15 +23,15 @@ struct DraftCaptureChecks {
         if case .add(let t, let est) = R.record(start: nil, end: page + typed, keys: typed.count, inserted: 0, recent: [], app: "Dia", now: now) {
             check(est && t.hasSuffix(typed) && t.count < typed.count + 30 && !t.contains("Privacy"), "an unexplained row: the key-budget tail, marked est")
         } else { check(false, "an unexplained row is never dropped") }
-        // a pasted paragraph is his: the paste explains it
+        // a pasted paragraph is the user's: the paste explains it
         let pasted = String(repeating: "lorem ipsum dolor sit amet ", count: 20)
         check(R.record(start: "", end: pasted, keys: 4, inserted: pasted.count, recent: [], app: "Claude", now: now) == .add(pasted.trimmingCharacters(in: .whitespaces), est: false),
               "a paste is allowed")
         // dictation: the voice text came in through a paste (Focus counts it)
         let said = "давай зустрінемось у четвер о десятій біля офісу"
         check(R.record(start: "", end: said, keys: 0, inserted: said.count + 1, recent: [], app: "Beeper", now: now) == .add(said, est: false), "dictation is allowed")
-        // a page that grew while he typed three letters: not kept
-        // a page that grew while he typed (a reply streaming in): kept as the tail his keys explain, marked est
+        // a page that grew while the user typed three letters: not kept
+        // a page that grew while the user typed (a reply streaming in): kept as the tail their keys explain, marked est
         let streamed = "Ask anything\n" + pasted + "and then we ship it"
         if case .add(let t, let est) = R.record(start: "Ask anything\n", end: streamed, keys: 19, inserted: 0, recent: [], app: "Claude", now: now) {
             check(est && t.hasSuffix("we ship it") && t.count < 60, "text that came in by itself: the estimate")
@@ -61,7 +61,7 @@ struct DraftCaptureChecks {
               "a continued draft replaces its row")
         check(R.record(start: "", end: more, keys: 60, inserted: 0, recent: kept, app: "Slack", now: now) == .add(more, est: false), "another app: a new row")
         check(R.record(start: "", end: more, keys: 60, inserted: 0, recent: kept, app: "Beeper", now: now + 3600) == .add(more, est: false), "an hour later: a new row")
-        // he clicked away and came back: the field holds his first draft, the new keys continue it
+        // the user clicked away and came back: the field holds their first draft, the new keys continue it
         let back = R.typedPart(start: page + first + " ", end: page + more, recent: kept, app: "Beeper", now: now)
         check(back.text == more && back.carried == first.count, "a draft he comes back to is carried")
         check(R.record(start: page + first + " ", end: page + more, keys: 20, inserted: 0, recent: kept, app: "Beeper", now: now) == .replace(more, now - 60, est: false),
@@ -72,7 +72,7 @@ struct DraftCaptureChecks {
         // fewer than three words: not a draft
         check(R.record(start: "", end: "ok so", keys: 5, inserted: 0, recent: [], app: "Beeper", now: now) == .skip, "a stub is not kept")
 
-        // times: "t0" his first key, "t" his last key; a continued row keeps its first start and moves the end
+        // times: "t0" the user's first key, "t" the user's last key; a continued row keeps its first start and moves the end
         let s1 = R.stamps(firstKey: now - 90, lastKey: now - 20, now: now)
         check(s1.t0 == now - 90 && s1.t == now - 20, "a new draft: first key and last key")
         check(R.stamps(firstKey: nil, lastKey: nil, now: now) == (nil, now), "no keys counted: no start, the end is now")
@@ -83,12 +83,12 @@ struct DraftCaptureChecks {
         check(R.stamps(firstKey: now - 30, lastKey: now - 5, now: now, continued: old).t0 == now - 30, "an old row: this draft's first key")
         check(R.stamps(firstKey: now + 5, lastKey: now + 9, now: now) == (now, now), "never after now, start never after the end")
 
-        // the sent line: the last line of what he wrote, never page text
+        // the sent line: the last line of what the user wrote, never page text
         check(R.sentLine(start: page, end: page + typed, keys: typed.count, inserted: 0, recent: [], app: "Dia", now: now) == typed, "sent line is his")
         check(R.sentLine(start: nil, end: page + typed, keys: typed.count, inserted: 0, recent: [], app: "Dia", now: now) == typed, "sent: the last line of the estimate")
 
         // the anchor: the page above changed (a time stamp), so the shared start breaks early; the last 40 characters
-        // before the caret at his first key are still there, and what follows them is the draft, not an estimate
+        // before the caret at the user's first key are still there, and what follows them is the draft, not an estimate
         let convo = "Updated 2 min ago\nMila: can you send the act tonight?\nme: sure, after six\nMila: thanks!\n"
         let reply = "sure, I will send it right after the call"
         let moved = convo.replacingOccurrences(of: "2 min", with: "3 min")

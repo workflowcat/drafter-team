@@ -1,7 +1,7 @@
 """Mid-line ghosts: fill in the middle with a plain completion model (2026-11-15, docs/rounds/2026-11-15-fim.md).
 
-The live model (Qwen3 1.7B base with his layer) has no fill-in-the-middle tokens. With the caret mid-line, the app sends
-the rest of the caret's line (`after_line`); the engine shows it above his text (engine/prompt.py MID_FORM) and writes
+The live model (Qwen3 1.7B base with the user's layer) has no fill-in-the-middle tokens. With the caret mid-line, the app sends
+the rest of the caret's line (`after_line`); the engine shows it above the user's text (engine/prompt.py MID_FORM) and writes
 a plain continuation, and these rules end the ghost where the gap is filled:
 
 - the model would now write the rest of the line: at a word boundary, the probability of the rest's first token

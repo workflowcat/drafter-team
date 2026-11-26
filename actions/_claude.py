@@ -1,4 +1,4 @@
-"""Actions run the logged-in `claude` CLI headless with one skill, after Andrii presses the chip.
+"""Actions run the logged-in `claude` CLI headless with one skill, after the user presses the chip.
 
 The run goes to the background (it can take minutes); the result line lands in data/actions.jsonl and in a macOS
 notification. DRAFTER_DRY=1 only writes the command it would run."""
@@ -24,7 +24,7 @@ def notify(title, text):
 
 
 def command(skill, prompt, tools):
-    """-> (argv, stdin). The prompt carries his text, so it goes on stdin (`claude -p` reads it there when no prompt
+    """-> (argv, stdin). The prompt carries the user's text, so it goes on stdin (`claude -p` reads it there when no prompt
     argument is given); argv holds flags only, as any process can read it through `ps` (2026-11-14)."""
     full = f"Use the {skill} skill. {prompt}\nWork without asking questions; at the end reply with one short line: what you made and where."
     return [CLAUDE, "-p", "--output-format", "json", "--allowedTools", ",".join(tools)], full

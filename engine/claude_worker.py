@@ -1,7 +1,7 @@
 """One `claude` process kept running (Haiku, no plugins, no MCP, no settings), so a request takes ~2-3 s instead of the
 ~8-14 s of starting the CLI each time. Every request carries its own full instructions; the process is restarted every
 8 requests so earlier chats do not pile up in its context. Used for replies, call summaries and questions to the notes.
-Only called on Andrii's own action (Tab on an empty box, the end of a call he recorded, a question he asked)."""
+Only called on the user's own action (Tab on an empty box, the end of a call the user recorded, a question the user asked)."""
 import json, os, queue, subprocess, threading, time
 from pathlib import Path
 

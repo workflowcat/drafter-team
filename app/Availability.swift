@@ -1,9 +1,9 @@
-// Availability as a reply (17 November 2026): the app side of app/AvailabilityRules.swift. Busy times from his calendars
+// Availability as a reply (17 November 2026): the app side of app/AvailabilityRules.swift. Busy times from the user's calendars
 // (EventKit, the calendars Settings leaves on: `calendarsOff`, the same set as ;free and call names); the rules pick the
 // slots and write the line. Three ways in:
 //   - their last message asks for a time: an option on the next-message card ("Можу вт 18.11 о 10:00, …"),
 //   - they proposed a slot: "works", or the nearest free one instead,
-//   - he starts the line himself ("I'm free ", "можу в "): a chip, Tab finishes it.
+//   - the user starts the line themselves ("I'm free ", "можу в "): a chip, Tab finishes it.
 // Every way checks the calendar again at Tab and drops a slot that filled meanwhile. Text only: never an invite, never Return.
 import AppKit
 import EventKit
@@ -15,7 +15,7 @@ enum Availability {
 
     private static let iso: ISO8601DateFormatter = { let f = ISO8601DateFormatter(); f.formatOptions = [.withInternetDateTime]; return f }()
 
-    /// His busy stretches from today through `days`. nil: no calendar access (never invented slots).
+    /// The user's busy stretches from today through `days`. nil: no calendar access (never invented slots).
     static func busy(days: Int = 9, now: Date = Date()) -> [AvailabilityRules.Busy]? {
         guard EKEventStore.authorizationStatus(for: .event) == .fullAccess else { return nil }
         let cals = Meeting.calendars()
@@ -97,7 +97,7 @@ enum Availability {
         return AvailabilityRules.offerLine(fresh, now: now, lang: lang, mine: mine, theirs: theirs, links: links)
     }
 
-    /// He typed the start of an availability line: a chip with the slots; Tab reads the calendar again and finishes it.
+    /// The user typed the start of an availability line: a chip with the slots; Tab reads the calendar again and finishes it.
     static func typedOffer(_ s: Spot, context: String) -> [String: Any]? {
         let line = s.before.components(separatedBy: "\n").last ?? ""
         guard AvailabilityRules.typedStart(line), let busy = busy() else { return nil }
@@ -109,7 +109,7 @@ enum Availability {
                 "run": ["kind": "avail.typed", "lang": lang, "zone": theirs?.identifier ?? ""]]
     }
 
-    /// The chip's Tab: slots from the calendar as it is now, put in after what he typed.
+    /// The chip's Tab: slots from the calendar as it is now, put in after what the user typed.
     static func runTyped(_ r: [String: Any]) {
         guard let busy = busy() else { Ghost.shared.flash("Calendar access is off (System Settings › Privacy › Calendars)"); return }
         let slots = AvailabilityRules.slots(busy: busy, now: Date(), minutes: minutes, calendar: .current)
@@ -117,7 +117,7 @@ enum Availability {
         let z = r["zone"] as? String ?? ""
         let text = AvailabilityRules.offerLine(slots, now: Date(), lang: r["lang"] as? String ?? "en", mine: .current, theirs: z.isEmpty ? nil : TimeZone(identifier: z), start: false)
         Snippets.expand(old: "", new: text, key: "lookup", expected: Keys.shared.spot)
-        log("availability: \(slots.count) slots put in after his start")
+        log("availability: \(slots.count) slots put in after the user's start")
     }
 }
 

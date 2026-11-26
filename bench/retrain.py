@@ -1,14 +1,14 @@
-"""Weekly retrain on his newest writing, switched on only if it types better on lines neither layer has seen.
+"""Weekly retrain on the user's newest writing, switched on only if it types better on lines neither layer has seen.
 
     .venv/bin/python bench/retrain.py [--force]
     .venv/bin/python bench/retrain.py --compare data/adapters data/adapters-prev    # the test alone: nothing moves
 
-Runs only when the last retrain is 7+ days old, the Mac is on power and he has been away from the keyboard 10+ minutes
+Runs only when the last retrain is 7+ days old, the Mac is on power and the user has been away from the keyboard 10+ minutes
 (--force skips those checks).
 
 The rolling test set (2026-11-01; before, 30 fixed messages from 19 October replayed through the running engine
-decided). Each run first draws a new fresh set from what he wrote since the last retrain (bench/make_fresh.py: 40
-Beeper replies with the chat above them, 60 lines to Claude; data/replay-fresh.json) and his older lines in each of
+decided). Each run first draws a new fresh set from what the user wrote since the last retrain (bench/make_fresh.py: 40
+Beeper replies with the chat above them, 60 lines to Claude; data/replay-fresh.json) and their older lines in each of
 those chats (bench/people_fresh.py). Training leaves those lines out (bench/make_train.py), so both layers are tested
 on lines they never saw; next week they train and a new set is drawn. Each layer is recorded on the set the way
 Drafter types (bench/typebench.py with the word booster and the per-person lines), scored through the decision gate
@@ -103,7 +103,7 @@ def record(adapter, label):
     g = json.loads((ROOT / "data/gate.json").read_text()) if (ROOT / "data/gate.json").exists() else {}
     args = [base_model(st), "--adapter", str(Path(adapter).relative_to(ROOT) if Path(adapter).is_absolute() else adapter),
             "--boost", str(g.get("boost", 0) or 0), "--label", label]
-    try:      # his older lines per chat, when they were read for this very set (Beeper may have been off)
+    try:      # the user's older lines per chat, when they were read for this very set (Beeper may have been off)
         import typescore
         d = json.loads((ROOT / "data/bench/people-fresh.json").read_text())
         if d.get("rows") and d.get("set_sha") == typescore.set_sha(ROOT / "data/replay-fresh.json"): args.append("--people")
@@ -212,7 +212,7 @@ def main():
             STAMP.parent.mkdir(parents=True, exist_ok=True)
             STAMP.write_text(str(cut))
     code, line = step("bench/people_fresh.py", timeout=900)
-    report.append(f"- his older lines per chat: {line}")
+    report.append(f"- the user's older lines per chat: {line}")
     if code:
         report.append("- no per-chat lines: the Beeper test would not match how Drafter types; no retrain this time")
         write_report(report)

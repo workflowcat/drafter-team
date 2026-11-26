@@ -1,11 +1,11 @@
 // Ranked typo fix at a word end (15 November 2026, setting `typoEngine` "ranked"; "system" is the macOS-only fix of
-// 31 October). Pure: no app, no spellchecker; the speller and his words come in as closures and tables, so every rule
+// 31 October). Pure: no app, no spellchecker; the speller and the user's words come in as closures and tables, so every rule
 // here has a test with made-up words (tests/typo_rules.swift). The parts, each its own rule:
-//   a. is it a word: never touch his words, names, words either Mac dictionary knows, code-like tokens, code fields
-//   b. candidates: macOS's guesses plus a delete index (SymSpell) over the words he writes, with his counts
+//   a. is it a word: never touch the user's words, names, words either Mac dictionary knows, code-like tokens, code fields
+//   b. candidates: macOS's guesses plus a delete index (SymSpell) over the words the user writes, with their counts
 //   c. a keyboard error model: what an edit costs depends on what it is (neighbour key, swap, doubled letter...)
-//   d. context: how often he wrote the candidate after the word before it (a bigram table built nightly)
-//   e. a gate: one logistic model over a handful of numbers, refit nightly on what he took (engine/typos.py)
+//   d. context: how often the user wrote the candidate after the word before it (a bigram table built nightly)
+//   e. a gate: one logistic model over a handful of numbers, refit nightly on what the user took (engine/typos.py)
 //   f. three outcomes: stay quiet, offer "→ word", or fix by itself when the evidence is overwhelming
 // Round notes and numbers: docs/rounds/2026-11-15-correction.md.
 import Foundation
@@ -49,13 +49,13 @@ enum TypoRules {
     static let codeApps: Set<String> = ["com.apple.Terminal", "com.googlecode.iterm2", "com.apple.dt.Xcode", "com.microsoft.VSCode",
                                         "com.todesktop.230313mzl4w4u92", "dev.zed.Zed", "dev.warp.Warp-Stable", "com.mitchellh.ghostty"]
 
-    /// The same word with the other apostrophe: he and the dictionary may use ' or ’ or ʼ.
+    /// The same word with the other apostrophe: the user and the dictionary may use ' or ’ or ʼ.
     static func apostropheForms(_ w: String) -> [String] {
         guard w.contains(where: { apostrophes.contains($0) }) else { return [w] }
         return ["'", "’", "ʼ"].map { a in String(w.map { apostrophes.contains($0) ? Character(a) : $0 }) }
     }
 
-    /// A word for him: his words or names (any case form, any apostrophe), or a word the Mac dictionary of its script
+    /// A word for the user: their words or names (any case form, any apostrophe), or a word the Mac dictionary of its script
     /// knows (English for Latin letters, Ukrainian for Cyrillic; asked the other way, the Mac's checker passes any word
     /// of the other script, so that answer means nothing).
     static func isWord(_ w: String, known: (String) -> Bool, spell: (String, String) -> Bool) -> Bool {
@@ -65,7 +65,7 @@ enum TypoRules {
     }
 
     /// What the ranked fix may look at: the word without quotes in front and punctuation after it, all lowercase
-    /// letters (a capital means a name or a sentence start he chose; left alone as today), 3 to 24 letters, one script,
+    /// letters (a capital means a name or a sentence start the user chose; left alone as today), 3 to 24 letters, one script,
     /// no Russian letters. nil = stay quiet.
     static func core(_ token: String) -> (lead: String, core: String, tail: String)? {
         guard !codeLike(token) else { return nil }
@@ -89,7 +89,7 @@ enum TypoHold {
     enum At: String { case none, word, after, next }
 
     /// `suspect(core, prev, complete)`: is this word (lowercase core, see `core`) a suspected typo? `complete` is false
-    /// while he may still be typing it (no space or punctuation after it yet). `len` is the held word's length, for the
+    /// while the user may still be typing it (no space or punctuation after it yet). `len` is the held word's length, for the
     /// log line (numbers only).
     static func at(_ before: String, suspect: (_ core: String, _ prev: String, _ complete: Bool) -> Bool) -> (at: At, len: Int) {
         let line = before.replacingOccurrences(of: "\u{A0}", with: " ").components(separatedBy: "\n").last ?? ""
@@ -108,10 +108,10 @@ enum TypoHold {
         return (.none, 0)
     }
 
-    /// The typo check's answer for one word. Never his words, names or a word either Mac dictionary knows (`isWord`),
-    /// never a word he took a fix back on (`spared`). A whole word is a typo when the typo fix has a candidate for it
+    /// The typo check's answer for one word. Never the user's words, names or a word either Mac dictionary knows (`isWord`),
+    /// never a word the user took a fix back on (`spared`). A whole word is a typo when the typo fix has a candidate for it
     /// (`hasFix`: the ranked decision, any outcome); a word still being typed when no word starts with its letters
-    /// (`starts`: the Mac's words, his words and names).
+    /// (`starts`: the Mac's words, the user's words and names).
     static func suspect(_ core: String, complete: Bool, spared: (String) -> Bool, known: (String) -> Bool,
                         spell: (String, String) -> Bool, starts: (String) -> Bool, hasFix: (String) -> Bool) -> Bool {
         guard !spared(core), !TypoRules.isWord(core, known: known, spell: spell) else { return false }

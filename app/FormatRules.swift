@@ -1,10 +1,10 @@
-// Written forms of a thing he copied (format round, 15 November 2026; Andrii: "would also be great to do a bunch of
+// Written forms of a thing the user copied (format round, 15 November 2026; the user: "would also be great to do a bunch of
 // autoformatting on copy for dates, numbers, IBAN account, etc."). For one detected thing (app/DetectRules.swift) or
 // a plain number: its useful forms, each with a short name and the text; amounts in words in Ukrainian and English as
 // on invoices; IBAN, ЄДРПОУ and РНОКПП check digits (an invalid one gets no forms, only a note: never "fixed");
 // a card-like number that passes Luhn is sensitive (no forms, no chip, no index); plain-text clean-ups. And the rule
 // store with its learner: after the same pick three times the app may ask once "Always?"; a rule is stored only on
-// his yes and undoes. Pure: Foundation only; the store's file is passed in (data/format-rules.json in the app).
+// the user's yes and undoes. Pure: Foundation only; the store's file is passed in (data/format-rules.json in the app).
 // The copy chip that uses it: app/Clip.swift. Tests: tests/format_rules.swift. Notes: docs/rounds/2026-11-15-detect.md.
 import Foundation
 
@@ -489,7 +489,7 @@ enum Format {
 
 struct FormatRule: Codable, Equatable { var kind: String; var dest: String?; var form: String }
 
-/// data/format-rules.json: the rules he confirmed, the pick counts, the questions already asked.
+/// data/format-rules.json: the rules the user confirmed, the pick counts, the questions already asked.
 struct FormatMemory: Codable, Equatable {
     var rules: [FormatRule] = []
     var picks: [String: Int] = [:]
@@ -505,7 +505,7 @@ enum FormatLearn {
         if let d = dest, let r = m.rules.first(where: { $0.kind == kind && $0.dest == d.rawValue }) { return r }
         return m.rules.first { $0.kind == kind && $0.dest == nil }
     }
-    /// He picked `form` for `kind`: count it. True once, when it is the third same pick, no rule covers it and the
+    /// The user picked `form` for `kind`: count it. True once, when it is the third same pick, no rule covers it and the
     /// question was never asked: the app may ask "Always?". Nothing is stored here but the count.
     static func picked(_ kind: String, dest: FormatDest?, form: String, in m: inout FormatMemory) -> Bool {
         let k = key(kind, dest, form)
@@ -514,7 +514,7 @@ enum FormatLearn {
         guard m.picks[k]! >= askAfter, !m.asked.contains(k), rule(kind, dest: dest, in: m)?.form != form else { return false }
         return true
     }
-    /// He answered the question: asked once either way; on yes the rule is stored (replacing one for the same kind and
+    /// The user answered the question: asked once either way; on yes the rule is stored (replacing one for the same kind and
     /// destination). Returns the rule it replaced, for Undo.
     @discardableResult
     static func answer(_ kind: String, dest: FormatDest?, form: String, yes: Bool, in m: inout FormatMemory) -> FormatRule?? {
@@ -549,7 +549,7 @@ enum FormatLearn {
 enum CopyPlan: Equatable {
     case nothing
     case note(String)                              // a quiet line: "IBAN: check digit does not match"
-    case apply(kind: String, FormatVariant)        // a rule he confirmed: applied at once, with Undo
+    case apply(kind: String, FormatVariant)        // a rule the user confirmed: applied at once, with Undo
     case offer(kind: String, [FormatVariant])      // at most 3 forms; the first is Tab, the second 2, the third 3
 }
 

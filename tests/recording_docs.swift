@@ -66,7 +66,7 @@ struct RecordingDocChecks {
         try! CallDoc.saveMeta(dir, ["points": nil, "lineEdits": nil])
         check(CallDoc.load(dir, notes: [dir.path: n]).points == ["Agreed on the plan", "Demo on Friday"], "undo: the note's points again")
 
-        // details he edits on the page, speaker names, combined recordings (17 November 2026)
+        // details the user edits on the page, speaker names, combined recordings (17 November 2026)
         try! CallDoc.saveMeta(dir, ["title": "Plan review", "place": "Room 4", "project": "Atlas", "details": "", "app": "Microsoft Teams",
                                     "speakers": ["Вони": "Mila Synthetic"]])
         let de = CallDoc.load(dir, notes: [dir.path: n])

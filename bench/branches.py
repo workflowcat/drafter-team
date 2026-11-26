@@ -1,8 +1,8 @@
 """Two prepared word branches in typing gaps (round four, 2026-11-14; Codex design review), on the one replay.
 
-After each answer the engine already works out the next one for when he takes the ghost (server.look_ahead). Here,
-in the gap before his next key, it also works out the answers for the next letter of two word branches: the model's
-own next word (what it wrote, gated or not) and his own most likely next word (engine/words.py Words.dist). When his
+After each answer the engine already works out the next one for when the user takes the ghost (server.look_ahead). Here,
+in the gap before the user's next key, it also works out the answers for the next letter of two word branches: the model's
+own next word (what it wrote, gated or not) and their own most likely next word (engine/words.py Words.dist). When the user's
 key is one of those letters the answer is ready (a cache hit, ~1 ms) instead of a fresh model run. Answers are the
 same either way (the engine keeps them by the exact request), so only time changes: a ghost is ready when the work
 before it fits in the gap (the look-ahead for the shown ghost first, then branch one, then branch two, each costing
@@ -47,7 +47,7 @@ class Branches:
     def __call__(self, row, before, src):
         g, ms = self.pol(row, before, src)
         ready = before in self.ready or before == self.taken
-        self.taken = before + g if g else None             # server.look_ahead: the answer for when he takes it all
+        self.taken = before + g if g else None             # server.look_ahead: the answer for when the user takes it all
         self.asked += 1; self.hit += ready
         # what this gap prepares: the look-ahead for the shown ghost (it already runs), then the branch letters
         budget = (self.gap or 10**9) - (ms if g else 0)

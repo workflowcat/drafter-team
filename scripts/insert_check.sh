@@ -2,7 +2,7 @@
 # Live insert check (insert audit, 23 November 2026; docs/inserts.md). Inserts made-up lines into its OWN test fields
 # and prints target x kind -> ok / wrong text / nothing / stopped by guard, with timing.
 #
-# Usage (Andrii's Mac, after a release that has --insert-check; no restart needed, nothing is sent):
+# Usage (the user's Mac, after a release that has --insert-check; no restart needed, nothing is sent):
 #   zsh scripts/insert_check.sh                     # TextEdit, Chrome and Safari, every kind
 #   zsh scripts/insert_check.sh textedit            # one target: textedit | chrome | safari
 #   INSERT_CHECK_SNIPPET=';xy' zsh scripts/insert_check.sh   # also the ; picker: a trigger whose FIRST row is a snippet

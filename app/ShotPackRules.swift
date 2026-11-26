@@ -24,7 +24,7 @@ struct ShotPicture: Codable, Equatable {
     var marks: [ShotMark] = []
     var crop: [Int]? = nil
     var original: String? = nil       // "original-2.png" once it was marked
-    var caption: String? = nil        // the capture deck (17 November 2026): what he said or typed under this card
+    var caption: String? = nil        // the capture deck (17 November 2026): what the user said or typed under this card
     init(file: String, width: Int, height: Int, marks: [ShotMark] = [], crop: [Int]? = nil, original: String? = nil, caption: String? = nil) {
         self.file = file; self.width = width; self.height = height; self.marks = marks; self.crop = crop; self.original = original
         self.caption = caption
@@ -34,7 +34,7 @@ struct ShotPicture: Codable, Equatable {
 /// Where a shot was passed on (the list after ⇥, and the record in shot.json).
 enum ShotTarget: String, Codable, CaseIterable {
     case field, clipboard, file, claude, codex, claudeCode, ask, person
-    /// A target that is gone (an owner's own app, before 26 November 2026) in an old shot.json reads as Clipboard, so
+    /// A target that is gone (a private app of the first user, before 26 November 2026) in an old shot.json reads as Clipboard, so
     /// the shot still loads.
     init(from decoder: Decoder) throws {
         let raw = try decoder.singleValueContainer().decode(String.self)
@@ -48,7 +48,7 @@ enum ShotTarget: String, Codable, CaseIterable {
         case .ask: return "Ask Claude here"; case .person: return "Person"
         }
     }
-    /// Leaves the Mac when he picks it (a cloud mark on the entry).
+    /// Leaves the Mac when the user picks it (a cloud mark on the entry).
     var cloud: Bool { self == .ask }
 }
 
@@ -163,7 +163,7 @@ struct ShotPack: Codable, Equatable {
 
     /// The text an agent reads. `path`: shot.png's absolute path, nil when the picture itself goes along (pasted).
     /// The screen text (OCR) only where the agent may not look at the picture (shot.md, a terminal): with the picture
-    /// it was too much (Andrii, 15 November: "it gives too much information").
+    /// it was too much (the user, 15 November: "it gives too much information").
     func agentText(path: String?, screenText: Bool? = nil) -> String {
         var where_ = ShotPack.place(app: app, window: window)
         if !where_.isEmpty { where_ = ", " + where_ }
@@ -228,7 +228,7 @@ struct ShotPack: Codable, Equatable {
                             "dev.warp.Warp", "com.github.wez.wezterm"]
     static let claudeApp = "com.anthropic.claudefordesktop", codexApp = "com.openai.codex"
 
-    /// How ↵ puts the shot into the field he was in.
+    /// How ↵ puts the shot into the field the user was in.
     enum FieldWay: Equatable { case agent, terminal, other }
     static func fieldWay(bundle: String, ai: [String]) -> FieldWay {
         if terminals.contains(bundle) { return .terminal }
@@ -236,11 +236,11 @@ struct ShotPack: Codable, Equatable {
         return .other
     }
     /// A paste is allowed in this app: never a skipped one (password managers, Drafter itself), except a terminal,
-    /// where he pressed ↵ to put the line in himself.
+    /// where the user pressed ↵ to put the line in themselves.
     static func mayPaste(bundle: String, skip: [String]) -> Bool { terminals.contains(bundle) || !skip.contains(bundle) }
 
     /// One line for a terminal: never a line break (a shell without bracketed paste would run each line, and the read
-    /// text could hold anything), the path to the picture and to shot.md, then his note.
+    /// text could hold anything), the path to the picture and to shot.md, then the user's note.
     func terminalLine(path: String, md: String) -> String {
         var where_ = ShotPack.place(app: app, window: window)
         if !where_.isEmpty { where_ = ", " + where_ }

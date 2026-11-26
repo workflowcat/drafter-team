@@ -137,10 +137,9 @@ Tests: `zsh scripts/run_tests.sh` runs every Python test file in its own process
 
 ## How it was built
 
-The owner directed the work; Claude agents wrote most of the code. Each track (typing, voice, look, release,
-efficiency, quality) is a saved agent role in `.claude/agents/`. Agents build in their own git worktrees, and every
-change comes with tests and, for typing, numbers before and after. Other models did outside reviews of the code and
-the release. [Building with agents](docs/building-with-agents.md) tells how a round runs.
+One person directed the work; Claude agents wrote most of the code. Each track (typing, voice, look, quality) is a
+saved agent role in `.claude/agents/`. Agents build in their own git worktrees, and every
+change comes with tests and, for typing, numbers before and after. Other models did outside reviews of the code. [Building with agents](docs/building-with-agents.md) tells how a round runs.
 
 ## Credits and licences
 
@@ -154,4 +153,4 @@ The models are downloaded from Hugging Face by `scripts/download_models.py`; the
 
 ## Licence
 
-MIT, copyright 2026 Andrii Udovychenko. See [LICENSE](LICENSE).
+MIT, copyright 2026 the user Udovychenko. See [LICENSE](LICENSE).

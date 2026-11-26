@@ -43,7 +43,7 @@ def cached(found, before, ask):
         try:
             _seen[k] = found.extract(before, ask)
         except Exception as e:
-            if type(e).__name__ == "Cancelled": return None     # he typed on; read it again next time
+            if type(e).__name__ == "Cancelled": return None     # the user typed on; read it again next time
             raise
     return _seen[k]
 
@@ -104,7 +104,7 @@ def run_python(id_, fields, wait=20):
 
 
 def queue_app(run, wait=20):
-    """An app-side step with no action file (eventkit.free: free slots from his calendars)."""
+    """An app-side step with no action file (eventkit.free: free slots from the user's calendars)."""
     job = {"job": _uuid.uuid4().hex[:12], "id": run.get("kind", ""), "run": run}
     ev = _threading.Event()
     with _NEW: PENDING.append(job); _RESULTS[job["job"]] = ev; _NEW.notify_all()

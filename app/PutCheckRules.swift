@@ -38,7 +38,7 @@ enum PutCheckRules {
             let grown = a.count - squash(before).count
             if grown >= max(1, t.count * 6 / 10) { return .grew }
         }
-        // empty: an Electron field that does not give its value, or a message he already sent (Return empties the box)
+        // empty: an Electron field that does not give its value, or a message the user already sent (Return empties the box)
         if a.isEmpty { return .unreadable }
         // Chromium's Accessibility tree can lag the page: the same value as before the paste is a stale read there, not
         // a miss (the paste went to a focused text field; it was checked before the paste).
@@ -61,7 +61,7 @@ enum PutCheckRules {
         return "voice put: \(id) \(parts) (\(n == 0 ? 0 : miss * 100 / n)% miss)"
     }
 
-    /// What he sees after a voice put (17 November 2026, Andrii: "just remove this note, it's always happening").
+    /// What the user sees after a voice put (17 November 2026, the user: "just remove this note, it's always happening").
     /// `notPutWhy` nil: the paste went to a focused text field, so no pill and no clipboard, whatever the read-back says
     /// (the take stays in History). Else a real miss (no field, secure input, a skipped app, a password field): the text
     /// goes to the clipboard and the strip says why, with "⌘V to paste".

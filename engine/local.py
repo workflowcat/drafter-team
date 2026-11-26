@@ -1,4 +1,4 @@
-"""The owner's local config: who the user is and which private tools this Mac has (open-source round, 2026-11-14).
+"""The user's local config: who the user is and which private tools this Mac has (open-source round, 2026-11-14).
 
 One untracked file, `data/drafter.local.json` (DRAFTER_LOCAL points elsewhere, for tests). The tracked
 `drafter.local.example.json` at the repo root shows every key. With no file every Claude prompt is neutral ("the user")
@@ -16,11 +16,11 @@ DEFAULTS = {
     "user": {
         "name": "",            # full name, opens the Claude system prompts ("You finish what <name> is typing")
         "short_name": "",      # first name in shorter prompts ("Answer <short_name>'s question"), the call speaker line
-        "own_names": [],       # names that are the user, never a contact ("Andrii" in his address book)
-        "own_stems": [],       # lower-case Latin stems of the user's name in case forms (notes: "andri" for Андрій/Andrii)
+        "own_names": [],       # names that are the user, never a contact ("Marta" in the user's address book)
+        "own_stems": [],       # lower-case Latin stems of the user's name in case forms (notes: "mart" for Марта/Marta)
         "about": "",           # one or two sentences after the name in the typing prompt: work, who they write to
         "languages": ["en"],
-        "style_rules": "",     # how the user writes, the local model's prompt head and Claude's "How he writes"
+        "style_rules": "",     # how the user writes: the local model's prompt head and Claude's writing rules
         "timezone": "",        # IANA zone, e.g. Europe/Kyiv; empty = this Mac's zone
         "city": "",            # shown after today's date in the typing prompt
         "email": "",
@@ -36,7 +36,7 @@ DEFAULTS = {
         "claude":      {"enabled": False, "bin": ""},
         "voice_guide": {"enabled": False, "path": ""},
     },
-    # build-time ids (app/build.sh): changing them on an installed Mac resets its macOS permissions, so an owner keeps his
+    # build-time ids (app/build.sh): changing them on an installed Mac resets its macOS permissions, so an owner keeps the user's
     "build": {"bundle_id": "", "launchd_label": "", "nightly_label": ""},
 }
 PUBLIC_BUNDLE_ID = "io.github.workflowcat.drafter"   # the one place the default id lives

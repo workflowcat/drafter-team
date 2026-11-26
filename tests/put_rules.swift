@@ -32,7 +32,7 @@ struct PutRulesTest {
         check(PutRules.way(why: "no field (none)", targetAlive: true) == .clipboard, "deck: no field: clipboard")
         check(PutRules.way(front: .none, targetAlive: true) == .clipboard, "nobody holds the keys: clipboard")
 
-        // a switch to another app during the deck: his (a click or key just before) or the system's (nothing before)
+        // a switch to another app during the deck: the user's (a click or key just before) or the system's (nothing before)
         check(PutRules.moved(switchAt: 100, lastInputAt: 99.7) == .user, "a click 0.3 s before: his switch")
         check(PutRules.moved(switchAt: 100, lastInputAt: 100.02) == .user, "input in the same instant: his")
         check(PutRules.moved(switchAt: 100, lastInputAt: 98) == .system, "input 2 s before: a system handoff")
@@ -57,7 +57,7 @@ struct PutRulesTest {
         check(PutRules.landed(target: beeper, keyApp: nil, windowsBefore: 1, windowsAfter: 1, field: true) != nil, "nobody holds the keys")
         check(PutRules.landed(target: beeper, keyApp: beeper, windowsBefore: 1, windowsAfter: 1, field: false) == "the field is gone", "field gone")
 
-        // where a put-in goes: the app he moved to himself, else the app the shot was taken in
+        // where a put-in goes: the app the user moved to themselves, else the app the shot was taken in
         check(PutRules.goesHere(front: .other, moved: .user), "he clicked into another app, then ↵: put in there")
         check(!PutRules.goesHere(front: .other, moved: .system), "a system handoff: back to the shot's app")
         check(!PutRules.goesHere(front: .other, moved: .unknown), "no switch seen: not there")

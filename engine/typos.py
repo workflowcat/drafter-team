@@ -1,11 +1,11 @@
 """Nightly tables for the ranked typo fix (app/TypoRank.swift), 15 November 2026. No model.
 
-- data/typo-bigrams.tsv: "prev<TAB>next<TAB>count" for word pairs he wrote twice or more (his corpus, as engine/words.py
+- data/typo-bigrams.tsv: "prev<TAB>next<TAB>count" for word pairs the user wrote twice or more (their corpus, as engine/words.py
   reads it); the context term of the ranker.
-- data/typo-gate.json: the logistic gate refit on his labelled offers and fixes from data/app.log. Each offer or fix
-  line carries its numbers (" f=cost,count,gap,ctx,len,uk,ai,chat,mac;p=0.83", no words). Labels: an offer he took = 1,
-  one he typed past or let expire = 0; an automatic fix that stayed = 1, one he took back (and left standing) = 0; a fix
-  his own fast Backspace hit is not a label. Under 40 labels the app keeps its hand-set gate.
+- data/typo-gate.json: the logistic gate refit on their labelled offers and fixes from data/app.log. Each offer or fix
+  line carries its numbers (" f=cost,count,gap,ctx,len,uk,ai,chat,mac;p=0.83", no words). Labels: an offer the user took = 1,
+  one the user typed past or let expire = 0; an automatic fix that stayed = 1, one the user took back (and left standing) = 0; a fix
+  their own fast Backspace hit is not a label. Under 40 labels the app keeps its hand-set gate.
 
     .venv/bin/python -B engine/typos.py [--data DIR] [--dry-run]
 """
@@ -22,7 +22,7 @@ MIN_LABELS = 40
 
 
 def lines_of(data):
-    """His lines, as Words.load reads them: the corpus, else typed and drafts. Test rows are never learned."""
+    """The user's lines, as Words.load reads them: the corpus, else typed and drafts. Test rows are never learned."""
     out = []
     corpus = data / "corpus.jsonl"
     if corpus.exists():
@@ -113,7 +113,7 @@ def trade(rows, bias, w, cuts=(0.5, 0.6, 0.7, 0.8, 0.9)):
 
 
 def threshold(rows, bias, w, aim=0.8, least=10):
-    """The lowest threshold whose shown offers he accepts at `aim` or more (with at least `least` shown)."""
+    """The lowest threshold whose shown offers the user accepts at `aim` or more (with at least `least` shown)."""
     for c in [x / 100 for x in range(30, 100)]:
         shown = [y for f, y in rows if prob(bias, w, f) >= c]
         if len(shown) >= least and sum(shown) / len(shown) >= aim: return c

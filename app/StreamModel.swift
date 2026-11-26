@@ -1,7 +1,7 @@
 // The stream's side of the window model (stream round, 23 November 2026): Go to a day (⌘T), back and forward (⌘[ ⌘]),
 // editing in place with save, cancel and undo, Combine, the inline player, the Record control, and the notice with
 // Undo. Rules: app/StreamRules.swift (pure, tested). Views: app/Stream.swift. Everything writes through the paths the
-// journal already had: JournalStore for his changes and drafts (the stored history is never rewritten), History.forget
+// journal already had: JournalStore for the user's changes and drafts (the stored history is never rewritten), History.forget
 // after the 8 s of a Delete, CallDoc.saveMeta for a recording's title and edited points, Talk and MeetingNotes for
 // recording.
 import AppKit
@@ -31,7 +31,7 @@ final class StreamState: ObservableObject {
     @Published var foldPast = UserDefaults.standard.object(forKey: "stream.foldPast") as? Bool ?? true {
         didSet { UserDefaults.standard.set(foldPast, forKey: "stream.foldPast") }
     }
-    @Published var openedDays: Set<String> = []     // past days he unfolded (this window session)
+    @Published var openedDays: Set<String> = []     // past days the user unfolded (this window session)
     @Published var openTopics: Set<String> = []     // topics shown with their rows
     var topicCache: (key: String, topics: [TopicCluster], loose: [String])?
     var dayTopicCache: [String: [String]] = [:]
@@ -252,7 +252,7 @@ extension WindowModel {
     // MARK: back and forward
 
     var place: JournalLayout.Place { .init(chosen: chosen, filter: "", group: "", query: query, view: "stream") }
-    /// Keeps where he is (a pick within 1.5 s replaces the last one).
+    /// Keeps where the user is (a pick within 1.5 s replaces the last one).
     func record() {
         guard !historyMuted else { return }
         history = JournalLayout.record(history, place, at: Date().timeIntervalSince1970)
@@ -396,7 +396,7 @@ extension WindowModel {
         if id == "new" { combineSources = []; notice("Combine cancelled · the items are as they were", undo: false) }
         focusField += 1
     }
-    /// ⌘↵: the edit is kept. An item's text: his change beside the original (JournalStore; the history file is never
+    /// ⌘↵: the edit is kept. An item's text: the user's change beside the original (JournalStore; the history file is never
     /// rewritten); a journal draft: its text; a Combine: a new draft; a recording: its title and points (meta.json).
     /// ⌘Z (or the notice's Undo) takes it back.
     func saveEdit() {

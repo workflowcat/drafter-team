@@ -41,7 +41,7 @@ enum UIShots {
         print("Native UI previews passed: " + folder)
     }
 
-    /// Made-up rows for the journal (never his): one morning today in detail (clips, drafts, voice notes, a chat
+    /// Made-up rows for the journal (never the user's): one morning today in detail (clips, drafts, voice notes, a chat
     /// export, a web page with its navigation, three repeats), then older days in sessions back `days` days.
     static func sampleTape(_ m: WindowModel, now: Double, days: Int = 420, perDay: Int = 6) {
         let cal = TapeBuild.cal
@@ -350,7 +350,7 @@ enum UIShots {
 // MARK: the strip styles side by side (14 November 2026)
 
 extension UIShots {
-    /// The states the owner's words are about, in order (made-up text only).
+    /// The states the user's words are about, in order (made-up text only).
     static let stripStates: [(String, String)] = [
         ("listening-1", "Listening · 1 line"), ("listening-2", "Listening · 2 lines"), ("listening-4", "Listening · 4 lines, scrolling"),
         ("finishing", "Finishing"), ("finishing-latched", "Finishing · ↩ latched"), ("armed", "Draft ready → a field"), ("armed-copy", "Draft ready · no field"), ("kept", "In the journal"), ("inserted", "In the field"),
@@ -610,7 +610,7 @@ extension UIShots {
         g.expand(true)
         try field(folder + "/card-open.png", typed: "", caret: caretBox, panel: g.panel, size: NSSize(width: 720, height: 230), box: fieldBox, placeholder: "Message")
         g.hide()
-        // a word Drafter fixed: dots under it, his own word in a chip above
+        // a word Drafter fixed: dots under it, the user's own word in a chip above
         let word = CGRect(x: 560, y: -2600, width: 58, height: 20)
         let typedFont = NSFont.systemFont(ofSize: 15.6)
         let fixed = FixMarks.shared.previewChip(old: "recieve", word: word)

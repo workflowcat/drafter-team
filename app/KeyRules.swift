@@ -99,7 +99,7 @@ enum KeyRules {
     }
 
     /// Keys round two (17 November 2026) for a settings file saved before it (no "keysRound"): each key still at the
-    /// old default moves to the new one; a key he set himself stays. ⌘⇧S goes back to apps (Andrii's decision).
+    /// old default moves to the new one; a key the user set themselves stays. ⌘⇧S goes back to apps (the user's decision).
     static func keysRoundTwo(_ j: [String: Any]) -> [String: Any] {
         var o = j
         if (o["captureKey"] as? String) == "⌃⌥S" { o["captureKey"] = "⌘⇧5" }
@@ -160,7 +160,7 @@ enum KeyRules {
                                          "lookup.insert", "lookup.search", "copy"]
     static func tabRunsChip(kind: String?) -> Bool { kind.map { textKinds.contains($0) } ?? false }
 
-    /// Row 4b (18 November 2026, Andrii: Tab "jumps to claude control once suggestion is done"): a plain Tab within
+    /// Row 4b (18 November 2026, the user: Tab "jumps to claude control once suggestion is done"): a plain Tab within
     /// `tabGrace` s of a Tab that took grey text, with no grey text left, stays with Drafter, so the rhythm of word-by-word
     /// Tabs never moves focus in the app. The window runs from the last take only: a slower Tab is the app's again.
     static let tabGrace: TimeInterval = 0.8

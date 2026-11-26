@@ -130,7 +130,7 @@ import Foundation
         precondition(m.index == 1 && m.resolved, "a pick decides")
         precondition(EntityRules.mentions(in: "Ганні and Anvil.", store: fs).isEmpty)
         precondition(EntityRules.mentions(in: "Ганні from Lantern Labs.", store: fs) == [0, 2], "\(EntityRules.mentions(in: "Ганні from Lantern Labs.", store: fs))")
-        // his fixes: pure, a fix replaces its opposite
+        // the user's fixes: pure, a fix replaces its opposite
         var fx = EntityRules.addFix([:], what: "related", a: "b", b: "a", why: "same client")!
         precondition((fx["related"] as! [[String]]) == [["a", "b", "same client"]])
         fx = EntityRules.addFix(fx, what: "not_related", a: "a", b: "b")!

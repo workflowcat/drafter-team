@@ -2,7 +2,7 @@
 // the settings grid: size on disk in the gutter, the pick mark, the name (a sparkle on the one recommended for this
 // Mac, its reason on hover), a speed mark and a quality mark, then download / progress and cancel / loading.
 // The engine does the work (GET /models, POST /model, /models/download, /models/cancel); rules: ModelPickRules.swift.
-// A download starts only from his press here; "typingModel" is saved only after the engine says it switched.
+// A download starts only from the user's press here; "typingModel" is saved only after the engine says it switched.
 import AppKit
 import SwiftUI
 

@@ -1,8 +1,8 @@
-// The pause rewrite (17 November 2026, Andrii's design; setting `pauseRewrite`, off, with the cloud mark in Settings).
+// The pause rewrite (17 November 2026, the user's design; setting `pauseRewrite`, off, with the cloud mark in Settings).
 // After PauseRewriteRules.pause seconds with no key, in a field whose paragraph before the caret holds a finished
 // sentence, a chip with a loading mark appears at the caret and the paragraph goes to engine `/pause_rewrite`: the ⌥Tab
 // rework path (engine/rework.py "polish", Claude Haiku) with the same context, under the daily Claude cap. When
-// the answer comes before his next key, the chip shows the rewrite with the changed words marked. Tab puts it in
+// the answer comes before the user's next key, the chip shows the rewrite with the changed words marked. Tab puts it in
 // (selects the paragraph, pastes the rewrite: never a typed Return, never a send); Backspace as the very next key takes
 // it back (Rework.takeBack, when `tabBack` is on); any other key drops the chip and goes to the app. Never in skipped
 // apps, password fields or under secure input. Keys: app/KeyMap.swift ("pauseRewrite", "tabBack").
@@ -79,7 +79,7 @@ enum PauseRewrite {
                 let sel = PauseRewriteRules.norm(Focus.selection() ?? "")
                 if sel != PauseRewriteRules.norm(p.text) {
                     if tries > 0 { put(tries - 1); return }
-                    Fields.right(1)   // the selection collapses to its end: the caret is back where he left it
+                    Fields.right(1)   // the selection collapses to its end: the caret is back where the user left it
                     Ghost.shared.flash("Could not rewrite"); log("pause rewrite: selection did not match"); return
                 }
                 guard Focus.focused().map({ CFEqual($0, el) }) == true, !IsSecureEventInputEnabled() else { return }

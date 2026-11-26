@@ -247,7 +247,7 @@ enum FoundRules {
 
 /// Each row's detector marks for the search, computed once per row id and text (the index build fills it, off the
 /// main thread); a row is read again only when its text changed. The per-key search only reads it: the detector never
-/// runs while he types. Thread-safe (the build queue writes, the main thread's plain fallback reads).
+/// runs while the user types. Thread-safe (the build queue writes, the main thread's plain fallback reads).
 final class SearchMarkStore {
     static let shared = SearchMarkStore()
     struct Marks: Equatable { let sig: Int; let bits: UInt16; let days: [Double] }

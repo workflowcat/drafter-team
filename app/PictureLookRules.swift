@@ -1,4 +1,4 @@
-// What a picture is, at a glance (pictures round, 24 November 2026; Andrii: "a quick classifier on the images at least
+// What a picture is, at a glance (pictures round, 24 November 2026; the user: "a quick classifier on the images at least
 // to know what we are looking for"). A kept picture is read once on this Mac (its text, History.readClip) and named
 // once by Vision (VNClassifyImageRequest labels, PictureLook); these rules turn the two into one kind and one line,
 // so a row reads "Code · func main()" instead of "Image · 900 × 703". Pure (Foundation), tests/picture_look_rules.swift.

@@ -1,7 +1,7 @@
 // Reader check before sending (roadmap item 4, 17 November 2026; docs/rounds/2026-11-17-reader.md; setting
 // `readerCheck`, off). In a chat box, once the message looks finished (ReaderRules.wait), the message and the screen
 // text the app already read for suggestions go to the engine's `/reader` (engine/reader.py: local, no model, nothing
-// leaves the Mac). An answer that comes within ReaderRules.budget, before any key of his, shows one chip: "⇥ Fix N"
+// leaves the Mac). An answer that comes within ReaderRules.budget, before any key of the user's, shows one chip: "⇥ Fix N"
 // (Tab puts the fixes in through the Fix chip's path, app/Proof.swift) and/or "↩ they asked about X" (Tab only
 // puts the chip away). Any other key, Enter included, drops the chip and goes to the app as always: Enter is never
 // held.

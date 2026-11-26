@@ -1,4 +1,4 @@
-// The journal's search core, pure part (search round, 14 November 2026; Andrii: "the search definitely needs to be
+// The journal's search core, pure part (search round, 14 November 2026; the user: "the search definitely needs to be
 // improved"). No AppKit, no files: tokens for Ukrainian and English (case, marks and the three apostrophes folded,
 // links and paths cut into parts, light stems), the forgiving query language (words AND, the last word a prefix,
 // "a phrase", -word, filters as chips, date words offered), the other keyboard layout, typo distance, ranking weights,
@@ -56,7 +56,7 @@ struct SearchDoc {
     var app = ""
     var pinned = false
     var uses = 0.0                  // the learned signal (QuickRules.useSignal), 0 when none
-    var changed = false             // he changed its text (has:change)
+    var changed = false             // the user changed its text (has:change)
     var picture = false             // a copied or captured picture (has:picture)
     var title = ""                  // the first line, or a recording's title goes to recTitle
     var body = ""
@@ -78,7 +78,7 @@ struct SearchDoc {
     }
 
     /// A text item: its first line is the title (at most 400 characters), the whole text the body. The body is the
-    /// caller's own string, not a copy, so the search holds no second copy of his text.
+    /// caller's own string, not a copy, so the search holds no second copy of the user's text.
     static func text(id: String, kind: SearchKind, time: Double, app: String, text: String) -> SearchDoc {
         var d = SearchDoc(id: id, kind: kind, time: time, app: app)
         d.title = String(SearchRules.firstLine(text).0.prefix(400))
@@ -415,7 +415,7 @@ enum SearchRules {
     /// BM25 idf.
     static func idf(df: Int, docs: Int) -> Double { log(1 + (Double(docs) - Double(df) + 0.5) / (Double(df) + 0.5)) }
 
-    /// The learned signal from QuickRules: how often and how lately he put an item in (1.5 a time fading over a week,
+    /// The learned signal from QuickRules: how often and how lately the user put an item in (1.5 a time fading over a week,
     /// at most 6) and a little for its app (0.2 a time, at most 1). The same numbers QuickRules.score adds.
     static func useSignal(item: [Double], app: [Double], now: Double) -> Double {
         let week = 7.0 * 86400
@@ -627,7 +627,7 @@ struct SearchOffer: Equatable {
 struct SearchWord: Equatable {
     let raw: String                          // as typed (the other layout is worked out from this)
     let term: String
-    var prefix = false                       // the last word while he types
+    var prefix = false                       // the last word while the user types
 }
 
 struct SearchQuery: Equatable {
@@ -912,7 +912,7 @@ enum SearchQueryRules {
                 if p.negated { q.excluded.append(w) } else { q.words.append(w); plain.append((p, q.words.count - 1)) }
             }
         }
-        // the last word is a prefix while he types (no space after it, not quoted, not a chip)
+        // the last word is a prefix while the user types (no space after it, not quoted, not a chip)
         if let last = ps.last, !last.quoted, !last.negated, NSMaxRange(last.range) == (s as NSString).length,
            let lw = q.words.last, plain.last?.1 == q.words.count - 1 {
             q.words[q.words.count - 1].prefix = lw.term.unicodeScalars.count >= SearchWeights.prefixMin

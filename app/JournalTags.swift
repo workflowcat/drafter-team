@@ -27,7 +27,7 @@ enum JournalTags {
         return true
     }
 
-    /// What he names in an app, by the app's name (the journal keeps names, not bundle ids): the destination words of
+    /// What the user names in an app, by the app's name (the journal keeps names, not bundle ids): the destination words of
     /// RefRules.dest, for `EntityRules.expect(dest:)`.
     static func dest(app: String) -> String {
         let a = app.lowercased()
@@ -145,7 +145,7 @@ final class TagDisk {
         let v = t.map { $0.kind + "\t" + $0.name }
         if file.tags[key] != v { file.tags[key] = v; dirty = true }
     }
-    /// Only the rows still shown stay (a row he deleted goes).
+    /// Only the rows still shown stay (a row the user deleted goes).
     func keep(_ keys: Set<String>) {
         let before = file.tags.count
         file.tags = file.tags.filter { keys.contains($0.key) }

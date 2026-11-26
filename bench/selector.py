@@ -1,7 +1,7 @@
-"""One calibrated selector over phrase memory, his own word and the model (round four, 2026-11-14; Codex design
-review). At each key every source offers its ghost: the phrase memory (his own line said before), the word finisher
+"""One calibrated selector over phrase memory, the user's own word and the model (round four, 2026-11-14; Codex design
+review). At each key every source offers its ghost: the phrase memory (the user's own line said before), the word finisher
 (engine/words.py Words.candidate) and the model's gated text whatever the gate says. One small logistic model reads
-which source it is and how sure that source is, and gives the chance that the first word is exactly his. The best
+which source it is and how sure that source is, and gives the chance that the first word is exactly the user's. The best
 candidate shows when that chance clears one bar.
 
 Fit on the earlier half of the held-out lines by date (bench/measure.py split), scored on the later half through the
@@ -99,7 +99,7 @@ def examples(items, rows, idx, S):
 
 
 class Selector:
-    """fast: the engine's order (phrase memory and his word are read first and answer at once when they clear the bar;
+    """fast: the engine's order (phrase memory and the user's word are read first and answer at once when they clear the bar;
     the model is asked only when they do not), instead of the best of all three."""
     def __init__(self, S, w, th, fast=True):
         self.S, self.w, self.th, self.fast = S, np.array(w), th, fast

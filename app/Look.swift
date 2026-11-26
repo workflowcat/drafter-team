@@ -1,5 +1,5 @@
-// The native look (23 November 2026, Andrii: "kill pixelkit references for now entirely and just use whatever the
-// model thinks is best"). One small file, no themes: the system font, the semantic system colours (light, dark and his
+// The native look (23 November 2026, the user: "kill pixelkit references for now entirely and just use whatever the
+// model thinks is best"). One small file, no themes: the system font, the semantic system colours (light, dark and the user's
 // accent colour follow macOS by themselves), SF Symbols for marks and glyphs, native corners. Rules: docs/look.md.
 import AppKit
 import SwiftUI

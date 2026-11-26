@@ -6,7 +6,7 @@
 
 rec: the held set (data/bench/weights/held-137.json) as Drafter types it, 24 tokens a key (bench/typebench.py through
 bench/models/record.py), with the copy after the screen text for caches that cannot be cut back.
--> data/bench/big-<label>.jsonl. train: his layer with the live recipe (LoRA rank 8, scale 20, 16 layers, lr 1e-4,
+-> data/bench/big-<label>.jsonl. train: the user's layer with the live recipe (LoRA rank 8, scale 20, 16 layers, lr 1e-4,
 1,500 steps) on prompt/completion rows (bench/big/ctx_train.py), the prompt masked, 1,024 tokens a row.
 -> bench/out/big/<name>/ (never data/adapters*). Each step: on mains power only, 25 % or more memory free, under the
 memory guard."""
@@ -105,7 +105,7 @@ def main():
     sub = ap.add_subparsers(dest="cmd", required=True)
     p = sub.add_parser("rec"); p.add_argument("candidate"); p.add_argument("--adapter"); p.add_argument("--label")
     p.add_argument("--smoke", action="store_true"); p.add_argument("--no-stable", action="store_true")
-    p.add_argument("--strength", type=float, default=1.0, help="his layer's merge scale 0..1 (engine strength)")
+    p.add_argument("--strength", type=float, default=1.0, help="the user's layer merge scale 0..1 (engine strength)")
     p.add_argument("--set", default=None, help="another held set, e.g. data/bench/big/held-slice.json (bench/big/slice.py)")
     p = sub.add_parser("train"); p.add_argument("candidate"); p.add_argument("--data", required=True); p.add_argument("--name", required=True)
     p.add_argument("--smoke", action="store_true"); p.add_argument("--sleep-engine", action="store_true")

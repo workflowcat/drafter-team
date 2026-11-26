@@ -1,19 +1,19 @@
-// How a voice note goes from his voice to a field (14 November 2026; the owner: "two places where typing happens at
+// How a voice note goes from the user's voice to a field (14 November 2026; the user: "two places where typing happens at
 // the same time", "if I click around to another thing it loses the typing", "stick to Enter to input something",
 // and in round three: "on send it should not stop the recording ... just send that message rather than closing").
 // Pure (Foundation only), tested in tests/voice_flow_rules.swift; app/Voice.swift feeds it events and does what it says.
 //
 // Setting `voiceInsert`:
-//   enter (default)  the field is not touched while he speaks; the strip is the one place the words show.
-//                    Return while he speaks puts in what he said so far: that SEGMENT closes, the microphone and the
+//   enter (default)  the field is not touched while the user speaks; the strip is the one place the words show.
+//                    Return while the user speaks puts in what the user said so far: that SEGMENT closes, the microphone and the
 //                    engine go on into a new one, and the closed segment goes in at the caret of the field focused when
 //                    its final text exists (in order: a later segment never lands before an earlier one). Return with
-//                    nothing said since the last insert is not Drafter's: it goes to the app (his send).
+//                    nothing said since the last insert is not Drafter's: it goes to the app (the user's send).
 //                    Only Right Option (or Esc) stops. What is left then waits in the strip as a draft, armed: a bare
 //                    Return puts it in; Return during Finishing latches that insert. Any other key disarms (Return is
 //                    the app's again), so does 45 s; a click or another app does not. Speaking again adds to the
 //                    draft. Esc drops it (it stays in the journal).
-//   live             the words go into the field while he speaks, as before. Return while a note is still finishing is
+//   live             the words go into the field while the user speaks, as before. Return while a note is still finishing is
 //                    held back once ("Finishing, press ↩ again"), so a message is never sent with half its text.
 // Drafter never presses Return in another app and never sends. No Return is swallowed without a visible change.
 import Foundation
@@ -43,7 +43,7 @@ enum FlowEvent: Equatable {
     case click            // a click anywhere
     case appSwitch        // another app came to the front
     case inserted(Bool)   // an insert's check: true = in a field, false = it went to the clipboard
-    case cancel           // the note ended with nothing (too short, timed out, a question to his notes, Esc)
+    case cancel           // the note ended with nothing (too short, timed out, a question to the user's notes, Esc)
     case tick             // time passes (the clock is `now`)
 }
 
@@ -101,7 +101,7 @@ enum VoiceFlowRules {
              (.copied, .tick) where now - f.at >= shownFor, (.dropped, .tick) where now - f.at >= shownFor:
             return f.queue > 0 ? go(f.state) : go(.idle, false, .hide)
         case (.kept, .ret), (.inserted, .ret), (.copied, .ret), (.dropped, .ret), (.kept, .esc), (.inserted, .esc), (.copied, .esc), (.dropped, .esc):
-            return nil                                                     // his keys are his again
+            return nil                                                     // the user's keys are their again
         case (.kept, _), (.inserted, _), (.copied, _), (.dropped, _):
             return go(f.state)
 
@@ -112,7 +112,7 @@ enum VoiceFlowRules {
             return go(.finishing(prefix: p, insert: false, drop: false, held: false, piece: false))
         case (.listening(let p), .ret):
             guard enter else { return nil }                                // live: the piece rule (Keys.swift) as before
-            guard f.said || !p.isEmpty else { return nil }                 // nothing said since the last insert: his send
+            guard f.said || !p.isEmpty else { return nil }                 // nothing said since the last insert: the user's send
             return go(.listening(prefix: ""), true, .closeSegment(p), said: false, queue: f.queue + 1)
         case (.listening, .esc):
             return go(.dropped, true, .dropNote)
@@ -124,25 +124,25 @@ enum VoiceFlowRules {
             return step(VoiceFlow(state: .finishing(prefix: p, insert: false, drop: false, held: false, piece: false), at: now, said: f.said, queue: f.queue),
                         .final(t), mode: mode, now: now)
         case (.listening, _):
-            return go(f.state)                                             // typed keys, clicks: his; the note goes on
+            return go(f.state)                                             // typed keys, clicks: the user's; the note goes on
 
         // the last audio being read
         case (.finishing, .words(let w)):
             return go(f.state, said: w)
         case (.finishing(let p, let ins, let dr, let held, let piece), .ret):
             if enter {
-                guard f.said || !p.isEmpty else { return nil }             // nothing to put in: the Return is his
+                guard f.said || !p.isEmpty else { return nil }             // nothing to put in: the Return is the user's
                 if !ins { return go(.finishing(prefix: p, insert: true, drop: dr, held: held, piece: piece), true, .willInsert) }
                 if !held { return go(.finishing(prefix: p, insert: true, drop: dr, held: true, piece: piece), true, .holdReturn) }
-                return nil                                                 // a third Return is his
+                return nil                                                 // a third Return is the user's
             }
-            if held { return nil }                                         // the second Return is his
+            if held { return nil }                                         // the second Return is the user's
             return go(.finishing(prefix: p, insert: ins, drop: dr, held: true, piece: piece), true, .holdReturn)
         case (.finishing(let p, _, _, let held, let piece), .esc):
             guard enter else { return go(f.state) }
             return go(.finishing(prefix: p, insert: false, drop: true, held: held, piece: piece), true, .drop)
         case (.finishing(let p, _, let dr, let held, let piece), .typed):
-            return go(.finishing(prefix: p, insert: false, drop: dr, held: held, piece: piece))   // a key of his: no surprise insert
+            return go(.finishing(prefix: p, insert: false, drop: dr, held: held, piece: piece))   // a key of the user's: no surprise insert
         case (.finishing(let p, _, _, _, true), .pieceDone):
             return go(.listening(prefix: p))
         case (.finishing(let p, let ins, let dr, _, _), .final(let t)):
@@ -187,7 +187,7 @@ enum VoiceFlowRules {
         !words.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && seconds >= saidFloor && !noise
     }
 
-    /// The tap's key as a flow event. `flags`: the event's raw flags. While he holds Right Option (push to talk) its
+    /// The tap's key as a flow event. `flags`: the event's raw flags. While the user holds Right Option (push to talk) its
     /// Option bit is not a modifier of Return: Return stays Return (round three).
     static func key(code: Int64, flags: UInt64) -> FlowEvent {
         let shift: UInt64 = 0x20000, ctrl: UInt64 = 0x40000, alt: UInt64 = 0x80000, cmd: UInt64 = 0x100000
@@ -201,13 +201,13 @@ enum VoiceFlowRules {
     }
 
     /// A Right Option press right after a voice note ends is a bounce only after a note with words (2026-10-22). After
-    /// an empty note (a dead microphone, nothing heard) it is him trying again: it starts (23 of 23 ignored presses in
+    /// an empty note (a dead microphone, nothing heard) it is the user trying again: it starts (23 of 23 ignored presses in
     /// the 7 days to 14 November followed an empty note).
     static func pressIgnored(sinceEnd: Double, lastHadWords: Bool) -> Bool { lastHadWords && sinceEnd < 0.8 }
 
-    /// Where an armed draft goes if he presses Return now, read from the focused element (Talk.watchTarget).
+    /// Where an armed draft goes if the user presses Return now, read from the focused element (Talk.watchTarget).
     enum Target: Equatable { case field, noField, password, skipped, secure }
-    /// What the strip says about the target, and the draft's button: Insert into a field, else Copy (said before he
+    /// What the strip says about the target, and the draft's button: Insert into a field, else Copy (said before the user
     /// presses, so a click elsewhere never loses the text). `app`: the frontmost app's name.
     static func target(_ t: Target, app: String) -> (place: String, button: String) {
         let a = app.isEmpty ? "this app" : app
@@ -228,7 +228,7 @@ enum VoiceFlowRules {
         return spot || canPaste ? .field : .noField
     }
 
-    /// An armed draft and what he said after it, as one text.
+    /// An armed draft and what the user said after it, as one text.
     static func join(_ prefix: String, _ text: String) -> String {
         let a = prefix.trimmingCharacters(in: .whitespacesAndNewlines), b = text.trimmingCharacters(in: .whitespacesAndNewlines)
         if a.isEmpty { return b }

@@ -1,14 +1,14 @@
-"""Live take rate per day (speed plan 2026-11-17, "one typing model"): kept letters per 1,000 letters he typed, ghosts
-shown, Tabs, and key-to-ghost p50/p90, from his own use. Numbers only: no line, take or ghost text is printed.
+"""Live take rate per day (speed plan 2026-11-17, "one typing model"): kept letters per 1,000 letters the user typed, ghosts
+shown, Tabs, and key-to-ghost p50/p90, from their own use. Numbers only: no line, take or ghost text is printed.
 
 Sources, all local:
 - data/accepted.jsonl: each Tab (text taken, characters before it, app, t).
-- data/typed.jsonl and data/drafts.jsonl: the lines he sent or left; bench/kept.py finds the take in them.
+- data/typed.jsonl and data/drafts.jsonl: the lines the user sent or left; bench/kept.py finds the take in them.
 - data/app.log and data/logs/app-*.log.gz: "shown <app> <n>ms ..." lines; a streamed ghost logs "part" pieces and a
   final line, counted once at its first grey text (shown_by_day). p50/p90 are key to ghost: idle ghosts (from a rest,
   no key) are counted in their own column.
 
-Kept letters per 1,000 = kept letters of his takes / letters (no spaces) in the lines he sent that day, x 1,000.
+Kept letters per 1,000 = kept letters of the user's takes / letters (no spaces) in the lines the user sent that day, x 1,000.
 That is the same rate the replay benches print (bench/cadence_replay.py), so live and replay can sit side by side.
 
     .venv/bin/python bench/take_rate.py [days]     # default 14; DRAFTER_DATA=<folder> for another data folder

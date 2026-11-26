@@ -184,7 +184,7 @@ class TwoTier(unittest.TestCase):
     def test_in_time(self):
         self.assertTrue(T.in_time(300, 100, 150, 3))
         self.assertFalse(T.in_time(240, 100, 150, 3))      # came after the next key
-        self.assertFalse(T.in_time(90, 100, 10, 3))         # he typed before the pause ended
+        self.assertFalse(T.in_time(90, 100, 10, 3))         # the user typed before the pause ended
 
     def test_spot_stats(self):
         spots = [

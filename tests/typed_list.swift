@@ -33,7 +33,7 @@ struct TypedListChecks {
         check(texts.contains("a long line that he cut back later") && !texts.contains("a long line that he"), "cut back: the longest version shows")
         check(list.count == 7, "seven messages, got \(list.count): \(texts)")
         check(zip(list, list.dropFirst()).allSatisfy { ($0.touched ?? $0.when) >= ($1.touched ?? $1.when) }, "newest first")
-        // a two-letter draft never swallows a long line he wrote after it… only the other way
+        // a two-letter draft never swallows a long line the user wrote after it… only the other way
         let stub = TypedList.build(sent: [], drafts: [row(base, "hello there my friend"), row(base + 10, "he")])
         check(stub.count == 2, "a long draft does not fold into a later two-letter stub")
         let later = TypedList.build(sent: [], drafts: [row(base, "the same words left in the box"), row(base + 3 * 3600, "the same words left in the box"),

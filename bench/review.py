@@ -32,7 +32,7 @@ for l in lines:
         src, n, word, taken, typed = m.group(1), *map(int, m.groups()[1:])
         u = used[src]
         u["taken"] += taken > 0; u["taken chars"] += taken
-        u["typed, not taken"] += taken == 0 and typed >= word   # right, but he typed it himself
+        u["typed, not taken"] += taken == 0 and typed >= word   # right, but the user typed it themselves
         u["typed chars"] += typed if taken == 0 else 0
         continue
     m = re.search(r"quiet (\S+): (.+?)( «|$)", l)

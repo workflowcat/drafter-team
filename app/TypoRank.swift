@@ -8,10 +8,10 @@ enum TypoRank {
         return h
     }
 
-    // MARK: b. A delete index (SymSpell) over the words he writes
+    // MARK: b. A delete index (SymSpell) over the words the user writes
 
     /// Every word and its deletes (one letter out; two for words of 8+ letters) as sorted hashes: about 12 bytes an
-    /// entry, so his ~19,000 words take a few MB. A lookup verifies each hit with the real distance.
+    /// entry, so the user's ~19,000 words take a few MB. A lookup verifies each hit with the real distance.
     struct DeleteIndex {
         let words: [String], counts: [Int]
         private let keys: [UInt64], ids: [Int32]
@@ -49,7 +49,7 @@ enum TypoRank {
             return ids[lo..<end]
         }
 
-        /// His words within `maxDistance` (Damerau) of the typo, with his counts.
+        /// The user's words within `maxDistance` (Damerau) of the typo, with the user's counts.
         func lookup(_ typo: String, maxDistance: Int) -> [(word: String, count: Int)] {
             var seen = Set<Int32>(), out: [(String, Int)] = []
             for d in DeleteIndex.deletes(typo, depth: maxDistance) {
@@ -63,9 +63,9 @@ enum TypoRank {
         var count: Int { keys.count }
     }
 
-    // MARK: d. Context: what he writes after the word before
+    // MARK: d. Context: what the user writes after the word before
 
-    /// "prev next" pairs he wrote twice or more, from data/typo-bigrams.tsv (engine/typos.py, nightly).
+    /// "prev next" pairs the user wrote twice or more, from data/typo-bigrams.tsv (engine/typos.py, nightly).
     struct Bigrams {
         let pairs: [UInt64: Int32], firsts: [UInt64: Int32]
         init(pairs: [UInt64: Int32] = [:], firsts: [UInt64: Int32] = [:]) { self.pairs = pairs; self.firsts = firsts }
@@ -99,7 +99,7 @@ enum TypoRank {
     struct Candidate: Equatable { var word: String; var count: Int; var macRank: Int? }
     struct Scored { let word: String; let count: Int; let mac: Bool; let cost: Double; let share: Double; let ctx: Double; let score: Double }
 
-    /// His count plus a prior for macOS's guesses (its first guess is worth ~20 of his uses), as a share of a fixed total.
+    /// The user's count plus a prior for macOS's guesses (its first guess is worth ~20 of their uses), as a share of a fixed total.
     static let total = 200_000.0
     static func share(_ c: Candidate) -> Double {
         let mac: Double = c.macRank.map { $0 == 0 ? 20 : $0 == 1 ? 8 : 3 } ?? 0
@@ -128,7 +128,7 @@ enum TypoRank {
 
     enum Outcome: String { case quiet, offer, fix }
 
-    /// The numbers the gate sees (logged with each offer, no words): cost, his count, gap to the second, context,
+    /// The numbers the gate sees (logged with each offer, no words): cost, the user's count, gap to the second, context,
     /// length, Ukrainian, AI app, chat app, a macOS guess.
     static let featureNames = ["cost", "count", "gap", "ctx", "len", "uk", "ai", "chat", "mac"]
     static func features(_ ranked: [Scored], typo: String, uk: Bool, appKind: String) -> [Double] {
@@ -145,7 +145,7 @@ enum TypoRank {
             let z = bias + zip(weights, f).reduce(0) { $0 + $1.0 * $1.1 }
             return 1 / (1 + exp(-z))
         }
-        /// Hand-set, used until the nightly fit has 40 labels of his (engine/typos.py); fitted on the synthetic set.
+        /// Hand-set, used until the nightly fit has 40 labels of the user's (engine/typos.py); fitted on the synthetic set.
         static let fallback = Gate(bias: 0.6, weights: [-1.5, 0.25, 0.45, 0.25, 0.1, -0.2, 0, 0, 0.5], offerAt: 0.6, fixAt: 0.95, labels: 0)
         init(bias: Double, weights: [Double], offerAt: Double, fixAt: Double, labels: Int) {
             self.bias = bias; self.weights = weights; self.offerAt = offerAt; self.fixAt = fixAt; self.labels = labels

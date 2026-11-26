@@ -59,7 +59,7 @@ struct SettingsView: View {
             }
         }
     }
-    /// His EventKit calendars, account by account.
+    /// The user's EventKit calendars, account by account.
     static func calendars() -> [(id: String, title: String, source: String)] {
         guard EKEventStore.authorizationStatus(for: .event) == .fullAccess else { return [] }
         return Actions.store.calendars(for: .event)
@@ -500,7 +500,7 @@ struct SettingsView: View {
                         st.callOff.removeAll { $0 == a.id }; if !on { st.callOff.append(a.id) }
                     }
                 }
-                // auto-record (17 November 2026): off everywhere until he turns it on for an app or a calendar
+                // auto-record (17 November 2026): off everywhere until the user turns it on for an app or a calendar
                 let cals = CalendarGroups.group(m.preview ? SettingsView.sampleCalendars : SettingsView.calendars()).flatMap(\.rows).filter { !s.calendarsOff.contains($0.id) }
                 if (!apps.isEmpty || !cals.isEmpty) && anyMatch(apps.map(\.name) + cals.map { "Meetings in " + $0.name }) { sub("Record by itself, no offer") }
                 ForEach(apps, id: \.id) { a in
@@ -541,7 +541,7 @@ struct SettingsView: View {
         }
     }
 
-    /// His calendars, account by account: the ones left out give no call names or free times.
+    /// The user's calendars, account by account: the ones left out give no call names or free times.
     @ViewBuilder var calendarRows: some View {
         let s = m.settings
         let groups = CalendarGroups.group(m.preview ? SettingsView.sampleCalendars : SettingsView.calendars())

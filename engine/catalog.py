@@ -1,11 +1,11 @@
 """The model catalog (Cotypist parity round 2, 15 November 2026): which typing models Drafter offers, what each was
-measured at on this Mac, which one suits a Mac, whether its weights are here, the download he starts, and the switch.
+measured at on this Mac, which one suits a Mac, whether its weights are here, the download the user starts, and the switch.
 
 engine/catalog.json holds the numbers (the big and Qwen3.5 rounds' trial table). Rules here are plain functions so the
 tests run them on made-up tables; the server holds the one model and calls switch() on the worker thread.
 
 Never two models in memory: switch() unloads the current model before it loads the next, and loads the live model
-back when the next one fails. No network here except the download he starts (engine/fetch_model.py, its own process).
+back when the next one fails. No network here except the download the user starts (engine/fetch_model.py, its own process).
 """
 import ctypes, json, os, subprocess, sys, threading, time
 from pathlib import Path
@@ -15,7 +15,7 @@ FILE = HERE / "catalog.json"
 LIVE = "live"
 
 # memory budget for the text model (app/Voice.swift: a long call read again lets the voice engine take 3.4 GB,
-# engine/voice.py DRAFTER_FILE_CAP_GB; macOS and his apps keep the rest)
+# engine/voice.py DRAFTER_FILE_CAP_GB; macOS and the user's apps keep the rest)
 VOICE_GB = 3.4
 SYSTEM_GB = 6.0
 SHARE = 0.25          # never more than a quarter of the Mac's memory for typing
@@ -62,7 +62,7 @@ def machine():
 
 
 def budget_gb(total_gb, free_gb=None, current_gb=0.0):
-    """Memory the typing model may use: what is left after macOS, his apps and the voice engine's worst case, at most
+    """Memory the typing model may use: what is left after macOS, the user's apps and the voice engine's worst case, at most
     a quarter of the Mac, and no more than is free now (plus what the current model gives back) less a margin."""
     b = min(total_gb - SYSTEM_GB - VOICE_GB, total_gb * SHARE)
     if free_gb is not None: b = min(b, free_gb + current_gb - MARGIN_GB)
@@ -158,7 +158,7 @@ def bytes_here(repo, cache=None):
 
 
 class Downloads:
-    """Downloads he started, one process each (engine/fetch_model.py), cancellable by that exact process."""
+    """Downloads the user started, one process each (engine/fetch_model.py), cancellable by that exact process."""
     def __init__(self, spawn=None, cache=None):
         self.jobs, self.lock, self.cache = {}, threading.Lock(), cache
         self.spawn = spawn or (lambda m: subprocess.Popen(
@@ -207,12 +207,12 @@ def marker_path(data):
 
 
 def start_pick(models, settings, data, env_repo=None, cache=None):
-    """The model the engine starts with: DRAFTER_MODEL (a bench run) wins; else his pick in Settings when its weights
+    """The model the engine starts with: DRAFTER_MODEL (a bench run) wins; else the user's pick in Settings when its weights
     are here; else live. A pick whose load killed the engine (the guard; the marker file is still there) is skipped
     once, and the marker goes. -> (entry or None for an unknown repo, note)"""
     live = entry(models, LIVE)
     # the app passes the old settings "model" (the live repo) as DRAFTER_MODEL on every start: that must not hide
-    # his pick in the picker; a bench run names another repo and still wins
+    # the user's pick in the picker; a bench run names another repo and still wins
     if env_repo and not ((settings or {}).get("typingModel") and live and env_repo == live["repo"]):
         return by_repo(models, env_repo), "env"
     mk = marker_path(data)
@@ -239,7 +239,7 @@ def layer_dir(m, data):
 
 
 def adapter_for(m, live_adapter, data=None, log=True):
-    """His layer only for the model it was trained on: `true` = the live layer (data/adapters, DRAFTER_ADAPTER);
+    """The user's layer only for the model it was trained on: `true` = the live layer (data/adapters, DRAFTER_ADAPTER);
     a string = that folder under data/layers/ when it holds a layer, else None (the model runs as its base, one log
     line, its base gate: gate_name)."""
     lay = m.get("layer")
@@ -251,7 +251,7 @@ def adapter_for(m, live_adapter, data=None, log=True):
 
 
 def has_layer(m, live_adapter, data=None):
-    """For /models: whether this entry runs with his layer on this Mac (the Personal style slider is on for it)."""
+    """For /models: whether this entry runs with the user's layer on this Mac (the Personal style slider is on for it)."""
     if m.get("layer") is True: return True
     return adapter_for(m, live_adapter, data, log=False) is not None
 

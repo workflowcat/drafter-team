@@ -1,7 +1,7 @@
 // The "Fix N" chip's path (from the Claude proofread of 1 November 2026; its Claude part went on 2026-11-17). The local
 // reader check (app/Reader.swift, engine/reader.py) puts its word fixes in `pending` and shows "⇥ Fix N · old → new";
-// Tab puts the fixes in place, one word at a time (his formatting stays), the caret goes back where it was, and each
-// fixed word keeps a dotted line with his own word in a chip to undo it (FixMarks). Nothing changes unless the field
+// Tab puts the fixes in place, one word at a time (the user's formatting stays), the caret goes back where it was, and each
+// fixed word keeps a dotted line with the user's own word in a chip to undo it (FixMarks). Nothing changes unless the field
 // still holds exactly the text that was checked.
 import AppKit
 import ApplicationServices
@@ -81,10 +81,10 @@ enum Proof {
             self.p = p; self.now = now; self.list = list; self.places = places; el = p.el; text16 = (p.text as NSString).length
         }
 
-        /// Still his field, and no key or click of his since Tab (Codex review 2026-11-01: a later step could select
-        /// and type into text he had typed meanwhile, or into another field).
+        /// Still the user's field, and no key or click of theirs since Tab (Codex review 2026-11-01: a later step could select
+        /// and type into text the user had typed meanwhile, or into another field).
         var still: String? {
-            if Keys.shared.inputRevision != rev { return "he typed" }
+            if Keys.shared.inputRevision != rev { return "user typed" }
             if IsSecureEventInputEnabled() { return "secure input" }
             if NSWorkspace.shared.frontmostApplication?.processIdentifier != p.pid { return "another app" }
             guard let f = Focus.focused(), CFEqual(f, el) else { return "another field" }

@@ -2,8 +2,8 @@
 Keep for historical results; use bench/measure.py for supported scoring. Do not import this runner: it reads data
 and sends requests at module scope. It lacks the current length, guess, minimum-three and keep-in-flight flags.
 
-Replays data/replay.json (his real messages, 30 items) letter by letter against the running engine, accepting
-the offered next word whenever it is exactly what he wrote (Tab word by word). Prints letters saved, wrong offers
+Replays data/replay.json (the user's real messages, 30 items) letter by letter against the running engine, accepting
+the offered next word whenever it is exactly what the user wrote (Tab word by word). Prints letters saved, wrong offers
 and speed. Phrase memory is off (these lines are in it).
 
     .venv/bin/python bench/replay.py '<json of /complete overrides>' [label]

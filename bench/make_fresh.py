@@ -1,5 +1,5 @@
-"""Fresh replay set (local only, data/replay-fresh.json) from lines Andrii wrote AFTER the last retrain, so no model
-layer has seen them: Beeper messages he sent, each with the 8 messages before it (the reply context), and lines he
+"""Fresh replay set (local only, data/replay-fresh.json) from lines the user wrote AFTER the last retrain, so no model
+layer has seen them: Beeper messages the user sent, each with the 8 messages before it (the reply context), and lines the user
 typed to Claude (typed.jsonl). Bigger than data/replay.json (30) so show/hide rules can be told apart.
 
     .venv/bin/python bench/make_fresh.py [claude_n] [beeper_n]

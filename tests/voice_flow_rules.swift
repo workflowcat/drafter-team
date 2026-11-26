@@ -25,7 +25,7 @@ struct VoiceFlowTest {
         check(s[2] && a[2] == .closeSegment("") && f.state == .listening(prefix: "") && f.queue == 1 && !f.said, "Return closes a segment, keeps listening")
         (f, a, s) = run([(.words(true), 4), (.segment("First part."), 4.1), (.ret, 6), (.segment("Second part."), 6.2)], from: f)
         check(inserts(a) == ["First part.", "Second part."] && f.queue == 0 && f.state == .listening(prefix: ""), "segments go in, in order, listening goes on")
-        // nothing said since the last insert: Return is his (it sends), the recording goes on
+        // nothing said since the last insert: Return is the user's (it sends), the recording goes on
         (f, a, s) = run([(.ret, 7)], from: f)
         check(!s[0] && f.state == .listening(prefix: ""), "an empty segment: Return goes to the app")
         check(VoiceFlowRules.step(f, .ret, mode: E, now: 7) == nil, "untaken: the flow has no say")
@@ -41,7 +41,7 @@ struct VoiceFlowTest {
         check(s[4] && !s[5], "the Return after an insert is his at once (the check never holds it)")
         (f, _, _) = run([(.start, 0), (.words(true), 1), (.stop, 1), (.final("Note"), 1.2), (.ret, 2), (.inserted(false), 2.2)])
         check(f.state == .copied, "no field: on the clipboard")
-        // Return during Finishing latches the insert; a second is held once (said), a third is his
+        // Return during Finishing latches the insert; a second is held once (said), a third is the user's
         (f, a, s) = run([(.start, 0), (.words(true), 0.5), (.stop, 1), (.ret, 1.1), (.ret, 1.2), (.ret, 1.3), (.final("Words"), 1.5)])
         check(s[3] && a[3] == .willInsert && s[4] && a[4] == .holdReturn && !s[5] && a.last == .insert("Words") && f.state == .inserted, "latch, held once, then his; the latch inserts at the final")
         (f, _, s) = run([(.start, 0), (.stop, 1), (.ret, 1.1)])
@@ -117,7 +117,7 @@ struct VoiceFlowTest {
                 var g = f0
                 for t in [30.0, 60, 90, 120, 200] { if let (n, _, _) = VoiceFlowRules.step(g, .tick, mode: mode, now: t) { g = n } }
                 if case .listening = g.state {
-                    // still speaking (no release ever seen): Return closes a segment at most, then is his again
+                    // still speaking (no release ever seen): Return closes a segment at most, then is the user's again
                     if let (n, _, _) = VoiceFlowRules.step(g, .ret, mode: mode, now: 201) { g = n }
                     check(!VoiceFlowRules.swallowsReturn(g, mode: mode), "\(mode) \(f0): Return free again after one segment")
                     continue

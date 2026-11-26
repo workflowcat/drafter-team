@@ -16,7 +16,7 @@ struct Settings: Codable {
     var voiceFast: String? = nil     // model ID or local path; read on next voice process start
     var voiceCareful: String? = nil  // preserve model choices when any app setting is saved
     /// How a voice note reaches the field (app/VoiceFlowRules.swift, 14 November 2026): "enter" (default) the words show
-    /// in the strip and ↩ puts the whole final text in; "live" they are typed into the field while he speaks.
+    /// in the strip and ↩ puts the whole final text in; "live" they are typed into the field while the user speaks.
     var voiceInsert = "enter"
     /// Voice style per app (17 November 2026, app/VoiceStyleRules.swift): an app kind (mail, chat, ai, other) or a bundle id
     /// -> "formal", "casual" or "veryCasual". Shape (app/VoiceShapeRules.swift): mail gets a greeting line, paragraphs and a
@@ -24,7 +24,7 @@ struct Settings: Codable {
     var voiceStyle: [String: String] = ["mail": "formal", "chat": "casual", "ai": "casual", "other": "formal"]
     var voiceStyleApps: [String: String] = [:]
     /// Voice cleanup level (research item 3, app/VoiceModeRules.swift): per app kind and per app, "raw", "clean",
-    /// "polished" or one of his mode names; none = Clean. `voiceModes`: his named modes, name -> prompt.
+    /// "polished" or one of the user's mode names; none = Clean. `voiceModes`: the user's named modes, name -> prompt.
     var voiceLevel: [String: String] = [:]
     var voiceLevelApps: [String: String] = [:]
     var voiceModes: [String: String] = [:]
@@ -32,9 +32,9 @@ struct Settings: Codable {
     var voiceChatLines = false
     var voiceSnippets = true
     var cleanNote = true       // "Cleaned: 2 fillers · 1 correction" under an armed draft
-    var adapter: String? = nil // LoRA trained on his writing (data/adapters), loaded on top of the model
+    var adapter: String? = nil // LoRA trained on the user's writing (data/adapters), loaded on top of the model
     var fmt: String? = nil     // prompt shape: raw (default) or bare (no examples up front, for the trained model)
-    var learn = true           // keep lines he sends (Return) in data/typed.jsonl for the phrase memory, local only
+    var learn = true           // keep lines the user sends (Return) in data/typed.jsonl for the phrase memory, local only
     /// The messages on screen above the field as context for suggestions (app/ScreenContext.swift): Accessibility text
     /// where it is clean, else a picture read on this Mac (Screen Recording); never stored, never sent. An old file's
     /// `screen` (its name before 14 November 2026) is read when this key is missing.
@@ -58,13 +58,13 @@ struct Settings: Codable {
     /// paragraph and the rework context when it fires; under backOfficeCap. Off by default, with the cloud mark.
     var pauseRewrite = false
     /// Claude cleans a Clean or Polished voice take after Parakeet's text went in (engine/voice_claude.py, 17 November
-    /// 2026): names, the chat on screen, his style; swapped in place only if he has not typed since, ⌫ puts Parakeet's
+    /// 2026): names, the chat on screen, the user's style; swapped in place only if the user has not typed since, ⌫ puts Parakeet's
     /// text back. Raw never goes. Offline or over 2.5 s: Parakeet's text stays. Spend under backOfficeCap.
     var voiceClaude = false
     var callNotes = false      // a call or long note: Claude Haiku writes the live outline and the call summary from the transcript text; off = the local model (engine/cloud.py)
-    var autocorrect = true     // fix typos when a word ends (macOS spellchecker + his own words; Backspace takes it back)
+    var autocorrect = true     // fix typos when a word ends (macOS spellchecker + the user's own words; Backspace takes it back)
     var autocorrectMode = "offer" // "offer": a fix found at a word end shows as "→ word" and Tab puts it in; "replace": put in at once (before 13 November 2026); "sure": the ranked fix goes in by itself only when its gate is sure, else offered
-    var typoEngine = "ranked"  // "ranked" (15 November 2026: his words, a keyboard error model, context and a learned gate, app/TypoEngine.swift) or "system" (macOS's correction only)
+    var typoEngine = "ranked"  // "ranked" (15 November 2026: the user's words, a keyboard error model, context and a learned gate, app/TypoEngine.swift) or "system" (macOS's correction only)
     var autocorrectUk = false  // Ukrainian typos too (off: the Ukrainian dictionary misses many real forms)
     var layoutFix = true       // a word typed in the wrong layout (ghbdsn -> привіт) is fixed and the keyboard switches; double Shift by hand
     var claudeModel = "sonnet" // the Claude model rework asks: sonnet or haiku (haiku answers ~0.5 s sooner)
@@ -74,22 +74,22 @@ struct Settings: Codable {
     /// finished, a local last look (engine/reader.py: slips, a question of theirs left open) as one chip; Tab takes it,
     /// any other key drops it. Never holds Enter, nothing leaves the Mac. Off by default.
     var readerCheck = false
-    /// Edit mode (roadmap item 8, 17 November 2026, app/EditMarks.swift): on a selection or while he edits a field, side
-    /// marks where the text could improve (engine/marks.py), Tab applies, Esc dismisses; ⌥⇧Tab his-style rewrite by the
+    /// Edit mode (roadmap item 8, 17 November 2026, app/EditMarks.swift): on a selection or while the user edits a field, side
+    /// marks where the text could improve (engine/marks.py), Tab applies, Esc dismisses; ⌥⇧Tab the user's-style rewrite by the
     /// local model. Local only.
     var editMarks = true
-    var rework = false         // ⌥Tab on a selection: shorter, fix, clearer, warmer, formal, list, translate or his own words (app/Rework.swift)
-    var fixWord = true         // the word being typed is no word he writes but one is a letter or a layout away: "→ word" at the caret, Tab swaps it (app/Fixer.swift)
-    let typoHold = true  /* fixed, SettingsPlan.fixed */        // no grey text while the word just typed is a suspected typo, until it is fixed or he types past the next word (TypoHold, 15 November 2026)
+    var rework = false         // ⌥Tab on a selection: shorter, fix, clearer, warmer, formal, list, translate or the user's own words (app/Rework.swift)
+    var fixWord = true         // the word being typed is no word the user writes but one is a letter or a layout away: "→ word" at the caret, Tab swaps it (app/Fixer.swift)
+    let typoHold = true  /* fixed, SettingsPlan.fixed */        // no grey text while the word just typed is a suspected typo, until it is fixed or the user types past the next word (TypoHold, 15 November 2026)
     // parity round (15 November 2026, app/ParityRules.swift)
     var clipContext = true     // a copy from the last 2 minutes goes into the ghost's prompt (never secrets, password managers, skipped apps)
-    var writingNote = ""       // his writing instruction for every app (engine prompt "notes"); "" = none
-    var appNotes: [String: String] = [:]   // bundle id -> his writing instruction for that app
-    var personalStrength = 100 // 0-100 %: how much of his trained layer the ghosts use (engine /strength re-merges it)
+    var writingNote = ""       // the user's writing instruction for every app (engine prompt "notes"); "" = none
+    var appNotes: [String: String] = [:]   // bundle id -> the user's writing instruction for that app
+    var personalStrength = 100 // 0-100 %: how much of the user's trained layer the ghosts use (engine /strength re-merges it)
     var guessBar = 0.15        // Bolder / Careful (more-bold round, 17 November 2026): the guesses' bar, 0.05-0.35; engine gatecore.guess_bar
     var typingModel = "live"   // Settings > Typing > Model: a catalog id (engine/catalog.json); saved only after the engine switched to it
     var alternatives = false   // ⌥1 ⌥2 ⌥3 on a ghost: the main idea or one of two others, a quiet "1/3" after the grey words (off since keys round three: ⌥ digits type characters)
-    var minGhost = 5           // grey text that adds fewer letters is not shown (2026-11-13: under 5 he took 3%); 0 = all
+    var minGhost = 5           // grey text that adds fewer letters is not shown (2026-11-13: under 5 the user took 3%); 0 = all
     var predictKeys = true     // ask for a suggestion at the key itself for the field + that letter (no 35 ms wait, 2026-11-13)
     var streamGhost = true     // two-step ghost: the first sure words at once, the rest grows in place (round two)
     var longGhostsAI = true    // a lighter tail of up to 8 words after the sure words in AI apps (round two)
@@ -97,7 +97,7 @@ struct Settings: Codable {
     /// How far a ghost runs after the gate's first word (long round, 14 November 2026): "word" (round five's few words),
     /// "phrase" (to a comma, 6 words), "sentence" (to the sentence end while the running chance holds; default).
     var ghostLength = "sentence"
-    /// Earlier round (2026-11-16, Andrii: "lets do 3-5 words and lessen the confidence"): outside "word" length the
+    /// Earlier round (2026-11-16, the user: "lets do 3-5 words and lessen the confidence"): outside "word" length the
     /// ghost shows at least `ghostMinWords` words when the model has them and at most `ghostMaxWords`; only a sentence
     /// end or a line break ends it sooner (engine gatecore "words" run). Off = `ghostLength` as before.
     let ghostWords = true   // fixed (settings round, SettingsPlan.fixed)
@@ -106,20 +106,20 @@ struct Settings: Codable {
     /// `guessShade` draws the whole guess lighter. Tab takes either. The bar per model is in engine/server.py GUESS.
     let guessGhosts = true   // fixed (settings round, SettingsPlan.fixed)
     let guessShade = true   // fixed (settings round, SettingsPlan.fixed)
-    /// Earlier round step 2: ghosts of `minGhostShort` letters or more (in place of `minGhost`, which his settings
-    /// file holds at 5), and a request still running when he types a few more letters runs on (engine keep_on).
+    /// Earlier round step 2: ghosts of `minGhostShort` letters or more (in place of `minGhost`, which the user's settings
+    /// file holds at 5), and a request still running when the user types a few more letters runs on (engine keep_on).
     /// Earlier round step 6: the guesses' bar one notch lower (0.25) and lower still right after a space (0.2),
     /// engine gatecore.early_bar. Only with guessGhosts.
     let earlyStart = true   // fixed (settings round, SettingsPlan.fixed)
-    /// Step 7, the idle ghost (Andrii: "start predicting and suggesting the next message even when the cursor is just
+    /// Step 7, the idle ghost (the user: "start predicting and suggesting the next message even when the cursor is just
     /// blinking"): the caret rests in a chat or AI box, empty or after a finished sentence, and the local model drafts
-    /// his next message from the screen above the field and his earlier lines there. Nothing leaves the Mac.
+    /// the user's next message from the screen above the field and their earlier lines there. Nothing leaves the Mac.
     var idleGhost = true
     let shortGhosts = true   // fixed (settings round, SettingsPlan.fixed)
     var minGhostShort = 3
     let keepTyping = true   // fixed (settings round, SettingsPlan.fixed)
     /// Cadence round (2026-11-17, docs/rounds/2026-11-17-cadence.md): with a bigger typing model picked, the live 1.7B
-    /// stays loaded beside it and answers while he types fast (a gap under 120 ms), the bigger one in longer gaps.
+    /// stays loaded beside it and answers while the user types fast (a gap under 120 ms), the bigger one in longer gaps.
     var comboModels = false
     var callOff: [String] = ["notion.id"]   // call apps that never get a record offer (Notion: its own meeting notes hold the mic)
     var autoRecordApps: [String] = []       // call apps whose calls record by themselves, no offer (17 November 2026, off for all by default)
@@ -139,8 +139,8 @@ struct Settings: Codable {
     var captureCmdShiftS = false              // ⌘⇧S starts the capture too (apps' Save As / Duplicate then never get it); off since 17 November
     var shotLast = ""                         // the last send-to target of a screenshot (ShotTarget raw value), first in the ⇥ list
     var shotFolder = ""                       // "File" saves screenshots here; "" = ~/Desktop
-    var captureTalk = true                    // the capture deck: the mic starts with each shot, what he says is that card's caption
-    var deckAt = ""                           // the capture deck's place after he dragged it ("x,y" of its bottom-left, AppKit points); "" = bottom centre
+    var captureTalk = true                    // the capture deck: the mic starts with each shot, what the user says is that card's caption
+    var deckAt = ""                           // the capture deck's place after the user dragged it ("x,y" of its bottom-left, AppKit points); "" = bottom centre
     // keys round (14 November 2026, app/KeyRules.swift)
     let midLine = true  /* fixed, SettingsPlan.fixed */         // a ghost with text after the caret on its line, on a small card under the line (2026-11-15; on since the fim round measured it)
     let fallbackAnchor = true  /* fixed, SettingsPlan.fixed */  // a field with no caret rect (web editors): the ghost at an estimated place, else on a chip near the field (2026-11-17)
@@ -151,7 +151,7 @@ struct Settings: Codable {
     var againKey = ""          // a chord for the last voice take again (app/Quick.swift), e.g. "⌃⌥R"; "" = off (the default since 17 November)
     var commandsKey = true     // Right ⌘ twice opens the one `;` picker (app/Commands.swift, KeyMap "commands")
     var againTap = true        // double tap of Right Option: the last voice take in again at the caret (KeyRules.AgainTap)
-    var keysRound = 3          // keys rounds two and three (17 November 2026) applied to his saved keys (Settings.migrateKeys)
+    var keysRound = 3          // keys rounds two and three (17 November 2026) applied to the user's saved keys (Settings.migrateKeys)
     var switchSwap = false     // ⌘⇧V again within 2 s of a switcher paste swaps it for the next older copy (opt-in since keys round three)
     // typography as you type (15 November 2026, app/TypoGraphRules.swift, app/Typography.swift): the master switch, then one per combo
     var typography = true
@@ -161,7 +161,7 @@ struct Settings: Codable {
     var typographyArrows = true, typographyMath = true, typographySymbols = true
     var typographyHryvnia = false, typographyNbsp = false
     var entityClassify = false // a kind for a name no source knows: Claude Haiku gets the name only (engine/entities.py); off = local model or nothing
-    var contextPacks = true    // in AI apps a name he types or says gets a quiet mark, ⌥Tab attaches its context pack (app/Entities.swift)
+    var contextPacks = true    // in AI apps a name the user types or says gets a quiet mark, ⌥Tab attaches its context pack (app/Entities.swift)
     var contextLevelAI = 2, contextLevelAgent = 3   // default pack level: 1 name, 2 one line, 3 full (chat assistants, coding agents)
     // the journal window (second window round, 14 November 2026, app/TapeWindow.swift)
     var tapeDensity = "compact"   // "compact": 28 pt rows; "comfortable": 36 pt
@@ -262,7 +262,7 @@ struct Settings: Codable {
         }
     }
     /// Keys rounds two and three (17 November 2026): a settings file saved before them gets the new defaults
-    /// (KeyRules.keysRoundThree, which runs round two first for a file without the mark); his own keys stay.
+    /// (KeyRules.keysRoundThree, which runs round two first for a file without the mark); the user's own keys stay.
     static func migrateKeys() {
         guard let d = try? Data(contentsOf: Home.settings),
               let j = (try? JSONSerialization.jsonObject(with: d)) as? [String: Any], ((j["keysRound"] as? Int) ?? 0) < 3 else { return }

@@ -1,5 +1,5 @@
-"""No text of his on any `claude` command line: argv is readable by every process through `ps` (2026-11-14: the kept
-workers carried his recent lines and chat messages in --system-prompt). Each spawn's argv is built with made-up text
+"""No text of the user's on any `claude` command line: argv is readable by every process through `ps` (2026-11-14: the kept
+workers carried the user's recent lines and chat messages in --system-prompt). Each spawn's argv is built with made-up text
 and must not hold it; the text goes through stdin or a 0600 file that is deleted once read.
 .venv/bin/python -B tests/test_claude_argv.py"""
 import os, stat, sys, time, unittest

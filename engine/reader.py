@@ -1,18 +1,18 @@
 """Reader check before sending (roadmap item 4, 17 November 2026; docs/rounds/2026-11-17-reader.md). In a chat box, once
 the message looks finished (a sentence end, or a rest of about 1 s after 3+ words), the app asks `/reader` for a last
-look: slips in his message and a question from the other person his draft does not touch. One quiet chip; Tab puts
+look: slips in the user's message and a question from the other person the user's draft does not touch. One quiet chip; Tab puts
 the fixes in through the Fix chip's path (app/Proof.swift), any other key drops it. Enter is never held.
 
 Local only, no model, no network: well under a millisecond per message.
-- Slips: a word he never wrote (fewer than 2 times in his writing, not in his kept words, not in the system English
-  word list) that is one edit (a missed, extra, wrong or swapped letter, a missing apostrophe) away from one word he
-  writes often (5+ times, 3x more than the next candidate), the same keys in the other layout of a word he writes, or
-  two words he writes together run into one. The result goes through the fix filter (engine/word_fixes.py edits),
-  so his words (word_fixes.keep_words) stay and only small one-word fixes survive. The app also drops a fix when the Mac's
-  spellchecker knows his word (as app/Fixer.swift does).
+- Slips: a word the user never wrote (fewer than 2 times in their writing, not in their kept words, not in the system English
+  word list) that is one edit (a missed, extra, wrong or swapped letter, a missing apostrophe) away from one word the user
+  writes often (5+ times, 3x more than the next candidate), the same keys in the other layout of a word the user writes, or
+  two words the user writes together run into one. The result goes through the fix filter (engine/word_fixes.py edits),
+  so the user's words (word_fixes.keep_words) stay and only small one-word fixes survive. The app also drops a fix when the Mac's
+  spellchecker knows the user's word (as app/Fixer.swift does).
 - An unanswered question: only from the screen text the app already reads for suggestions (app/ScreenContext.swift
-  marks the other person's messages "Вони: "). When their last message, with nothing of his after it, asks a question
-  and his draft shares no content word with it (a "yes"/"no" word answers a yes/no question): "they asked about X".
+  marks the other person's messages "Вони: "). When their last message, with nothing of the user's after it, asks a question
+  and the user's draft shares no content word with it (a "yes"/"no" word answers a yes/no question): "they asked about X".
   Without the marks nothing is said: whose question it is cannot be told.
 - Tone: not checked. No cheap local signal was good enough (round doc).
 
@@ -25,9 +25,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 MAX_CHARS = 800
 MIN_LEN = 4              # shorter words: too many real words one letter apart
-MIN_COUNT = 5            # a fix target is a word he wrote this many times
+MIN_COUNT = 5            # a fix target is a word the user wrote this many times
 MARGIN = 3               # ...and this many times more than the next candidate
-MAX_EDITS = 3            # more slips than this in one message: likely a language or style he rarely writes; say nothing
+MAX_EDITS = 3            # more slips than this in one message: likely a language or style the user rarely writes; say nothing
 
 WORD = re.compile(r"[^\W\d_]+(?:['’ʼ-][^\W\d_]+)*", re.UNICODE)
 RUSSIAN = re.compile(r"[ыэъёЫЭЪЁ]")
@@ -39,7 +39,7 @@ TO_UK = dict(zip(EN_KEYS, UK_KEYS))
 TO_EN = {b: a for a, b in TO_UK.items()}
 
 
-# ---------- his words ----------
+# ---------- the user's words ----------
 
 _sys = {"words": None}
 
@@ -88,17 +88,17 @@ def _cased(word, new):
 
 
 def fix_word(word, W, kept, sysw=None):
-    """-> the word he most likely meant, or None. `W` is engine/words.py Words (his counts)."""
+    """-> the word the user most likely meant, or None. `W` is engine/words.py Words (the user's counts)."""
     sysw = system_words() if sysw is None else sysw
     low = word.lower()
     if len(low) < MIN_LEN or RUSSIAN.search(low) or known(low, W, kept, sysw): return None
     ascii_ = low.isascii()
     if not ascii_ and any(c.isascii() for c in low.replace("'", "")): return None   # mixed scripts: a name, a code
     with W.lock:
-        # the other layout: ghbdsn -> привіт, руддщ -> hello (the whole word, one he writes)
+        # the other layout: ghbdsn -> привіт, руддщ -> hello (the whole word, one the user writes)
         conv = "".join((TO_UK if ascii_ else TO_EN).get(c, c) for c in low)
         if conv != low and _count(W, conv) >= 3: return _cased(word, conv)
-        # two words he writes together, run into one: незнаю -> не знаю
+        # two words the user writes together, run into one: незнаю -> не знаю
         best = None
         for i in range(1, len(low)):
             a, b = low[:i], low[i:]
@@ -150,7 +150,7 @@ YESNO = re.compile(r"^\W*(так|ні|нє|не|ага|угу|ок|окей|ok|o
 
 
 def last_them(context):
-    """Their last message when it is the last one on screen (nothing of his after it), else ''."""
+    """Their last message when it is the last one on screen (nothing of the user's after it), else ''."""
     import prompt
     ts = prompt.turns(context or "")
     if not ts or not any(w is not None for w, _ in ts): return ""

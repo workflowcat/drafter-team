@@ -57,7 +57,7 @@ struct CallAppChecks {
         check(CallAppRules.service(text: "Join: https://meet.google.com/abc-defg-hij") == .meet, "a Meet link")
         check(CallAppRules.service(text: "https://acme.zoom.us/j/1") == .zoom, "a Zoom link")
         check(CallAppRules.service(text: "Room 4, second floor") == nil, "a place is no service")
-        // auto-record: off unless he switched it on for the app or the meeting's calendar
+        // auto-record: off unless the user switched it on for the app or the meeting's calendar
         check(!CallAppRules.auto(app: zoom, on: true, calendar: "cal-work", apps: [], calendars: []), "auto-record is off by default")
         check(CallAppRules.auto(app: zoom, on: true, calendar: nil, apps: [zoom], calendars: []), "on for the app")
         check(CallAppRules.auto(app: teams, on: true, calendar: "cal-work", apps: [], calendars: ["cal-work"]), "on for the calendar")

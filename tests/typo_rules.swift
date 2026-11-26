@@ -63,7 +63,7 @@ import Foundation
         check(bi.lift("fresh", "zorba", share: 0.001) > 2, "context lifts")
         check(bi.lift("", "zorba", share: 0.001) == 0 && bi.lift("stale", "zorba", share: 0.001) == 0, "no context, no lift")
 
-        // ranking: his count wins without context, context can turn it
+        // ranking: the user's count wins without context, context can turn it
         let none2 = TypoRank.Bigrams()
         let r1 = TypoRank.rank("zorbp", [.init(word: "zorbo", count: 40), .init(word: "zorba", count: 2)], prev: "", keyboard: k, bigrams: none2)
         check(r1.first?.word == "zorbo", "count decides")

@@ -1,4 +1,4 @@
-// Each fact once per view, and one row for one text kept as several kinds (soft round, 14 November 2026; Andrii:
+// Each fact once per view, and one row for one text kept as several kinds (soft round, 14 November 2026; the user:
 // "you can see some of the duplicates here", "cleaning up the meta"). The reader of a voice note said its kind, time,
 // length and app in a header, again in a sub-line and again in a footer; a row inside a session of Claude said
 // "Claude" again; a row under "Wednesday 11 November" said "Wed 10:31". And a voice note Drafter put into a field came
@@ -29,7 +29,7 @@ enum JournalMeta {
         return clip == "image" ? "picture" : clip == "link" ? "link" : clip == "file" ? "file" : "copied"
     }
 
-    // MARK: one outline at a time (wire round, 15 November 2026; the owner: less blue)
+    // MARK: one outline at a time (wire round, 15 November 2026; the user: less blue)
 
     /// The accent outlines of a pane and the item chosen in it. The pane that has the keys shows its line only while
     /// nothing in it is chosen; a chosen card or row shows the accent ring only while its pane has the keys (else a

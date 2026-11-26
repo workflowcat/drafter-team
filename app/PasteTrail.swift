@@ -1,5 +1,5 @@
-// Where a clip went (gallery round, 14 November 2026; Andrii: "icons from sources, where something came from and where
-// it's placed"). Each paste he or Drafter makes is one line in data/paste-trail.jsonl: when, into which app (bundle id
+// Where a clip went (gallery round, 14 November 2026; the user: "icons from sources, where something came from and where
+// it's placed"). Each paste the user or Drafter makes is one line in data/paste-trail.jsonl: when, into which app (bundle id
 // and name), and a short hash of what the clipboard held, so the journal can find the clip. Never the text. Never in a
 // password field, a skipped app or under secure input (PasteWatch checks before it writes). Pure store and matching:
 // tests/paste_trail.swift with a temp folder. The journal reads it; nothing in the history files changes.

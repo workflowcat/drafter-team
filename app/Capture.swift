@@ -1,11 +1,11 @@
-// Quick capture (round three, Part B, 14 November 2026; Andrii: replace ⌘⇧5). ⌘⇧5 since keys round two, 17 November
+// Quick capture (round three, Part B, 14 November 2026; the user: replace ⌘⇧5). ⌘⇧5 since keys round two, 17 November
 // (setting `captureKey`; "" = off; an optional `captureFallbackKey` beside it)
 // dims every screen. Drag a region, or Space then click a window, or Return for the screen under the mouse; Esc
 // cancels. Before the drag K keeps the picture on the tape only and T puts its read text in instead. On release the
 // picture is taken with ScreenCaptureKit (Drafter's own windows left out), stored like a copied picture (data/clips/,
-// read by Vision once) and joins the tape as an image row; then it goes into the field he was in, through Focus, which
-// gives his clipboard back. A field that takes no picture: it stays on the clipboard and the strip says so.
-// The dimmed screen is a non-activating panel that never becomes key: his app keeps the focus and the caret, the
+// read by Vision once) and joins the tape as an image row; then it goes into the field the user was in, through Focus, which
+// gives the user's clipboard back. A field that takes no picture: it stays on the clipboard and the strip says so.
+// The dimmed screen is a non-activating panel that never becomes key: the user's app keeps the focus and the caret, the
 // event tap hands keys here (Quick.tap), the mouse goes to the panel. The panel is left out of screen pictures
 // (sharingType none), so the capture runs at once, without waiting for it to hide.
 // Key and strip round (15 November 2026): ⌘⇧S too while `captureCmdShiftS` is on (ShotRules.keys).
@@ -27,7 +27,7 @@ final class Capture {
     private var panels: [NSPanel] = []
     private(set) var origin: NSRunningApplication?
     private var originTitle = ""
-    /// Round 4: the caret and the field he was in when the capture opened (AX, top-left), read off the main thread;
+    /// Round 4: the caret and the field the user was in when the capture opened (AX, top-left), read off the main thread;
     /// the deck opens centred on it (DeckRules.anchor).
     private(set) var caretAX: (caret: CGRect?, field: CGRect?) = (nil, nil)
 
@@ -94,7 +94,7 @@ final class Capture {
         isOpen = true
         log("capture: open")
         mark.drawn("\(panels.count) screens" + (built ? ", panels built" : ""))
-        // the deck's code and drawing paged in while he drags (a deck after a long idle opened in up to 1.1 s)
+        // the deck's code and drawing paged in while the user drags (a deck after a long idle opened in up to 1.1 s)
         DispatchQueue.main.async { CaptureNote.shared.prewarm() }
         // the window title for the shot, off the main thread (an AX read can take up to AXOff.timeout); Drafter's own
         // window is never read off main
@@ -112,7 +112,7 @@ final class Capture {
     }
 
     /// The caret and its field in `app` (AX points), read off the main thread, answered on main (round 4b: the deck
-    /// follows him to another screen). Never Drafter's own window.
+    /// follows the user to another screen). Never Drafter's own window.
     static func readCaret(_ app: NSRunningApplication, _ done: @escaping ((caret: CGRect?, field: CGRect?)) -> Void) {
         guard app.processIdentifier != getpid() else { return }
         let skip = Drafter.shared.settings.skip
@@ -263,7 +263,7 @@ final class Capture {
 
     // MARK: taking it
 
-    /// The screen's content list fetched while he drags (speed round, 17 November 2026: the first capture after a
+    /// The screen's content list fetched while the user drags (speed round, 17 November 2026: the first capture after a
     /// while spent up to 1 s on it after release). Used on release when it still lists every window the picture must
     /// leave out (and the window asked for); else fetched again.
     private var warmed: (content: SCShareableContent, at: Date)?
@@ -364,7 +364,7 @@ final class Capture {
         else { Pill.shared.flash("The screen could not be taken") }
     }
 
-    /// Where the picture goes, by mode: into his field, onto the tape only, or its read text into the field.
+    /// Where the picture goes, by mode: into the user's field, onto the tape only, or its read text into the field.
     private func land(_ png: Data, row: [String: Any], mode: ShotRules.Mode, origin: NSRunningApplication?, t0: Date, shot: Date, pack: ShotPack? = nil,
                       region: NSRect? = nil, full: Bool = false, window: Bool = false, inPlace: Bool = true) {
         let ms = { Int(Date().timeIntervalSince(t0) * 1000) }, taken = Int(shot.timeIntervalSince(t0) * 1000)
@@ -392,9 +392,9 @@ final class Capture {
         }
     }
 
-    /// Is his field still the one in front, and can it take a paste?
+    /// Is the user's field still the one in front, and can it take a paste?
     static func target(_ origin: NSRunningApplication?) -> Bool { targetWhyNot(origin) == nil }
-    /// nil when his field takes a paste, else the reason for the log ("front app moved" can be mended by bringing
+    /// nil when the user's field takes a paste, else the reason for the log ("front app moved" can be mended by bringing
     /// the origin back, see CaptureNote.putIn).
     /// The app that gets the keys, so where a ⌘V lands: the accessibility focus (not Drafter), else the workspace's
     /// front app. The workspace's answer can lag a switch (17 November 2026: Beeper in front, the deck's origin was
@@ -410,7 +410,7 @@ final class Capture {
                let app = NSRunningApplication(processIdentifier: pid) { return app }
         }
         // never Drafter itself (20 November 2026: a shot taken while Drafter held the front recorded Drafter as its
-        // app, and every insert then failed "front app moved"): his last app instead
+        // app, and every insert then failed "front app moved"): the user's last app instead
         if let ws = NSWorkspace.shared.frontmostApplication, ws.processIdentifier != getpid() { return ws }
         return lastOther.flatMap { $0.isTerminated ? nil : $0 }
     }
@@ -447,7 +447,7 @@ final class Capture {
         let (spot, why) = Focus.spot(skip: st.skip)
         return spot != nil || Focus.pasteTarget(why) ? nil : "no field (\(why))"
     }
-    /// A terminal he was in (it is on the skip list for typing help): still in front, no secure input. Text only.
+    /// A terminal the user was in (it is on the skip list for typing help): still in front, no secure input. Text only.
     static func terminalTarget(_ origin: NSRunningApplication?) -> Bool {
         guard let front = keyApp(), front.processIdentifier == origin?.processIdentifier,
               ShotPack.mayPaste(bundle: front.bundleIdentifier ?? "", skip: Drafter.shared.settings.skip),
@@ -460,7 +460,7 @@ final class Capture {
             if let t = NSBitmapImageRep(data: png)?.tiffRepresentation { pb.setData(t, forType: .tiff) }
         }
     }
-    /// The picture into his field (his clipboard comes back), else onto the clipboard (and the strip says so).
+    /// The picture into the user's field (their clipboard comes back), else onto the clipboard (and the strip says so).
     @discardableResult
     static func put(picture png: Data, origin: NSRunningApplication?) -> String {
         if target(origin) { Focus.paste("", write: pictureWriter(png)); return "pasted" }
@@ -499,7 +499,7 @@ enum OwnChrome {
     }
 }
 
-/// The dimmed screen never becomes key: keys come through the event tap, his app keeps the caret.
+/// The dimmed screen never becomes key: keys come through the event tap, the user's app keeps the caret.
 final class CapturePanel: NSPanel {
     override var canBecomeKey: Bool { false }
     override var canBecomeMain: Bool { false }

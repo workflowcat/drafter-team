@@ -1,12 +1,12 @@
 """The idle ghost's prompt for an empty chat box (round "earlier", step 7b, 2026-11-16).
 
-Step 7 asked the local model with the typing prompt (the screen text, then his empty line): in 14 of 18 empty boxes it
+Step 7 asked the local model with the typing prompt (the screen text, then the user's empty line): in 14 of 18 empty boxes it
 wrote nothing a ghost could show, and the first word was right once in 24 made-up chats. An empty box needs the shape
-the nextMessage path gives Claude: the chat as turns (theirs and his), who the chat is with, his earlier lines there,
-then his turn. Two local forms (bench/idle.py measures them):
-  turns  plain continuation: the typing head (how he writes), then the chat as "Name: text" lines and "Я: " last, so
-         the model writes his line and stops at the line end
-  chat   the model's chat template: one user turn asks for his next message, the answer is his message
+the nextMessage path gives Claude: the chat as turns (theirs and the user's), who the chat is with, the user's earlier lines there,
+then the user's turn. Two local forms (bench/idle.py measures them):
+  turns  plain continuation: the typing head (how the user writes), then the chat as "Name: text" lines and "Я: " last, so
+         the model writes the user's line and stops at the line end
+  chat   the model's chat template: one user turn asks for their next message, the answer is their message
   screen the typing prompt as in step 7 (kept for the comparison)
 After a finished sentence the box is not empty: the typing prompt stays (plain continuation).
 Pure text here; engine/server.py tokenises. No data/ reads.
@@ -41,7 +41,7 @@ def chat_turns(context, n=TURNS):
 
 
 def turns_tail(context, app="", who="", mine=""):
-    """The plain-continuation tail after the typing head: [app], who it is, his earlier lines, the chat, then "Я: "."""
+    """The plain-continuation tail after the typing head: [app], who it is, the user's earlier lines, the chat, then "Я: "."""
     ts = chat_turns(context)
     t = f"[{app}]\n" if app else ""
     if who.strip(): t += "Хто це: " + " ".join(who.split())[:600] + "\n"
@@ -51,7 +51,7 @@ def turns_tail(context, app="", who="", mine=""):
 
 
 def chat_messages(context, app="", who="", mine="", name=""):
-    """Chat-template messages: one user turn asking for his next message; the answer is the message itself."""
+    """Chat-template messages: one user turn asking for the user's next message; the answer is the message itself."""
     ts = chat_turns(context)
     me = name or "the user"
     u = (f"A chat in {app}. " if app else "") + f"Write {me}'s next message in this chat ({ME} = {me}).\n"

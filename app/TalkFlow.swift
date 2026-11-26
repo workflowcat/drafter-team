@@ -5,7 +5,7 @@ import Carbon
 
 extension Talk {
     var insertMode: VoiceMode { Drafter.shared.settings.voiceInsert == "live" ? .live : .enter }
-    /// An armed draft he is speaking after: the new words add to it.
+    /// An armed draft the user is speaking after: the new words add to it.
     var flowPrefix: String { if case .listening(let p) = flow.state { return p }; return "" }
     /// ↩ came while the note was finishing: the text goes in once it is read.
     var flowInsertPending: Bool { if case .finishing(_, true, _, _, _) = flow.state { return true }; return false }
@@ -67,7 +67,7 @@ extension Talk {
         }
     }
 
-    /// Return while he speaks (enter mode): the words so far are one segment. The engine closes it (an END frame; the
+    /// Return while the user speaks (enter mode): the words so far are one segment. The engine closes it (an END frame; the
     /// audio after it starts the next Take, engine/voice.py, so no new protocol message), the microphone never stops,
     /// and the new segment starts clean in the strip. Its final text goes in once read, in order (insertNext).
     private func closeSegment(_ prefix: String) {
@@ -154,7 +154,7 @@ extension Talk {
     /// time and in order (a later segment never lands before an earlier one), the way the Quick panel puts text in.
     /// No field, a password field, a skipped app or secure input: the clipboard, said in words. Drafter never presses
     /// Return here and never sends. The strip says "In the field" as soon as the paste is out (2026-11-14: waiting for
-    /// the check held the flow 1-2 s, and his next Return, his send, was taken in that time); the check after it only
+    /// the check held the flow 1-2 s, and the user's next Return, their send, was taken in that time); the check after it only
     /// reports a failure.
     private func insertDraft(_ text: String) {
         // a segment: the note is still going (or its last part is being read); the receipt then sits in the band
@@ -194,7 +194,7 @@ extension Talk {
             }
             Entities.dictated(text)                               // names in the note wait for ⌥Tab (app/Entities.swift)
             if segment { Pill.shared.segmentDone(ok: true, reason: "") } else { Pill.shared.inserted() }
-            // the next insert waits until a paste put his clipboard back (two pastes at once would paste one text twice)
+            // the next insert waits until a paste put the user's clipboard back (two pastes at once would paste one text twice)
             let pasted = how.hasPrefix("paste")
             let wait = pasted ? Focus.restoreDelay + 0.1 : 0.12
             done(after: pasted ? Focus.restoreDelay + 0.05 : 0.05)
@@ -221,7 +221,7 @@ extension Talk {
     }
 
     /// Claude cleanup (`voiceClaude`, engine/voice_claude.py): Parakeet's text is already in; Claude's version replaces
-    /// it in place only while he has not typed since and the field still ends with it (app/VoiceClaudeRules.swift).
+    /// it in place only while the user has not typed since and the field still ends with it (app/VoiceClaudeRules.swift).
     /// ⌫ right after puts Parakeet's text back (Rework.takeBack). Off, offline, slow or a bad answer: nothing shows.
     func claudeAfter(_ out: String, _ c: VoiceChoice, front: NSRunningApplication?) {
         let st = Drafter.shared.settings
@@ -240,7 +240,7 @@ extension Talk {
                 guard Date().timeIntervalSince(t0) <= VoiceClaudeRules.deadline + 0.2, self.insertQueue.isEmpty,
                       VoiceClaudeRules.canSwap(revisionAt: rev, revisionNow: Keys.shared.inputRevision,
                                                before: Focus.spot(skip: st.skip).0?.before, put: put) else {
-                    log("voice claude: kept Parakeet's text, \(ms) ms (he typed or the field changed)"); return
+                    log("voice claude: kept Parakeet's text, \(ms) ms (the user typed or the field changed)"); return
                 }
                 Focus.replace(put, with: new + " ") { ok in
                     guard ok, let el = Focus.focused() else { log("voice claude: swap refused by the field, \(ms) ms"); return }

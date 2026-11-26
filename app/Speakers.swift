@@ -1,5 +1,5 @@
-// Who said each line of a call (17 November 2026: a client demo call came out with every line his). After a call is
-// read, or recordings are combined, engine/speakers.py places each line's voice locally: his (his voice print), a
+// Who said each line of a call (17 November 2026: a client demo call came out with every line the user's). After a call is
+// read, or recordings are combined, engine/speakers.py places each line's voice locally: the user's (their voice print), a
 // person of the other side ("Speaker 2", or their name when the match is clear), or "unknown". It rewrites
 // lines.json and transcript.txt; here brief.md is written again from them, and the caller goes on with the new lines
 // (the note, the board). Without the script, the model or in time, the lines stay as they were and it is logged.

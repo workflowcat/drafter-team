@@ -10,21 +10,21 @@ POST /outline  {text, call?}              -> {title, points, todos}: live outlin
 POST /note     {text, audio?}             -> long note: title, people and projects named, follow-ups; saved in data/notes
 POST /rewrite  {text, instruction}         -> {text}: the selection rewritten (speak over a selection)
 POST /voice/claude {text, level, mode, note, app, context, kb, names} -> {text}: Claude's cleanup of a voice take, or "" (voiceClaude)
-POST /free     {from, to, minutes, title?, earliest?, latest?, count?} -> {slots: [{start, end, chip}]} from his calendars
+POST /free     {from, to, minutes, title?, earliest?, latest?, count?} -> {slots: [{start, end, chip}]} from the user's calendars
 POST /lookup   {kind,query}               -> read-only documents, links, meetings and free times
 POST /command  {text}                     -> up to 3 runnable options for a typed direction (⌃⌥Space)
 POST /snippet  {key, text}                -> save a snippet (data/snippets.json)
-POST /ask      {text}                     -> answer from his notes and takes (Claude Haiku), for the strip
+POST /ask      {text}                     -> answer from the user's notes and takes (Claude Haiku), for the strip
 POST /prep     {text}                     -> {lines, people, vault_notes}: call prep from the vault cache for a call window's title
 POST /instant  {app, context}             -> {options}: three local one-line replies (yes, no, later) to their last message
 POST /fields   {app, context}             -> {name, first name, company, last link to them}: smart snippet fields, local
 POST /chip     {before}                   -> {action?} for the line being typed (the app asks after a pause)
 POST /prefill  {before, app, title, context}  -> reads it into the cache (on focus), no suggestion
-POST /typed    {text, app, context?}      -> a line he sent; kept in data/typed.jsonl (with the chat above) for the phrase memory and benches; in Beeper it joins that chat's lines (people.py)
+POST /typed    {text, app, context?}      -> a line the user sent; kept in data/typed.jsonl (with the chat above) for the phrase memory and benches; in Beeper it joins that chat's lines (people.py)
 POST /act      {id, fields}               -> runs an action; app-side ones (EventKit) go to the app via /pending
 GET  /settings, POST /settings {paused?, skip?, actions_off?, model?, callNotes?, ...}   -> for local tools
 POST /words/remove {text}
-GET  /edits, POST /edits {heard, fixed, accept}   -> words he changed after dictating; accepted ones join the dictionary
+GET  /edits, POST /edits {heard, fixed, accept}   -> words the user changed after dictating; accepted ones join the dictionary
 POST /sleep {secs}, POST /wake  -> text model off / on while a long call is read again (memory budget)
 GET  /health
 GET  /sources, POST /sources {name, enabled}, POST /sources/run {name?}  -> working sources (engine/sources.py): switch, count, last update
@@ -32,7 +32,7 @@ GET  /sources/find?q=&who=  -> [{title, url, file, src, t, from}]: links and fil
 GET  /models -> {models: [catalog entry + downloaded, download {state, pct}, speed, quality], current, recommended, why,
                  machine {total_gb, free_gb, budget_gb}, switching}   (model catalog, 2026-11-15)
 POST /model {id}            -> {ok, current, error?, seconds}: unload the current model, load this one (live on a failure)
-POST /models/download {id}  -> {state, pct}: the weights he asked for, in their own process; /models/cancel {id} stops it
+POST /models/download {id}  -> {state, pct}: the weights the user asked for, in their own process; /models/cancel {id} stops it
 
 Only local programs (the app, local scripts) may call it, never a web page: a request with Origin or Sec-Fetch-*
 headers, a Host other than 127.0.0.1/localhost, or a POST that is not application/json gets 403.
@@ -106,7 +106,7 @@ finisher = words_mod.Words()
 print(f"drafter engine: word finisher from {finisher.load()} lines, {finisher.export(DATA / 'mywords.txt')} known words", flush=True)
 GATE_LOCK = threading.Lock()
 GATE = {"g": gatecore.load(), "mtime": 0}
-# per-person memory (engine/people.py): his older messages in the Beeper chat on screen go above it in the prompt;
+# per-person memory (engine/people.py): the user's older messages in the Beeper chat on screen go above it in the prompt;
 # read from the Beeper CLI in the background (off with DRAFTER_PEOPLE=0)
 people_mem = people.People()
 # integrations.available finds `beeper` outside launchd's PATH too (shutil.which alone did not: data/people.json stood still from 1 November)
@@ -114,7 +114,7 @@ if os.environ.get("DRAFTER_PEOPLE", "1") == "1" and integrations.available("beep
 import sources as sources_mod
 source_index = sources_mod.Index(state=sources_mod.STATE)   # mail, chats, Docs (engine/sources.py), light view
 who = whom.Who(people_mem, DATA / "names.json", topics=source_index)   # keyboard line + the chat's person, for Claude (engine/whom.py)
-promise_book = promises_mod.Book(DATA / "promises.json")   # promises in lines he sent (engine/promises.py), local only
+promise_book = promises_mod.Book(DATA / "promises.json")   # promises in lines the user sent (engine/promises.py), local only
 import journal_db
 # typed, takes and clipboard JSONL copied row by row into data/journal.sqlite (engine/journal_db.py, phase 1 of the
 # move to SQLite): the files stay as they are; started in __main__ only
@@ -132,7 +132,7 @@ def promise_typed(req, text):
 
 
 def earlier(app, context, remember=True):
-    """His older messages in the Beeper chat on screen (people.People.block), or ''; every local prompt of a screen
+    """The user's older messages in the Beeper chat on screen (people.People.block), or ''; every local prompt of a screen
     takes the same, so /prefill and /complete share one warm cache."""
     if not (app or "").lower().startswith("beeper") or not context: return ""
     try: return people_mem.block(context, remember=remember)
@@ -191,18 +191,18 @@ def kept_json(name, names):
 
 
 def wordgate():
-    """data/wordgate.json (bench/wordgate.py --save): when his own finish of the word being typed answers first."""
+    """data/wordgate.json (bench/wordgate.py --save): when the user's own finish of the word being typed answers first."""
     return kept_json("wordgate.json", gatecore.WORD_NAMES)
 
 
 def selector():
-    """data/selector.json (bench/selector.py --save): one chance per offer from memory, his word or the model."""
+    """data/selector.json (bench/selector.py --save): one chance per offer from memory, the user's word or the model."""
     s = kept_json("selector.json", gatecore.SEL_NAMES)
     return s if s and (s.get("wordgate") or {}).get("names") == gatecore.WORD_NAMES else None
 
 
 def offers_now(sel, before, ai, mid):
-    """The selector's instant offers (phrase memory, his word): the best (p, text, kind) that clears its bar, or None."""
+    """The selector's instant offers (phrase memory, the user's word): the best (p, text, kind) that clears its bar, or None."""
     best, low = None, sel.get("min", {})
     said, hits = phrases.suggest(before)
     said = clean(before, said) if said else ""
@@ -221,7 +221,7 @@ def offers_now(sel, before, ai, mid):
 
 
 def word_first(before, ai):
-    """His own word, when the word gate approves it (round four): the rest of the word, or ''."""
+    """The user's own word, when the word gate approves it (round four): the rest of the word, or ''."""
     wg = wordgate()
     if not wg: return ""
     c = finisher.candidate(before)
@@ -235,7 +235,7 @@ ADAPTER = os.environ.get("DRAFTER_ADAPTER") or None
 
 
 def strength_setting(st=None):
-    """Settings > Typing "Personal style" (parity round): 0-100 % of his layer, default 100."""
+    """Settings > Typing "Personal style" (parity round): 0-100 % of the user's layer, default 100."""
     if st is None:   # read here: settings_load() is defined further down, after the model loads
         try: st = json.loads((DATA / "settings.json").read_text())
         except Exception: st = {}
@@ -243,8 +243,8 @@ def strength_setting(st=None):
     except (TypeError, ValueError, AttributeError): return 1.0
 
 
-# Model catalog (2026-11-15, engine/catalog.py): the model he picked in Settings > Typing > Model (settings
-# "typingModel"), when its weights are here; DRAFTER_MODEL (benches) wins; else live. His layer: live's data/adapters,
+# Model catalog (2026-11-15, engine/catalog.py): the model the user picked in Settings > Typing > Model (settings
+# "typingModel"), when its weights are here; DRAFTER_MODEL (benches) wins; else live. The user's layer: live's data/adapters,
 # or an entry's own folder under data/layers/ (catalog.adapter_for; 16 November 2026), merged at Personal style.
 CATALOG = catalog.load()
 LIVE_ENTRY = catalog.entry(CATALOG, catalog.LIVE)
@@ -272,7 +272,7 @@ model.warm(builder.head_ids)
 model.pieces()
 print(f"drafter engine: {REPO} ({(CURRENT['entry'] or {}).get('id', 'not in the catalog')}, {_why}) loaded in {model.load_s:.1f}s, head {len(builder.head_ids)} tokens, port {PORT}", flush=True)
 
-# Cadence round (2026-11-17, engine/cadence.py): the fast model (the live 1.7B + his layer) beside the picked bigger
+# Cadence round (2026-11-17, engine/cadence.py): the fast model (the live 1.7B + the user's layer) beside the picked bigger
 # one, loaded when a request asks for it (setting comboModels) and memory allows, dropped when the switch goes off, on
 # sleep and on a model switch. Same worker, same queue: one model answers each key. Its own gate is live's.
 FAST = {"m": None, "b": None, "loading": False, "used": 0, "loads": 0, "refused": 0, "gate": None, "mtime": None}
@@ -485,7 +485,7 @@ def refresh_cli():
 
 
 def claude_on(feature, st=None):
-    """The one check before the engine sends his text to a Claude worker: the setting that owns `feature` is on
+    """The one check before the engine sends the user's text to a Claude worker: the setting that owns `feature` is on
     (engine/cloud.py) and the Mac is online. tests/test_cloud_gate.py fails on a Claude call site that skips it."""
     return cloud.allowed(feature, settings_load() if st is None else st) and router.online()
 
@@ -507,8 +507,8 @@ def clean(before, text):
 def rewrite(req):
     """Speak over a selection (idea 1; voice edit round, 17 November 2026: Wispr's command mode): the selected text
     rewritten as the spoken instruction says. Local model only: Claude is not at the caret any more. `names`: names on
-    screen and in his dictionary, for "fix the names"."""
-    text, instr = (req.get("text") or "")[:3000], (req.get("instruction") or "")[:900]   # 900: a voice mode's prompt and his app note (VoiceModeRules.instruction)
+    screen and in the user's dictionary, for "fix the names"."""
+    text, instr = (req.get("text") or "")[:3000], (req.get("instruction") or "")[:900]   # 900: a voice mode's prompt and the user's app note (VoiceModeRules.instruction)
     if not text.strip() or not instr.strip(): return {"text": ""}
     names = [n for n in (req.get("names") or []) if isinstance(n, str)][:30]
     known = ("Імена, як вони пишуться / names as they are spelled: " + ", ".join(names) + "\n") if names else ""
@@ -549,7 +549,7 @@ def voice_claude(req):
 
 def outline(req):
     """Live outline of a long note or a call still running (Granola-style): a title, main points, to-dos with names.
-    Claude Haiku when `callNotes` is on and online (engine/cloud.py), else the base model (his-writing layer off); the newest
+    Claude Haiku when `callNotes` is on and online (engine/cloud.py), else the base model (the user's-writing layer off); the newest
     ~6,000 characters."""
     text = (req.get("text") or "")[-6000:]
     if len(text.split()) < 12: return {}
@@ -585,7 +585,7 @@ TYPED = [0]      # /complete requests for a typed key (not the idle ghost)
 
 def instant(req):
     """Instant replies (engine/instant.py): an empty chat or mail box whose last message is theirs gets three one-line
-    replies - yes, no, later or a question - from the local model (base, his-writing layer off), in the language of
+    replies - yes, no, later or a question - from the local model (base, the user's-writing layer off), in the language of
     that message. Nothing leaves the Mac; nothing is typed (the app shows a card, ⌥1-3 or Tab put one in).
     Setting `instantReplies` (on by default). Same screen -> the same answer from the cache."""
     st = settings_load()
@@ -638,7 +638,7 @@ WINDOWS = {}   # (app, title, part) -> the first characters of the window used l
 
 def window(key, text, size, remember=True):
     """The last `size` characters of `text`, with a start that stays put while the text only grows at the end (a new
-    message came in, he typed on), so the prompt cache keeps all before it. It jumps forward when the window gets half
+    message came in, the user typed on), so the prompt cache keeps all before it. It jumps forward when the window gets half
     again as long (2026-11-01: a shifting window made the engine read the whole chat again, 230-360 ms on one key)."""
     with WINDOWS_LOCK:
         if len(text) <= size: return text
@@ -676,7 +676,7 @@ def parts(req, remember=True):
     return before, app, title, context, f"{app} · {title}"
 def extras(req):
     """(clip, notes) a request carries for the local prompt (parity round): the fresh copy the app judged safe
-    (prompt.clip_text checks again) and his writing instructions for this app. Empty = the prompt as before."""
+    (prompt.clip_text checks again) and the user's writing instructions for this app. Empty = the prompt as before."""
     return str(req.get("clip") or "")[:2000], str(req.get("notes") or "")[:600]
 
 
@@ -690,7 +690,7 @@ def mid_line(req):
 
 
 def mid_result(req, res):
-    """A mid-line answer from any source (memory, his word, the model): one line that fits before the rest of the
+    """A mid-line answer from any source (memory, the user's word, the model): one line that fits before the rest of the
     line, never repeating it (engine/fim.py cut); no lighter tail, no "more"."""
     _, line = mid_line(req)
     if not line or not isinstance(res, dict) or not res.get("text"): return res
@@ -715,7 +715,7 @@ def builder_for(fmt):
 
 AHEAD, AHEAD_LOCK, AHEAD_TTL = OrderedDict(), threading.Lock(), 30.0
 AHEAD_STATS = {"made": 0, "hit": 0}
-AHEAD_KIND = {}   # key -> "next" (the rest after he takes the ghost) or "branch" (a next letter), for the day counts
+AHEAD_KIND = {}   # key -> "next" (the rest after the user takes the ghost) or "branch" (a next letter), for the day counts
 
 
 def ahead_stats():
@@ -762,15 +762,15 @@ def ahead_key(req, pack=None):
 
 
 BRANCHES = int(os.environ.get("DRAFTER_BRANCHES", "2"))
-# Futures (long round, 2026-11-14, Andrii: "run like parallel realities ... so that the model watches a few ideas about
-# what might be coming"): after the shown ghost, the gap before his next key prepares the answers for up to FUTURES
+# Futures (long round, 2026-11-14, the user: "run like parallel realities ... so that the model watches a few ideas about
+# what might be coming"): after the shown ghost, the gap before the user's next key prepares the answers for up to FUTURES
 # other next letters, the likeliest first (the model's own next word, the other likely starts in its first-step
-# distribution, his own next words), each run to the same sentence length. How many fit is read from his own key
+# distribution, the user's own next words), each run to the same sentence length. How many fit is read from the user's own key
 # gaps and the engine's own answer time (futures_k); none on a low battery or near the memory cap.
-# Cap 2: replay of the held set with his 1,443 key gaps (bench/long_ghosts.py futures): answered at 0 ms or joined
+# Cap 2: replay of the held set with the user's 1,443 key gaps (bench/long_ghosts.py futures): answered at 0 ms or joined
 # K 0 3% · K 1 31% · K 2 38% · K 3 39% · K 4 39%; K 3-4 cost 0.6 more prepared tokens per ask for about one point.
 FUTURES = int(os.environ.get("DRAFTER_FUTURES", "2"))
-GAPS, COSTS = [], []          # ms between his typing requests (under 1.5 s), ms per prepared answer: the last 200 of each
+GAPS, COSTS = [], []          # ms between the user's typing requests (under 1.5 s), ms per prepared answer: the last 200 of each
 FUT_INDEX = OrderedDict()     # ahead_key of a shown request -> [(letter, ahead_key of its future)], for /futures
 WANT = [""]                   # ahead_key of the newest typing request: a look-ahead for exactly it is not cancelled
 INFLIGHT = {}                 # ahead_key -> Event while a look-ahead for it runs (the request for it waits instead)
@@ -797,7 +797,7 @@ def power_low():
 
 
 def futures_k(cap=None):
-    """How many futures fit in his usual gap: the median gap less the look-ahead for the shown ghost, over the median
+    """How many futures fit in the user's usual gap: the median gap less the look-ahead for the shown ghost, over the median
     answer time; between 1 and FUTURES (2 before any numbers), 0 on a low battery or near the memory cap."""
     cap = FUTURES if cap is None else cap
     if cap <= 0 or power_low(): return 0
@@ -812,7 +812,7 @@ def futures_k(cap=None):
 
 def branch_letters(before, raw, ghost, n=BRANCHES, alts=()):
     """The next letter of the word branches (round four, bench/branches.py; long round: more of them): the model's own
-    next word (what it wrote, shown or not), the other likely starts of the model's first step (`alts`), his own
+    next word (what it wrote, shown or not), the other likely starts of the model's first step (`alts`), the user's own
     likely next words (Words.dist); none that the shown ghost already starts with (typing it keeps the ghost)."""
     out = []
     t = raw.lstrip(" ") if before.endswith((" ", "\n")) else (raw or "")
@@ -826,9 +826,9 @@ def branch_letters(before, raw, ghost, n=BRANCHES, alts=()):
 
 
 def look_ahead(req, text, seq=None, raw="", alts=()):
-    """A suggestion went out: the one for when he takes it (Tab, or types it through) is worked out now, behind any
+    """A suggestion went out: the one for when the user takes it (Tab, or types it through) is worked out now, behind any
     newer key (which stops it), so Tab, Tab, Tab never waits for the model (2026-11-01). Then, in the same gap, the
-    answers for the next letter of two word branches (round four): when his key is one of them, the answer is ready
+    answers for the next letter of two word branches (round four): when the user's key is one of them, the answer is ready
     (bench/branches.py: in chats 75% of new ghosts ready, in AI apps 43-48%, against 1-2% before)."""
     before = req.get("before") or ""
     next_req = {k: v for k, v in req.items() if k != "gap_ms"}
@@ -856,7 +856,7 @@ def look_ahead(req, text, seq=None, raw="", alts=()):
             t0 = time.perf_counter()
             try:
                 # long round: a newer key for exactly this text does not stop it (the request waits for it instead);
-                # before, the very answer he was about to need was cancelled at his key and worked out again
+                # before, the very answer the user was about to need was cancelled at their key and worked out again
                 res = complete(nxt, low=True, seq=seq, keep=key)
             finally:
                 INFLIGHT.pop(key, None)
@@ -865,7 +865,7 @@ def look_ahead(req, text, seq=None, raw="", alts=()):
             if key != ahead_key(nxt): ev.set(); return  # pack changed while the model was working
             with LATEST_LOCK:
                 # kept even when a newer key came meanwhile (it is the exact answer for its text; before, a branch that
-                # ended a moment after his key was thrown away)
+                # ended a moment after the user's key was thrown away)
                 if res.get("stale") or res.get("error"): ev.set(); return
                 with AHEAD_LOCK:
                     AHEAD[key] = (time.time(), res); AHEAD_STATS["made"] += 1
@@ -877,7 +877,7 @@ def look_ahead(req, text, seq=None, raw="", alts=()):
 
 
 def complete(req, low=False, seq=None, on_part=None, keep=None):
-    """/complete: a suggestion worked out ahead (look_ahead) when he took the last one, else _complete; every
+    """/complete: a suggestion worked out ahead (look_ahead) when the user took the last one, else _complete; every
     suggestion with text then starts the next one ahead."""
     # mid-line (engine/fim.py): every answer, the ones worked out ahead too, is cut to fit before the rest of the line
     if low and req.get("mid"): return mid_result(req, _complete(req, low=True, seq=seq, **({"keep": keep} if keep else {})))
@@ -922,7 +922,7 @@ def futures(req):
         return {"futures": out, "k": futures_k()}
 
 
-# Short ghosts (2026-11-13, app.log 6-13 November: under 5 letters he took 3%, 5-9 letters 30%; bench/lengths.py):
+# Short ghosts (2026-11-13, app.log 6-13 November: under 5 letters the user took 3%, 5-9 letters 30%; bench/lengths.py):
 # the app sends min_letters (setting minGhost); a gated suggestion that adds fewer letters goes on past its sure words
 # while each token stays >= GROW, up to GROW_WORDS words, and what is still short is not offered.
 # Held set (137 lines after the 8 November cutoff), letters saved by ghosts of 5+ letters, AI apps / chats:
@@ -944,7 +944,7 @@ IDLE_SCREEN = "· idle chat ·"     # one cache slot for every screen's idle cha
 
 def idle_ids(form, b, app, context, blk):
     """(ids, heal, stable) for the idle ghost in an empty box (engine/idle_prompt.py): "turns" after the typing head, "chat" in
-    the model's chat template. Nothing he types is in it, so all but the last token stays put per screen."""
+    the model's chat template. Nothing the user types is in it, so all but the last token stays put per screen."""
     mine = earlier(app, context, remember=False)
     if form == "chat":
         ids, heal = chat_ids(model, idle_mod.chat_messages(context, app, blk, mine, local.short_name())), ""
@@ -968,7 +968,7 @@ def _complete(req, low=False, seq=None, pack=None, on_part=None, keep=None):
         # step 7b: an empty box gets a reply-shaped prompt (engine/idle_prompt.py); after a sentence, the typing prompt
         idle_form = idle_mod.form_for(req) if not before.strip() else "screen"
         if blk and idle_form == "screen": context = blk.strip() + "\n\n" + context
-        # the chat form shares no start with the typing prompt: its own parked cache, so his first key after it does
+        # the chat form shares no start with the typing prompt: its own parked cache, so the user's first key after it does
         # not read the typing head again (bench/idle.py: 1.7-2.1 s once, on the shared cache)
         if idle_form == "chat": screen = IDLE_SCREEN
     after, after_line = mid_line(req) if req.get("mid") else ("", "")
@@ -977,15 +977,15 @@ def _complete(req, low=False, seq=None, pack=None, on_part=None, keep=None):
     # chips: the Drafter app asks for them separately (/chip, after a pause) so typing never waits for a chip read;
     # other local callers still get them here
     chips = req.get("chips", True)
-    # a quick insert: ";m" -> his email, "my email is" -> the same (engine/snippets.py), before anything else
+    # a quick insert: ";m" -> the user's email, "my email is" -> the same (engine/snippets.py), before anything else
     snip = snippets.offer(before)
     if snip:
         return {"text": "", "action": snip, "src": "snippet", "ms": 0}
     sel = selector() if req.get("selector", True) and req.get("gate", True) else None
-    if sel:   # more-bold round (2026-11-17): his Bolder / Careful setting moves the selector's bar with the guess bar
+    if sel:   # more-bold round (2026-11-17): the user's Bolder / Careful setting moves the selector's bar with the guess bar
         sel = dict(sel, th=gatecore.bolder_sel(sel["th"], gatecore.guess_bar(gate(), "live", os.environ.get("DRAFTER_GUESS"), req.get("guess_bar"))))
     if req.get("memory", True) and not sel:
-        # his own phrase, said before: answer at once, the model is not asked (bench/memory_eval.py)
+        # the user's own phrase, said before: answer at once, the model is not asked (bench/memory_eval.py)
         t = time.perf_counter()
         said, hits = phrases.suggest(before)
         if said and not short(req, clean(before, said)) and not (chips and actions.detect(before)):
@@ -997,7 +997,7 @@ def _complete(req, low=False, seq=None, pack=None, on_part=None, keep=None):
     g = gate() if req.get("gate", True) else None
     ai = any(k in (app or "").lower() for k in AI_APPS)
     if mid and req.get("fix"):
-        # the word being typed is no word he writes, but one he writes often is a letter (or a layout) away: a ghost
+        # the word being typed is no word the user writes, but one the user writes often is a letter (or a layout) away: a ghost
         # that replaces (engine/words.py Words.fix; the app shows "→ word" and Tab swaps it)
         t = time.perf_counter()
         fx = finisher.fix(before)
@@ -1005,24 +1005,24 @@ def _complete(req, low=False, seq=None, pack=None, on_part=None, keep=None):
             return {"text": fx["new"], "replace": fx["old"], "kind": fx["kind"], "src": "fix", "ms": round((time.perf_counter() - t) * 1000, 1)}
     if pack is None: pack = knowledge.snapshot()  # one check for this request's finisher and booster
     if mid and req.get("words", True) and (g or {}).get("words_first", req.get("words_first", False)):
-        # the instant word finisher: his own words, no model (engine/words.py)
+        # the instant word finisher: the user's own words, no model (engine/words.py)
         t = time.perf_counter()
         f, source = words_mod.finish_with_source(finisher, before, (g or {}).get("words", (2, 0.6, 1)), pack)
         if f and not short(req, f):
             if source == "know": knowledge.offered += 1
             return {"text": f, "src": source, "ms": round((time.perf_counter() - t) * 1000, 1)}
-    # his own word first (round four, Codex review "personal word path first"): when the word gate approves, the word
+    # the user's own word first (round four, Codex review "personal word path first"): when the word gate approves, the word
     # shows at once; the model runs only to extend it (bench/wordgate.py, before/after on held-out lines)
     if sel and g:
-        # one calibrated selector (round four, bench/selector.py): memory and his word answer at once when their chance
+        # one calibrated selector (round four, bench/selector.py): memory and the user's word answer at once when their chance
         # clears the bar; else the model, whose first word must clear the same bar
         t = time.perf_counter()
         best = offers_now(sel, before, ai, mid) if req.get("words", True) and req.get("memory", True) else None
-        if best:          # each source's own minimum length is in offers_now (memory 5 letters, his word 3)
+        if best:          # each source's own minimum length is in offers_now (memory 5 letters, the user's word 3)
             return {"text": best[1], "src": best[2], "sel": round(best[0], 3), "ms": round((time.perf_counter() - t) * 1000, 1)}
-        # a name from the names / knowledge pack (2026-11-16): offers_now reads his own words only, and the name paths
+        # a name from the names / knowledge pack (2026-11-16): offers_now reads the user's own words only, and the name paths
         # below are closed with the selector, so /health know.offered stayed 0. Pack.finish offers a capitalised word
-        # only when one name fits and his own words with those letters do not compete (engine/know.py).
+        # only when one name fits and the user's own words with those letters do not compete (engine/know.py).
         kf = words_mod.know_only(finisher, before, pack) if mid and req.get("words", True) and req.get("know", True) else ""
         if kf and not short(req, kf):
             knowledge.offered += 1
@@ -1032,7 +1032,7 @@ def _complete(req, low=False, seq=None, pack=None, on_part=None, keep=None):
         return {"text": first_word, "src": "words", "first": True, "ms": 0}
     if first_word: on_part({"part": first_word, "src": "words", "ms": 0})
     if model.asleep or model.loading:
-        # the text model steps aside while a call is read (or is loading back): his own words only, at once, never
+        # the text model steps aside while a call is read (or is loading back): the user's own words only, at once, never
         # queued behind the reload
         f, source = words_mod.finish_with_source(finisher, before, (g or {}).get("words", (2, 0.6, 1)), pack) if mid and req.get("words", True) else ("", "")
         if short(req, f): f = ""
@@ -1040,13 +1040,13 @@ def _complete(req, low=False, seq=None, pack=None, on_part=None, keep=None):
         return {"text": f, "src": source if f else "asleep", "ms": 0}
 
     t_in = time.perf_counter()
-    # cadence round (engine/cadence.py): the fast model answers this key when he types fast and comboModels is on
+    # cadence round (engine/cadence.py): the fast model answers this key when the user types fast and comboModels is on
     slot = globals().get("slot_for", lambda r: "big")(req)
     used = {}
 
     def job(cancelled):
         m, bb, gg = model, b, g
-        if slot == "fast" and FAST["m"] is not None and not FAST["m"].asleep:   # cadence round: he types fast
+        if slot == "fast" and FAST["m"] is not None and not FAST["m"].asleep:   # cadence round: the user types fast
             m, bb, gg = FAST["m"], FAST["b"], (fast_gate() or g) if g else None
             used["slot"] = "fast"; FAST["used"] += 1
         t = time.perf_counter()
@@ -1086,8 +1086,8 @@ def _complete(req, low=False, seq=None, pack=None, on_part=None, keep=None):
                     seen["guess"] = True
                     return p
                 return None
-            # the word booster (2026-11-01): his own next words mixed into the model's guess, at the share the gate was
-            # fit with (data/gate.json "boost"; 0 = off). His words update with every line he sends (/typed).
+            # the word booster (2026-11-01): the user's own next words mixed into the model's guess, at the share the gate was
+            # fit with (data/gate.json "boost"; 0 = off). The user's words update with every line the user sends (/typed).
             lam = float(gg.get("boost", 0) or 0) if req.get("boost", True) else 0.0
             boost = words_mod.boost_targets(finisher, before, heal, knowledge=pack, context=context, title=title) if lam else None
             min_letters = int(req.get("min_letters") or 0)
@@ -1105,7 +1105,7 @@ def _complete(req, low=False, seq=None, pack=None, on_part=None, keep=None):
             part_fn = None
             if on_part is not None:
                 def part_fn(raw, sure):
-                    if WRITTEN["seq"] == seq: WRITTEN["text"] = raw.replace("\ufffd", "")   # he may type it through
+                    if WRITTEN["seq"] == seq: WRITTEN["text"] = raw.replace("\ufffd", "")   # the user may type it through
                     o = clean(before, raw.replace("\ufffd", ""))
                     if not o or short(req, o) or cancelled(): return
                     if first_word and not gatecore.extends(o, first_word): return
@@ -1147,7 +1147,7 @@ def _complete(req, low=False, seq=None, pack=None, on_part=None, keep=None):
             fall, source = words_mod.finish_with_source(finisher, before, gg.get("words", (2, 0.6, 1)), pack) if mid and not out and req.get("words", True) and not sel else ("", "")
             if short(req, fall): fall = ""
             if fall:
-                # the gate said no: the word being typed, from his own words, when that is clear (bench/gate.py
+                # the gate said no: the word being typed, from the user's own words, when that is clear (bench/gate.py
                 # policy_from, as measured: first three words of a line saved 4.5% -> 8.6% in Beeper, 16.5 -> 21% in Claude)
                 if source == "know": knowledge.offered += 1
                 return {"text": fall, "src": source, "gate": round(seen.get("p", 0), 3), "next": seen["raw"], "ms": round(total)}
@@ -1162,7 +1162,7 @@ def _complete(req, low=False, seq=None, pack=None, on_part=None, keep=None):
                 res["guess"] = True
                 if req.get("guess_shade", True): res["unsure"] = out
             return res
-        # short and sure (Andrii, 2026-10-19): at most 3 words, and only the words the model gives >= 50% to
+        # short and sure (the user, 2026-10-19): at most 3 words, and only the words the model gives >= 50% to
         # (bench: shown on 9/30 cut messages instead of 29, wrong on 3 instead of 19)
         soft = float(req.get("soft", 0) or 0)
         text, first, total = m.complete(None, raw_ids=ids, max_tokens=n, cancelled=cancelled, heal=heal,
@@ -1214,7 +1214,7 @@ def models_view():
     rows = []
     for m in shown:
         d = DOWNLOADS.state(m)
-        # "layer" goes out as true/false (the app reads a bool): his layer is here for this model
+        # "layer" goes out as true/false (the app reads a bool): the user's layer is here for this model
         rows.append({**m, "layer": catalog.has_layer(m, ADAPTER, DATA), "downloaded": d["state"] == "done", "download": d,
                      "speed": catalog.speed_mark(m), "quality": catalog.quality_mark(CATALOG, m)})
     return {"models": rows, "current": cur["id"] if cur else None, "recommended": rec, "why": why,
@@ -1239,7 +1239,7 @@ def switch_to(target):
 
 
 def reader_check(req):
-    """A last look before he sends a chat message (engine/reader.py): slips and a question left open. Local only, no
+    """A last look before the user sends a chat message (engine/reader.py): slips and a question left open. Local only, no
     model, nothing sent; off unless `readerCheck`."""
     st = settings_load()
     if not st.get("readerCheck"): return {"edits": [], "ask": "", "src": "off"}
@@ -1251,7 +1251,7 @@ def reader_check(req):
 
 def edit_marks(req):
     """Edit mode (engine/marks.py): places in a paragraph where the text could improve, each with one new text and a
-    one-line why. Local only, no model, nothing sent; setting `editMarks` (on unless he turned it off)."""
+    one-line why. Local only, no model, nothing sent; setting `editMarks` (on unless the user turned it off)."""
     st = settings_load()
     if not st.get("editMarks", True): return {"marks": [], "src": "off"}
     import marks as marks_mod, reader
@@ -1262,8 +1262,8 @@ def edit_marks(req):
 
 
 def my_style(req):
-    """Edit mode's "Rewrite in my style": the text in his own words, by the LOCAL model only (local_rewrite), with his
-    writing note and up to 4 of his earlier lines to this person as the example of his voice. Never Claude."""
+    """Edit mode's "Rewrite in my style": the text in the user's own words, by the LOCAL model only (local_rewrite), with their
+    writing note and up to 4 of the user's earlier lines to this person as the example of the user's voice. Never Claude."""
     st = settings_load()
     if not st.get("editMarks", True): return {"text": "", "src": "off"}
     text = str(req.get("text") or "")[:3000]
@@ -1274,21 +1274,21 @@ def my_style(req):
              "Rewrite it in his own words and style; keep the meaning and the language.")
     if mine: instr += " Як він пише цій людині / how he writes to this person: " + " | ".join(mine)
     t = time.perf_counter()
-    # his-writing layer on: the same prompt keeps its shape with it (3 of 3 made-up lines, docs/rounds/2026-11-17-editing.md)
+    # the user's-writing layer on: the same prompt keeps its shape with it (3 of 3 made-up lines, docs/rounds/2026-11-17-editing.md)
     out = local_rewrite(text, instr, str(st.get("writingNote") or "")[:300], layer=True)
     return {"text": out, "ms": round((time.perf_counter() - t) * 1000), "by": "local"}
 
 
 def local_rewrite(text, instr, notes="", layer=False):
-    """The selection rewritten by the local model (base, his-writing layer off): the offline way for /rework. `notes`:
-    his writing instructions, one line when there are some."""
+    """The selection rewritten by the local model (base, the user's-writing layer off): the offline way for /rework. `notes`:
+    the user's writing instructions, one line when there are some."""
     prompt = ("Перепиши текст за вказівкою. Відповідай лише новим текстом, без пояснень і без лапок. Мова та сама, що в "
               "тексті, якщо вказівка не каже інакше. Rewrite the text as the instruction says; reply with the new text only.\n"
               + (f"Як він пише / his writing instructions: {notes}\n" if notes else "")
               + f"Вказівка / instruction: {instr}\n\nТекст / text:\n{text}")
     ids = chat_ids(model, [{"role": "user", "content": prompt}])
     n = min(900, int(len(model.tok.encode(text)) * 2) + 40)
-    # stops when he types again (a newer suggestion) or the request gave up, so the one model is free for typing
+    # stops when the user types again (a newer suggestion) or the request gave up, so the one model is free for typing
     # (Codex review 2026-11-01: a dismissed rework held it for up to 900 tokens)
     start, gone = latest[0], threading.Event()
     stop = lambda: gone.is_set() or latest[0] != start
@@ -1298,8 +1298,8 @@ def local_rewrite(text, instr, notes="", layer=False):
 
 
 def rework(req):
-    """⌥Tab on a selection (engine/rework.py): shorter, fix, clearer, warmer, formal, list, the other language, or his
-    own words. Claude when online, else the local model. Only when he picks a command; setting `rework`.
+    """⌥Tab on a selection (engine/rework.py): shorter, fix, clearer, warmer, formal, list, the other language, or the user's
+    own words. Claude when online, else the local model. Only when the user picks a command; setting `rework`.
     From the Quick panel (`from: quick`, app/Quick.swift) with `rework` off: the local model only, nothing sent."""
     st = settings_load()
     if not cloud.allowed("rework", st) and (req.get("from") != "quick" or req.get("warm")): return {}
@@ -1408,7 +1408,7 @@ class H(BaseHTTPRequestHandler):
             return self.send(entity_store().context(q, level))
         if self.path == "/sources": return self.send(sources_mod.status())
         if self.path.split("?", 1)[0] == "/sources/find":
-            # links and files from his mail, Docs and chats for "attach what they asked for" and smart fields; local only
+            # links and files from the user's mail, Docs and chats for "attach what they asked for" and smart fields; local only
             from urllib.parse import urlsplit, parse_qs
             qs = parse_qs(urlsplit(self.path).query)
             who_ = [w for w in qs.get("who", [""])[0].split(",") if w.strip()]
@@ -1539,8 +1539,8 @@ class H(BaseHTTPRequestHandler):
             if was: r["load_s"] = round(time.time() - t, 2); print(f"wake: loaded in {r['load_s']}s (head included)", flush=True)
             return self.send({**r, "mlx_active_gb": round(model.memory_gb()[0], 2)})
         if self.path == "/strength":
-            # the app saved a new "Personal style" (0-100): his layer is merged again at that scale, in the one model
-            # (a few seconds, typing answers from his words meanwhile); answers prepared at the old strength go
+            # the app saved a new "Personal style" (0-100): the user's layer is merged again at that scale, in the one model
+            # (a few seconds, typing answers from the user's words meanwhile); answers prepared at the old strength go
             want = strength_setting({"personalStrength": req.get("value", 100)})
             r = run(lambda c: {"seconds": round(model.set_strength(want) + (FAST["m"].set_strength(want) if FAST["m"] is not None else 0), 2)}, newest=False, timeout=60)
             with AHEAD_LOCK: AHEAD.clear(); AHEAD_KIND.clear(); FUT_INDEX.clear()
@@ -1556,7 +1556,7 @@ class H(BaseHTTPRequestHandler):
             SWITCH["busy"] = True
             return self.send(run(lambda c: switch_to(target), newest=False, timeout=300))
         if self.path in ("/models/download", "/models/cancel"):
-            # only on his press in Settings: the one network use besides what AGENTS.md lists
+            # only on the user's press in Settings: the one network use besides what AGENTS.md lists
             target = catalog.entry(CATALOG, req.get("id"))
             if target is None: return self.send({"ok": False, "error": "unknown model"}, 404)
             if self.path == "/models/cancel": return self.send({"ok": DOWNLOADS.cancel(target["id"]), **DOWNLOADS.state(target)})
@@ -1567,7 +1567,7 @@ class H(BaseHTTPRequestHandler):
             r = run(lambda c: {"fed": model.prefill(ids, screen=screen, stable=stable)}, newest=False, timeout=5)
             return self.send(r)
         if self.path == "/typed":
-            # a line he sent or finished (Return), from a field Drafter may read: kept locally for the phrase memory
+            # a line the user sent or finished (Return), from a field Drafter may read: kept locally for the phrase memory
             text = (req.get("text") or "").strip()
             if len(text.split()) >= 3 and len(text) <= 600:
                 with open(DATA / "typed.jsonl", "a") as f:
@@ -1582,7 +1582,7 @@ class H(BaseHTTPRequestHandler):
                     export_words = time.time() - GATE.get("exported", 0) > 600
                     if export_words: GATE["exported"] = time.time()
                 if export_words: finisher.export(DATA / "mywords.txt")
-                try: edits.sent(text)          # words he changed in a voice take become "heard -> fixed" candidates
+                try: edits.sent(text)          # words the user changed in a voice take become "heard -> fixed" candidates
                 except Exception as e: print("edits:", e, flush=True)
             if 0 < len(text) <= 600:
                 try: promise_typed(req, text)
@@ -1637,7 +1637,7 @@ class H(BaseHTTPRequestHandler):
             actions.finish(req.get("job", ""), req.get("result") or {})
             return self.send({"ok": True})
         if self.path == "/free":
-            # free slots from his own calendars, read by the Drafter app (EventKit) (2026-10-21)
+            # free slots from the user's own calendars, read by the Drafter app (EventKit) (2026-10-21)
             job = {"kind": "eventkit.free", **{k: req[k] for k in ("from", "to", "minutes", "title", "earliest", "latest", "count") if k in req}}
             return self.send(actions.queue_app(job))
         if self.path == "/act":

@@ -1,7 +1,7 @@
-// Wrong keyboard layout (2026-10-31, Andrii: "a quick english to ukrainian switch"): "ghbdsn" typed with ABC on
+// Wrong keyboard layout (2026-10-31, the user: "a quick english to ukrainian switch"): "ghbdsn" typed with ABC on
 // means "привіт" on Ukrainian-PC. The key map is read from the two layouts installed on this Mac (UCKeyTranslate),
-// so it matches his keyboard exactly. Words are judged by the macOS spellchecker (English and Ukrainian, offline)
-// and his own words (engine word list), never by a model.
+// so it matches the user's keyboard exactly. Words are judged by the macOS spellchecker (English and Ukrainian, offline)
+// and the user's own words (engine word list), never by a model.
 import AppKit
 import Carbon
 
@@ -63,7 +63,7 @@ enum KeyLayout {
     }
     static var ukrainianNow: Bool { ukIDs.contains(currentID) }
 
-    /// The current input source's language ("uk", "en", ...; 2026-11-16, Andrii: "pass the fact of my current language
+    /// The current input source's language ("uk", "en", ...; 2026-11-16, the user: "pass the fact of my current language
     /// setting to Claude"): sent as `kb` with requests that can reach Claude (engine/whom.py). Read on the main thread
     /// (TIS); elsewhere the last value read there.
     private static var lastLanguage = ""
@@ -100,7 +100,7 @@ enum KeyLayout {
                 let letters = t.filter { $0.isLetter }
                 guard letters.count >= 2, !Spell.known(letters, "en"), !known(letters.lowercased()) else { continue }
                 let uk = convert(t, toUk: true)
-                // a 3-letter word only when it is one of his (nfr -> так); the dictionary alone turns cfg into сап
+                // a 3-letter word only when it is one of the user's (nfr -> так); the dictionary alone turns cfg into сап
                 guard uk.allSatisfy({ $0.isLetter || "'’ʼ".contains($0) }), uk.count >= 3,
                       known(uk.lowercased()) || (uk.count > 3 && Spell.known(uk, "uk")) else { continue }
                 return (t + tail, uk + tail, true)

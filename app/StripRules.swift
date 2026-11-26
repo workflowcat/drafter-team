@@ -2,11 +2,11 @@
 // alone in tests/strip_rules.swift. app/ComposerStrip.swift draws what this places; app/ClassicStrip.swift is the old
 // one-row strip, restored as it was, and places itself.
 //
-// The owner: "two places where typing happens at the same time", "when creating an input and sending it to the agent,
+// The user: "two places where typing happens at the same time", "when creating an input and sending it to the agent,
 // it should be easily visible", "fix the notch". The composer:
 //   - a band the height of the menu bar grows out of both sides of the camera housing (the notch, about 200 x 32 pt at
 //     the top centre). Left of the housing: the state mark and the state word (Listening, Finishing, Draft ready, In the
-//     field). Right of it: his level, then the keys ("↩ Insert · ⌥ Stop", "↩ Insert · Esc Drop"). Nothing readable
+//     field). Right of it: the user's level, then the keys ("↩ Insert · ⌥ Stop", "↩ Insert · Esc Drop"). Nothing readable
 //     behind the housing.
 //   - under the band, the words: large, in the primary text colour, 1 line growing to 4, then the older lines scroll up.
 //   - no housing (an external display): a capsule at the top centre under the menu bar with the same content, the band's
@@ -39,7 +39,7 @@ struct StripLayout {
     var notch: CGRect               // the camera housing in strip coordinates (empty without one)
     var band: CGFloat               // the first row's height (the band beside the housing)
     var mark: CGRect                // the state mark
-    var level: CGRect? = nil        // a note: his level
+    var level: CGRect? = nil        // a note: the user's level
     var levels: [CGRect] = []       // a recording: me, then them (each a bar; a label sits left of it)
     var labels: [CGRect] = []       // "me", "them"
     var text: CGRect? = nil         // the words, a title, a question or a message
@@ -228,7 +228,7 @@ enum StripRules {
         case .ctrlOptR: return "⌃⌥R"
         }
     }
-    /// The key that puts the last take in again (keys round two): the double tap while `againTap` is on, else his
+    /// The key that puts the last take in again (keys round two): the double tap while `againTap` is on, else the user's
     /// `againKey` chord, else none (the hint then says nothing about it).
     static func againKey(tap: Bool, chord: String, tight: Bool = true) -> String? {
         if tap { return key(.doubleRightOption, tight: tight) }
@@ -238,5 +238,5 @@ enum StripRules {
 
     /// The theme's colour jobs the composer draws letters with (contrast-checked on black in tests). The words are
     /// ink; partial words one step quieter (muted), never fainter.
-    static let textJobs = ["ink", "muted", "warn", "mint"]   // words on the strip (never the faint grey: too dim on black); warn: "No text field in …" on a draft; mint: "In the field" while he still speaks
+    static let textJobs = ["ink", "muted", "warn", "mint"]   // words on the strip (never the faint grey: too dim on black); warn: "No text field in …" on a draft; mint: "In the field" while the user still speaks
 }

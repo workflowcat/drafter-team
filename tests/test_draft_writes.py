@@ -1,8 +1,8 @@
 """Every text Drafter writes into a field is counted for the draft budget (Focus.wrote, app/DraftCaptureRules.swift).
 
-A write that bypasses the counter makes a draft look longer than his keys explain. The only places that may write
+A write that bypasses the counter makes a draft look longer than the user's keys explain. The only places that may write
 text are Focus.setSelectedText (AX), Focus.typeText (key events) and Focus.commandV (⌘V); each calls `wrote(`.
-The test typer in DevHooks.swift posts plain key events (no Drafter mark): Keys counts them as his letters.
+The test typer in DevHooks.swift posts plain key events (no Drafter mark): Keys counts them as the user's letters.
 
     .venv/bin/python -B tests/test_draft_writes.py
 """
@@ -19,7 +19,7 @@ WRITES = {
     "paste": re.compile(r"virtualKey:\s*9\b"),
 }
 ALLOWED = {"ax": "setSelectedText", "keys": "typeText", "paste": "commandV"}
-# the test typer and the live insert check's ghost and snippet steps: plain key events, counted as his letters
+# the test typer and the live insert check's ghost and snippet steps: plain key events, counted as the user's letters
 EXEMPT = {("DevHooks.swift", "keys"), ("InsertCheck.swift", "keys")}
 
 

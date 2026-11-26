@@ -1,13 +1,13 @@
 """Rework a selection (1 November 2026; Apple Writing Tools, Raycast AI, Grammarly's rewrite; item 7 in
-docs/typing-models-research.md "Third round"). Andrii selects text, presses ⌥Tab and picks what to do: shorter, fix,
-clearer, warmer, formal, a list, the other language, or types his own instruction. Claude (his signed-in `claude` CLI,
-its own kept-running worker) writes the new text in his voice; the app shows it and Tab puts it in place.
+docs/typing-models-research.md "Third round"). The user selects text, presses ⌥Tab and picks what to do: shorter, fix,
+clearer, warmer, formal, a list, the other language, or types their own instruction. Claude (the user's signed-in `claude` CLI,
+its own kept-running worker) writes the new text in the user's voice; the app shows it and Tab puts it in place.
 
 A result is kept only when it is not empty, differs from the text, has no Russian letters where Ukrainian is wanted,
-keeps every link and email (and every number, except for "shorter" and his own instruction), and "shorter" is shorter.
-Offline, or when Claude gives nothing: the local model (base, his-writing layer off) through the `local` callback.
+keeps every link and email (and every number, except for "shorter" and the user's own instruction), and "shorter" is shorter.
+Offline, or when Claude gives nothing: the local model (base, the user's-writing layer off) through the `local` callback.
 
-What leaves the Mac: the selected text and the app name, only when he picks a command.
+What leaves the Mac: the selected text and the app name, only when the user picks a command.
 
     .venv/bin/python engine/rework.py shorter "the text"
 """
@@ -41,7 +41,7 @@ COMMANDS = {
     "formal": "Make it more formal and polite for a business message. Same language; in Ukrainian address the reader as «ви».",
     "list": "Turn it into a short list: one point per line, each line starting with \"- \". Same language.",
     "translate": "Translate it into {lang}, keeping his tone.",
-    # the pause rewrite (engine/pause_rewrite.py, setting pauseRewrite): offered after a pause, never picked by him
+    # the pause rewrite (engine/pause_rewrite.py, setting pauseRewrite): offered after a pause, never picked by the user
     "polish": "Rewrite it the way he would send it after one more read: fix typos, wrong endings and clumsy wording. Keep his voice, language, length, line breaks and every name, number, time and link. Change as few words as you can. If it is already fine, reply with ✓ only.",
 }
 NAMES = {"shorter": "Shorter", "fix": "Fix", "clearer": "Clearer", "warmer": "Warmer", "formal": "Formal",
@@ -110,7 +110,7 @@ def warm(model="sonnet"):
 
 
 def rework(text, cmd, custom="", app="", model="sonnet", online=True, local=None, cancelled=lambda: False, notes="", hint=""):
-    """-> {"text", "cmd", "by", "ms"} or {} (nothing kept). `notes`: his writing instructions (Settings > Typing), added
+    """-> {"text", "cmd", "by", "ms"} or {} (nothing kept). `notes`: the user's writing instructions (Settings > Typing), added
     to the Claude and the local prompt only when there are some."""
     notes = notes_text(notes)
     text = (text or "").strip("\n")

@@ -1,17 +1,17 @@
 """Edit mode marks (roadmap item 8, "side cursors": proofread fixes as places; 17 November 2026,
-docs/rounds/2026-11-17-editing.md). On a selected paragraph, or a field he is editing rather than writing on, the app
+docs/rounds/2026-11-17-editing.md). On a selected paragraph, or a field the user is editing rather than writing on, the app
 asks `/marks` for the places where the text could improve. Each mark is one range with one concrete new text and a
 one-line "why"; Tab (or a click) puts that text in, Esc puts the mark away (app/EditMarks.swift, app/EditRules.swift).
 
-Local only, no model, no network: rules and his own word counts, a few milliseconds per paragraph.
-- typo: engine/reader.py `slips` (a word he never writes, one edit from one he writes often, the other layout, two of
-  his words run together), through the proofread's own filter, so his words stay.
+Local only, no model, no network: rules and the user's own word counts, a few milliseconds per paragraph.
+- typo: engine/reader.py `slips` (a word the user never writes, one edit from one the user writes often, the other layout, two of
+  their words run together), through the proofread's own filter, so their words stay.
 - unclear: a doubled word ("the the"); a sentence over 30 words split at a conjunction after a comma (", але" ->
   ". Але"); a space before a comma, full stop or semicolon. Rules without a concrete new text (a word repeated a few
   words apart, a vague "це"/"it" at a sentence start) were left out: a mark must be one key to apply.
-- tone for this person: only from his earlier lines to them on screen (the app marks the other side "Вони: ", see
-  engine/prompt.py `turns`), and only with 2+ of them as evidence: ти/ви the other way from how he writes to them,
-  a greeting more or less formal than his usual one to them, "!" or emoji far above his usual lines to them.
+- tone for this person: only from the user's earlier lines to them on screen (the app marks the other side "Вони: ", see
+  engine/prompt.py `turns`), and only with 2+ of them as evidence: ти/ви the other way from how the user writes to them,
+  a greeting more or less formal than the user's usual one to them, "!" or emoji far above the user's usual lines to them.
 - rank: typos first, then tone, then unclear; no overlapping ranges; at most 5.
 
     .venv/bin/python -B engine/marks.py "text" ["Я: earlier line\\nВони: their line"]
@@ -24,7 +24,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 MAX_CHARS = 3000
 LONG_WORDS = 30          # a sentence longer than this gets a split mark
 MIN_PART = 6             # ...each part keeps at least this many words
-EVIDENCE = 2             # earlier lines of his to them needed before a tone mark
+EVIDENCE = 2             # earlier lines of the user's to them needed before a tone mark
 ORDER = {"typo": 0, "tone": 1, "unclear": 2}
 
 WORD = re.compile(r"[^\W\d_]+(?:['’ʼ-][^\W\d_]+)*", re.UNICODE)
@@ -67,7 +67,7 @@ def typos(text, W, kept=None, sysw=None):
 def doubled(text):
     out = []
     for m in re.finditer(r"\b([^\W\d_]+)(\s+)\1\b", text, re.I | re.U):
-        if m.group(1).lower() in ("ha", "ха", "так", "no", "ні", "дуже", "very", "ну"): continue   # "дуже дуже", "так так": his on purpose
+        if m.group(1).lower() in ("ha", "ха", "так", "no", "ні", "дуже", "very", "ну"): continue   # "дуже дуже", "так так": the user's on purpose
         out.append(_mark(m.start(), m.group(0), m.group(1), "unclear", "the same word twice in a row", 0.7))
     return out
 
@@ -115,7 +115,7 @@ def space_before(text):
 # ---------- tone for this person ----------
 
 def his_lines(context):
-    """His earlier lines to them: lines not marked as theirs (or an AI's), only when the screen text has marks."""
+    """The user's earlier lines to them: lines not marked as theirs (or an AI's), only when the screen text has marks."""
     import prompt
     ts = prompt.turns(context or "")
     if not any(w is not None for w, _ in ts): return []

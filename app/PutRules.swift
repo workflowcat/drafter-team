@@ -1,8 +1,8 @@
 // One put-in rule for every place Drafter remembers an app and later pastes into it or raises it (17 November 2026,
-// after the Beeper bug; Andrii: "for all of it, not just Beeper"). Pure; the hook is app/PutBack.swift.
+// after the Beeper bug; the user: "for all of it, not just Beeper"). Pure; the hook is app/PutBack.swift.
 //  1. The target is the app with the keys (Capture.keyApp: the accessibility focus), never the workspace's guess.
-//  2. The target is raised only when Drafter itself is in front. Another app in front is where he moved to: raising
-//     the target over it hid his window (Beeper) and the paste went into the wrong app. That goes to the clipboard.
+//  2. The target is raised only when Drafter itself is in front. Another app in front is where the user moved to: raising
+//     the target over it hid the user's window (Beeper) and the paste went into the wrong app. That goes to the clipboard.
 //  3. After a paste the same app must still hold the keys, keep its windows and a field; else "unsure", the clipboard
 //     and the pill.
 import Foundation
@@ -20,7 +20,7 @@ enum PutRules {
     /// to the front during the deck with no click on it). user: a click, a key or a modifier went just before the
     /// switch; system: nothing did (macOS or an app handed the focus over); unknown: no switch was seen.
     enum Moved: Equatable { case user, system, unknown }
-    /// A switch this soon after his input is his.
+    /// A switch this soon after the user's input is the user's.
     static let userWindow = 0.8
     static func moved(switchAt: Double?, lastInputAt: Double?) -> Moved {
         guard let s = switchAt else { return .unknown }
@@ -28,9 +28,9 @@ enum PutRules {
         return .system
     }
 
-    /// Where a put-in goes (17 November 2026: 5 shots "lost": each time he took the shot in Dia or Obsidian, clicked
-    /// into the Claude app, then pressed ↵; the rule sent it to the clipboard). He moved there himself: there, the app
-    /// he is in at ↵. Anything else: the app the shot was taken in (raised back over Drafter or after a system handoff).
+    /// Where a put-in goes (17 November 2026: 5 shots "lost": each time the user took the shot in Dia or Obsidian, clicked
+    /// into the Claude app, then pressed ↵; the rule sent it to the clipboard). The user moved there themselves: there, the app
+    /// the user is in at ↵. Anything else: the app the shot was taken in (raised back over Drafter or after a system handoff).
     static func goesHere(front: Front, moved: Moved) -> Bool { front == .other && moved == .user }
 
     /// go: paste now. bringBack: raise the target once, then check again. clipboard: put it there, say so.
@@ -39,7 +39,7 @@ enum PutRules {
         switch front {
         case .target: return targetAlive ? .go : .clipboard
         case .drafter: return targetAlive ? .bringBack : .clipboard
-        case .other: return targetAlive && moved == .system ? .bringBack : .clipboard   // he moved there: leave him
+        case .other: return targetAlive && moved == .system ? .bringBack : .clipboard   // the user moved there: leave them
         case .none: return .clipboard
         }
     }
@@ -61,7 +61,7 @@ enum PutRules {
         return nil
     }
 
-    /// The pill when the front app is not the one he started in.
+    /// The pill when the front app is not the one the user started in.
     static func movedPill(front: String?, target: String?, what: String = "On the clipboard") -> String {
         guard let f = front, !f.isEmpty, let o = target, !o.isEmpty, f != o else { return "\(what) · ⌘V to paste" }
         return "\(f) is in front, not \(o) · \(what.prefix(1).lowercased() + what.dropFirst()), ⌘V to paste"
@@ -69,7 +69,7 @@ enum PutRules {
     /// The pill when the check after a paste is unsure.
     static let unsurePill = "Not sure it went in · on the clipboard too, ⌘V to paste"
 
-    // MARK: accessibility asks while a capture is up (17 November 2026, Andrii: "screenshots keep getting lost … I
+    // MARK: accessibility asks while a capture is up (17 November 2026, the user: "screenshots keep getting lost … I
     // think it's accessibility"). Setting AXEnhancedUserInterface on a Chromium or Electron app can reorder its windows
     // and move the focus; it is never asked while the capture overlay, the deck, a scrolling capture or the markup
     // panel is up. Electron gets AXManualAccessibility first and AXEnhancedUserInterface only if that gave no focus.

@@ -1,4 +1,4 @@
-"""Ghost length round (2026-11-13, Andrii: "too slow and not quite accurate... I would autocomplete more if we had
+"""Ghost length round (2026-11-13, the user: "too slow and not quite accurate... I would autocomplete more if we had
 better autocomplete for longer sentences"). Scores show/hide/length rules offline on a typebench recording made with
 enough tokens (--tokens 24), through the live gate (data/gate.json) and the live word finisher, with the same
 simulated typist as bench/typescore.py, and splits everything by ghost length.
@@ -7,11 +7,11 @@ simulated typist as bench/typescore.py, and splits everything by ghost length.
 
 Per app (claude = AI apps, beeper = chats):
   saved     letters Tab put in minus one key per Tab, share of all letters (an ideal typist who always takes a right word)
-  saved5    the same, counting only ghosts of 5+ letters when shown (live: he takes a ghost under 5 letters 3% of the
-            time, 5-9 letters 30%; app.log 6-13 November), so the part of `saved` he really uses
-  shown / right   suggestions shown; share whose first word was his next word
-  wrong     shown suggestions whose first word was not his
-  by length shown and right per bucket of letters shown (<5, 5-9, 10-14, 15-19, 20+), whole = the whole ghost was his
+  saved5    the same, counting only ghosts of 5+ letters when shown (live: the user takes a ghost under 5 letters 3% of the
+            time, 5-9 letters 30%; app.log 6-13 November), so the part of `saved` the user really uses
+  shown / right   suggestions shown; share whose first word was their next word
+  wrong     shown suggestions whose first word was not the user's
+  by length shown and right per bucket of letters shown (<5, 5-9, 10-14, 15-19, 20+), whole = the whole ghost was the user's
 """
 import argparse, json, re, statistics, sys
 from collections import defaultdict

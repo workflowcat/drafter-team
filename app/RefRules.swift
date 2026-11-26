@@ -1,4 +1,4 @@
-// What "this entity" becomes in the app he is in (proposal section 4), pure. Step 1 rows: Obsidian, mail, AI apps and
+// What "this entity" becomes in the app the user is in (proposal section 4), pure. Step 1 rows: Obsidian, mail, AI apps and
 // plain fields; the others (Notion, Slack, Telegram @username, Docs chips) come with step 3. Never key events into a
 // chat app's picker: Drafter only puts text.
 import Foundation
@@ -33,7 +33,7 @@ enum RefRules {
     /// One way to put the entity in, for the card: (what the chip shows, what goes in).
     struct Form: Equatable { let label: String; let text: String }
 
-    /// The card's forms, the reference for this destination first. `typed`: the name as he wrote it (the card: the
+    /// The card's forms, the reference for this destination first. `typed`: the name as the user wrote it (the card: the
     /// canonical name). Contact-only cards never get a reference, only their addresses.
     static func forms(_ e: Entity, dest: String, typed: String? = nil) -> [Form] {
         let shown = typed ?? e.name

@@ -1,10 +1,10 @@
 """Score show/hide rules on recordings from bench/typebench.py, offline (no model).
 
-A simulated Andrii types each fresh line letter by letter. A grey suggestion stays while he types the same letters
-(as in the app) and is asked again when he types something else. When the next grey word is exactly what he
-wrote, he presses Tab (one key) and it goes in. Scores per app:
+A simulated user types each fresh line letter by letter. A grey suggestion stays while the user types the same letters
+(as in the app) and is asked again when the user types something else. When the next grey word is exactly what the user
+wrote, the user presses Tab (one key) and it goes in. Scores per app:
   saved   - letters Tab put in, minus the Tab presses, as a share of all letters
-  shown   - suggestions that appeared;  right - share of them he took at least one word of (his trust in it)
+  shown   - suggestions that appeared;  right - share of them the user took at least one word of (the user's trust in it)
   ms      - key to grey text for what was shown (engine time only: prefill + tokens up to the last shown word)
 
     .venv/bin/python bench/typescore.py data/bench/<label>.jsonl [policy ...]
@@ -106,7 +106,7 @@ def current(row, before, src, bars=(0.3, 0.45, 0.6), max_tokens=10):
 
 
 def simulate(items, rows, policy, src=None, tab_cost=1):
-    """bench/measure.py replay(), in this bench's shape; `right%` here is the share of shown ghosts he took at least
+    """bench/measure.py replay(), in this bench's shape; `right%` here is the share of shown ghosts the user took at least
     one word of (measure's `taken`), as before, so the retrain's comparison keeps its meaning."""
     import measure
     res, _ = measure.replay(items, rows, policy, tab_cost=tab_cost, only=src)

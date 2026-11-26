@@ -10,7 +10,7 @@ import Foundation
 final class QuickSearch {
     /// Main thread only, once handed over. Documents carry the item's own id (QuickItem.id), so an index built for
     /// older rows still answers for newer ones (speed round, 15 November 2026: the index was dropped on every new
-    /// row, and for its 0.3 s rebuild the order fell back to the plain match and jumped under his keys).
+    /// row, and for its 0.3 s rebuild the order fell back to the plain match and jumped under the user's keys).
     private var index: SearchIndex?
     /// Main thread: item id -> its row in the items last handed to `rebuild`.
     private var rowOf: [String: Int] = [:]

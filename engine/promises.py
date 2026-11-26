@@ -1,4 +1,4 @@
-"""Promises (2026-11-17): promises in lines he sent ("I'll send the deck tomorrow", "завтра скину договір"),
+"""Promises (2026-11-17): promises in lines the user sent ("I'll send the deck tomorrow", "завтра скину договір"),
 kept locally in data/promises.json, offered back in that chat's empty box when they come due.
 
 - detect(text, now): pure rule, no model. A first-person promise verb (English: I'll / I will / I'm going to / a
@@ -24,7 +24,7 @@ TEST = "⟦drafter-test⟧"
 DEDUPE = 2 * 86400
 MAX_OPEN = 200
 SOON = 12 * 3600         # /promises/due: due within this many seconds (or overdue) counts as due
-SETTLE = 30 * 60         # ... and only once it is this old (the box empties right after he sends the promise)
+SETTLE = 30 * 60         # ... and only once it is this old (the box empties right after the user sends the promise)
 CLIP_ROWS = 500
 
 SIGNED = re.compile(r"^\s*(claude|клод)\s*:", re.I)
@@ -140,7 +140,7 @@ def _clauses(line):
 
 
 def detect(text, now=None):
-    """-> [{what, due, phrase, lang}] for promises in a line he sent."""
+    """-> [{what, due, phrase, lang}] for promises in a line the user sent."""
     now = time.time() if now is None else now
     if not text or TEST in text or SIGNED.match(text): return []
     out = []
@@ -172,7 +172,7 @@ def _ukrainian(s):
     if not m: return None
     head = s[:m.start(1)]
     if UK_NEG.search(head[-24:]) or UK_QUESTION_START.search(s): return None
-    # reported speech: "він каже, що скину" is rare; a third person subject right before the verb is not his promise
+    # reported speech: "він каже, що скину" is rare; a third person subject right before the verb is not the user's promise
     if re.search(r"(?<![^\W\d_])(він|вона|вони|воно)\s*$", head.lower()): return None
     verb = re.sub(r"\s+", " ", m.group(1).lower())
     what = _object(m.group(2), UK_STOP, UK_DROP)

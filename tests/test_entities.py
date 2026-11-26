@@ -55,7 +55,7 @@ class Cast(unittest.TestCase):
             {'id': 'google:otherContacts/c3', 'name': 'noreply@example.test', 'aliases': [], 'handles': {'email': ['noreply@example.test']}, 'cards_only': True},
             {'id': 'google:people/c4', 'name': 'Іван Семпл', 'aliases': [], 'handles': {}, 'cards_only': False},
         ]
-        # his own yes: the contact card "Hanna T." is the vault's Ганна Ткач
+        # the user's own yes: the contact card "Hanna T." is the vault's Ганна Ткач
         self.same({'same': [[HANNA, 'contacts:google:people/c1']]})
 
     def same(self, d):
@@ -78,7 +78,7 @@ class Cast(unittest.TestCase):
         for secret in ('PRIVATE', 'Hidden Matter', 'Quiet Person', 'Secret Person', 'OBSIDIAN-JUNK', 'SYSTEM-OLD', 'Notes View'):
             self.assertNotIn(secret, written, secret)
             self.assertNotIn(secret, packs, secret)
-        self.assertNotIn('Owner Sample', [r['name'] for r in store['records']])   # his own name is never a record
+        self.assertNotIn('Owner Sample', [r['name'] for r in store['records']])   # the user's own name is never a record
         self.assertFalse(any(r['private'] for r in store['records']))
 
     def test_phone_numbers_never_in_a_pack(self):
@@ -88,7 +88,7 @@ class Cast(unittest.TestCase):
                 text = entities.render(r, level, today=TODAY)
                 self.assertNotRegex(text, r'\d{3}[ -]?\d{3}[ -]?\d{2,}', r['name'])
                 self.assertNotIn('0100', text)
-        self.assertIn('+380 44 555 0100', self.rec(store, 'Ганна Ткач')['handles']['phone'])   # his own card keeps it
+        self.assertIn('+380 44 555 0100', self.rec(store, 'Ганна Ткач')['handles']['phone'])   # the user's own card keeps it
 
     def test_allowed_private_records_only_one_by_one_and_marked(self):
         # an old file may still name a source that is gone: ignored
@@ -112,7 +112,7 @@ class Cast(unittest.TestCase):
     def test_one_record_per_thing(self):
         store = self.build()
         h = self.rec(store, 'Ганна Ткач')
-        self.assertEqual({s['system'] for s in h['sources']}, {'vault', 'contacts'})   # his own "same"
+        self.assertEqual({s['system'] for s in h['sources']}, {'vault', 'contacts'})   # the user's own "same"
         self.assertEqual(h['id'], HANNA)
         self.assertEqual(h['targets']['obsidian'], 'Entities/People/Ганна Ткач')
         self.assertEqual(h['targets']['mail'], 'Hanna@Example.test')
@@ -130,7 +130,7 @@ class Cast(unittest.TestCase):
         self.same({'same': [[ivan, 'contacts:google:people/c4'], [ivan, other]], 'not': [[ivan, other]]})
         store = self.build()
         self.assertEqual(len([r for r in store['records'] if r['name'] == 'Іван Семпл']), 1)
-        self.assertEqual(len([r for r in store['records'] if r['name'] == 'Іван Інший']), 1)   # his "not the same" wins
+        self.assertEqual(len([r for r in store['records'] if r['name'] == 'Іван Інший']), 1)   # the user's "not the same" wins
 
     def test_one_key_kind_fix_wins_on_rebuild(self):
         store = self.build()
@@ -174,7 +174,7 @@ class Cast(unittest.TestCase):
         self.assertTrue(store['surface_flags']['base']['ordinary'] and store['surface_flags']['base']['needs_context'])
         self.assertTrue(store['surface_flags']['іван']['shared'])
         self.assertNotIn('lantern labs', store['surface_flags'])   # a two-word name needs nothing
-        self.assertNotIn('owner sample', s)                 # his own name
+        self.assertNotIn('owner sample', s)                 # the user's own name
         self.assertEqual(len(who('іван')), 2)               # a first name shared by two: ambiguous
 
     # packs --------------------------------------------------------------------------------------------------------

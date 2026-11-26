@@ -1,4 +1,4 @@
-// The people his recordings name, kept on this Mac (17 November 2026, Andrii: match the speakers to people, give each
+// The people the user's recordings name, kept on this Mac (17 November 2026, the user: match the speakers to people, give each
 // person the nicknames and name forms used in the transcript). data/speakers.json: {"people": {"<name>": ["<form>", …]}}.
 // The forms go to the reader as names to expect when that person is in the meeting (TalkRecord.transcribe). Pure
 // Foundation: tests/people_book.swift.
@@ -31,7 +31,7 @@ struct PeopleBook {
     mutating func add(_ name: String) { let n = name.trimmingCharacters(in: .whitespaces); if !n.isEmpty, people[n] == nil { people[n] = [] } }
     mutating func set(_ name: String, forms text: String) { add(name); people[name] = PeopleBook.forms(text, name: name) }
 
-    /// Every name and form to expect for these people (the event's attendees, the speakers he named), each once.
+    /// Every name and form to expect for these people (the event's attendees, the speakers the user named), each once.
     func expected(_ names: [String]) -> [String] {
         var out: [String] = []
         for n in names {

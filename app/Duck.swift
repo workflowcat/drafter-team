@@ -44,7 +44,7 @@ enum Duck {
         if wait { queue.sync(execute: work) } else { queue.async(execute: work) }
     }
 
-    /// At launch: a volume a crash or a kill left ducked goes back once (if he did not change it since).
+    /// At launch: a volume a crash or a kill left ducked goes back once (if the user did not change it since).
     static func launch() {
         queue.async {
             guard let saved = UserDefaults.standard.dictionary(forKey: key) else { return }

@@ -1,28 +1,28 @@
 // Autocorrect and the wrong-layout fix (2026-10-31), run when a word ends with Space.
-// Typos: macOS's own correction (English, Ukrainian), only for a word that is neither in the spellchecker nor in his
-// own words, all lowercase (names and capitals are left alone), one or two letters away. Surzhyk he writes on purpose
-// ("шо", "тіки", "щас") is in his words, so it stays. Wrong layout: KeyLayout.fix, and the keyboard switches with it.
-// Backspace right after a fix puts his word back and counts it (data/autocorrect-keep.json): kept after the second take-back.
+// Typos: macOS's own correction (English, Ukrainian), only for a word that is neither in the spellchecker nor in the user's
+// own words, all lowercase (names and capitals are left alone), one or two letters away. Surzhyk the user writes on purpose
+// ("шо", "тіки", "щас") is in the user's words, so it stays. Wrong layout: KeyLayout.fix, and the keyboard switches with it.
+// Backspace right after a fix puts the user's word back and counts it (data/autocorrect-keep.json): kept after the second take-back.
 // Offer, not replace (13 November 2026): by default the fix shows as "→ word" after the space and Tab puts it in
 // (Fixer.offer); setting `autocorrectMode` "replace" puts it in at once, as before. A week of the live log (6-13
 // November): 408 automatic fixes, 250 taken back (typos 234 of 388, layout 16 of 20), 248 of them within a second.
-// The keep list they built: 346 words, 261 a letter from a word he writes (median 90 uses) and 257 of those never
-// written by him: the Backspace was his own correction of the typo, landing after Drafter had already fixed it.
-// So a Backspace within `fastBackspace` of an automatic fix is his and goes to the app (the fix stays, the space goes),
-// and a take-back counts towards the keep list only when the word he got back still stands 2 s later.
+// The keep list they built: 346 words, 261 a letter from a word the user writes (median 90 uses) and 257 of those never
+// written by the user: the Backspace was their own correction of the typo, landing after Drafter had already fixed it.
+// So a Backspace within `fastBackspace` of an automatic fix is the user's and goes to the app (the fix stays, the space goes),
+// and a take-back counts towards the keep list only when the word the user got back still stands 2 s later.
 // Later, until the sentence ends: the dotted underline under the fixed word, its chip, a click or Tab (FixMarks.swift).
 // macOS's own autocorrect is off on this Mac (NSAutomaticSpellingCorrectionEnabled 0), so nothing fixes twice.
 import AppKit
 
 enum Autocorrect {
     struct Fix { let old: String; let new: String; let kind: String; let revision: Int; let el: AXUIElement; let at: Date; let wasUk: Bool
-        var deliberate = false   // put in by his Tab (an offer or the mid-word ghost), not by itself
+        var deliberate = false   // put in by the user's Tab (an offer or the mid-word ghost), not by itself
     }
-    /// Faster than he could have seen the fix: the Backspace was meant for his own typo (log: 248 of 250 take-backs
+    /// Faster than the user could have seen the fix: the Backspace was meant for their own typo (log: 248 of 250 take-backs
     /// came within the same or the next second; the log has no finer times, so this is a judgement, logged per take-back).
     static let fastBackspace = 0.5
     static var last: Fix?
-    /// Words he put back after a fix this run (take-back, undo chip): never a typo for the typo hold (TypoHold), even
+    /// Words the user put back after a fix this run (take-back, undo chip): never a typo for the typo hold (TypoHold), even
     /// before the keep list counts them. Memory only.
     static var spared = Set<String>()
     private static var mine = Set<String>(), names = Set<String>(), keep = Set<String>()
@@ -102,7 +102,7 @@ enum Autocorrect {
         guard core.count >= 3, core.count <= 24, core == core.lowercased(),
               core.allSatisfy({ $0.isLetter || "'’".contains($0) }), core.unicodeScalars.allSatisfy({ !russian.contains($0) }) else { return nil }
         let uk = core.unicodeScalars.contains { KeyLayout.cyr.contains($0) }
-        // Ukrainian typos only when switched on: on his history the Ukrainian dictionary "fixed" real forms
+        // Ukrainian typos only when switched on: on the user's history the Ukrainian dictionary "fixed" real forms
         // (доробляв -> доробляє, колаба -> колба) as often as typos; English was right 10 of 10 (2026-10-31)
         if uk && !typosUk { return nil }
         let lang = uk ? "uk" : "en"
@@ -115,7 +115,7 @@ enum Autocorrect {
               c == c.lowercased(), c.allSatisfy({ $0.isLetter || "'’".contains($0) }),
               c.unicodeScalars.allSatisfy({ !russian.contains($0) }),
               distance(core, c) <= (uk ? 1 : 2),
-              // typos almost never hit the first letter, and a 3-letter word is often his acronym (mvp, lem):
+              // typos almost never hit the first letter, and a 3-letter word is often the user's acronym (mvp, lem):
               // there only a swap of two letters counts (teh, nad); 2026-10-31 history check
               c.first == core.first, core.count > 3 || (c.count == 3 && Set(c) == Set(core)) else { return nil }
         return (token + " ", String(lead) + c + tail + " ", "typo")
@@ -140,15 +140,15 @@ enum Autocorrect {
         replace(f, at: s)
     }
 
-    /// Backspace as the very next key after a fix: his word comes back (without the space); it counts one take-back
-    /// once it still stands 2 s later. A Backspace faster than he could have seen an automatic fix is his own edit:
+    /// Backspace as the very next key after a fix: the user's word comes back (without the space); it counts one take-back
+    /// once it still stands 2 s later. A Backspace faster than the user could have seen an automatic fix is their own edit:
     /// false, so it goes to the app.
     static func takeBack() -> Bool {
         guard let f = last, Keys.shared.editRevision == f.revision + 1, Date().timeIntervalSince(f.at) < 8 else { last = nil; return false }
         last = nil
         let ms = Int(Date().timeIntervalSince(f.at) * 1000)
         if !f.deliberate, Date().timeIntervalSince(f.at) < fastBackspace {
-            log("autocorrect kept, backspace \(ms)ms is his own (\(f.kind))")
+            log("autocorrect kept, backspace \(ms)ms is the user's own (\(f.kind))")
             return false
         }
         DispatchQueue.main.async {
@@ -167,8 +167,8 @@ enum Autocorrect {
         return true
     }
 
-    /// A take-back teaches the keep list only when he leaves the word as it came back: 2 s later it is still a whole
-    /// word in the last few lines before the caret. If he went on deleting into it, it was a typo he was fixing.
+    /// A take-back teaches the keep list only when the user leaves the word as it came back: 2 s later it is still a whole
+    /// word in the last few lines before the caret. If the user went on deleting into it, it was a typo the user was fixing.
     static func keepIfStands(_ word: String, el: AXUIElement, after: Double = 2) {
         DispatchQueue.main.asyncAfter(deadline: .now() + after) {
             guard let s = Focus.spot(skip: Drafter.shared.settings.skip).0, CFEqual(s.el, el) else { log("autocorrect take-back not counted: field changed"); return }
@@ -184,7 +184,7 @@ enum Autocorrect {
         return tail.split(whereSeparator: { $0.isWhitespace }).map { $0.trimmingCharacters(in: .punctuationCharacters) }.contains(w)
     }
 
-    /// His word, put back: kept after two take-backs; the legacy text file counts as one.
+    /// The user's word, put back: kept after two take-backs; the legacy text file counts as one.
     static func keepWord(_ old: String) {
         let word = old.trimmingCharacters(in: .whitespaces).trimmingCharacters(in: .punctuationCharacters).lowercased()
         guard !word.isEmpty else { return }
@@ -236,7 +236,7 @@ enum Autocorrect {
 
 extension Autocorrect {
     /// `Drafter --autocorrect-test`: fixed cases, then every word of data/typed.jsonl as if Space ended it; prints what
-    /// would change, so false fixes show before Andrii meets them. Nothing is typed anywhere.
+    /// would change, so false fixes show before the user meets them. Nothing is typed anywhere.
     static func selfTest() {
         files.invalidate()
         let deadline = Date().addingTimeInterval(5)
@@ -254,7 +254,7 @@ extension Autocorrect {
             if !ok { bad += 1 }
             print(ok ? "ok  " : "FAIL", input, "->", got ?? "-", ok ? "" : "(want \(want ?? "-"))")
         }
-        // his history: what would have changed
+        // the user's history: what would have changed
         let t = (try? String(contentsOf: Home.data.appendingPathComponent("typed.jsonl"), encoding: .utf8)) ?? ""
         var words = 0, fixes: [String: Int] = [:]
         for row in t.split(separator: "\n") {
@@ -269,7 +269,7 @@ extension Autocorrect {
             }
         }
         print("history: \(words) words, \(fixes.values.reduce(0, +)) fixes")
-        // recall: his own words typed in the other layout should come back
+        // recall: the user's own words typed in the other layout should come back
         var back = 0, tried = 0, misses: [String] = []
         for w in mine.shuffled().prefix(800) where w.count >= 3 && w.allSatisfy({ $0.isLetter }) {
             let uk = w.unicodeScalars.contains { KeyLayout.cyr.contains($0) }
@@ -278,7 +278,7 @@ extension Autocorrect {
             tried += 1
             if let f = check(typed + " ", layout: true, typos: false), f.new == w + " " { back += 1 } else if misses.count < 12 { misses.append("\(typed)→\(w)") }
         }
-        print("layout recall: \(back) of \(tried) of his words typed in the other layout came back; missed e.g. \(misses.joined(separator: ", "))")
+        print("layout recall: \(back) of \(tried) of the user's words typed in the other layout came back; missed e.g. \(misses.joined(separator: ", "))")
         for (k, n) in fixes.sorted(by: { $0.value > $1.value }).prefix(80) { print("  \(n)× \(k)") }
         print(bad == 0 ? "all cases ok" : "\(bad) cases failed")
     }

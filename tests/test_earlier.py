@@ -129,11 +129,11 @@ class Keep(unittest.TestCase):
         self.assertFalse(g.keeps("", "a"))
 
     def test_keeps_when_he_types_the_answer_through(self):
-        """Short-ghost round (2026-11-18): past 4 letters it still runs on when what he typed is what it wrote."""
+        """Short-ghost round (2026-11-18): past 4 letters it still runs on when what the user typed is what it wrote."""
         self.assertTrue(g.keeps("see you ", "see you tomorr", written="tomorrow at noon"))
         self.assertTrue(g.keeps("see you", "see you tomorrow ", written=" tomorrow at noon"))
         self.assertTrue(g.keeps("see you ", "see you tomorrow at", written=" tomorrow  at noon"))   # spaces as clean()
-        self.assertFalse(g.keeps("see you ", "see you tomorx", written="tomorrow at noon"))         # he left it
+        self.assertFalse(g.keeps("see you ", "see you tomorx", written="tomorrow at noon"))         # the user left it
         self.assertFalse(g.keeps("see you ", "see you tomorrow at noon too", written="tomorrow at noon"))
         self.assertFalse(g.keeps("see you ", "see you tomorr", written=""))                         # nothing written yet
         self.assertFalse(g.keeps("see you ", "see you tom\nx", written="tom\nx"))                   # a new line

@@ -1,4 +1,4 @@
-// What is in a text (detect round, 15 November 2026; Andrii: "we should actually parse the text for links and dates
+// What is in a text (detect round, 15 November 2026; the user: "we should actually parse the text for links and dates
 // and such too"). Links, e-mail addresses, phone numbers, dates and ranges, addresses, money, paths, shell commands and
 // code, IBANs, tracking codes, issue references, colours, IP addresses, versions, and one-time codes (sensitive: never
 // indexed, never a chip, never logged). Apple's NSDataDetector first (links, dates, phones, addresses), then small

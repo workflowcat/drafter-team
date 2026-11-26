@@ -1,5 +1,5 @@
 """Model catalog (2026-11-15): the catalog's shape, the recommendation rule on made-up Macs and tables, weights found
-in a made-up cache, the download he starts (a stand-in process), and the switch order with a stand-in model (no
+in a made-up cache, the download the user starts (a stand-in process), and the switch order with a stand-in model (no
 real model loads here).
 
     .venv/bin/python -B tests/test_catalog.py
@@ -55,7 +55,7 @@ class Shape(unittest.TestCase):
 class Recommend(unittest.TestCase):
     def test_this_mac_gets_live(self):
         mid, why = C.recommend(C.load(), 24.0, free_gb=10.0, current_gb=2.7)
-        self.assertEqual(mid, C.LIVE)                              # the 4B with his layer is better but p95 244 > 150
+        self.assertEqual(mid, C.LIVE)                              # the 4B with the user's layer is better but p95 244 > 150
         self.assertIn("own layer", why); self.assertNotIn("only one", why)
         self.assertEqual(C.best_quality(C.load()), "qwen3-4b-mine")
 

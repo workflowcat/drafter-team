@@ -8,7 +8,7 @@ import AppKit
 extension WindowModel {
     // MARK: what the chosen text holds
 
-    /// The things in the text the reader shows (his change, or the original while he looks at it). Sensitive things
+    /// The things in the text the reader shows (the user's change, or the original while the user looks at it). Sensitive things
     /// never show. A recording has none here (its transcript is long; search marks it instead).
     func found(_ it: TapeItem) -> [Found] {
         guard it.doc == nil else { return [] }
@@ -92,7 +92,7 @@ extension WindowModel {
     // MARK: "Copy as…" and "Insert as…"
 
     /// The entries for the chosen item: the thing in focus, or the whole item when it is one thing, plus a text
-    /// clip's clean-ups. Insert reads the destination from the app he came from.
+    /// clip's clean-ups. Insert reads the destination from the app the user came from.
     func formEntries(_ it: TapeItem, insert: Bool) -> [FormEntry] {
         guard it.doc == nil, it.shot == nil, (it.entry?.clip ?? .text) == .text else { return [] }
         var dest = FormatDest.other

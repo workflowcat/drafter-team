@@ -5,7 +5,7 @@
 import AppKit
 import SwiftUI
 
-/// The preview's window says it is key, so controls draw as in the window he works in (the accent on prominent buttons).
+/// The preview's window says it is key, so controls draw as in the window the user works in (the accent on prominent buttons).
 final class PreviewKeyWindow: NSWindow { override var isKeyWindow: Bool { true } }
 
 extension UIShots {
@@ -45,7 +45,7 @@ extension UIShots {
         func reset() { model.editing = nil; model.picked = []; model.open = nil; model.stream.notice = nil; model.status = ""; model.nav.region = .list }
         // the column: newest first under day headings, a draft chosen
         pick("t4"); try shot("stream", 0.5)
-        // semantic zoom (zoom round, 24 November 2026): weeks, days, sessions, compact and detailed rows; the level he
+        // semantic zoom (zoom round, 24 November 2026): weeks, days, sessions, compact and detailed rows; the level the user
         // keeps is put back after
         let kept = model.stream.zoom
         for l in [StreamZoomRules.Level.weeks, .days, .sessions, .compact, .detailed] {

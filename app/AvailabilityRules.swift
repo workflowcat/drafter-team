@@ -1,14 +1,14 @@
-// Availability as a reply (17 November 2026; Andrii: "suggest my availability to somebody and do like a quick check").
-// Their last message asks for a time: 2-3 free slots in his words and their language, in their time zone when the chat
-// names one. They proposed a slot: "works", or the nearest free one instead. The slots are checked again when he takes
+// Availability as a reply (17 November 2026; the user: "suggest my availability to somebody and do like a quick check").
+// Their last message asks for a time: 2-3 free slots in the user's words and their language, in their time zone when the chat
+// names one. They proposed a slot: "works", or the nearest free one instead. The slots are checked again when the user takes
 // the line (Tab), since the calendar can change in between. Text only, into the field: never an invite.
-// Busy times come from his calendars through Actions.busy (EventKit, the calendars Settings leaves on: `calendarsOff`).
+// Busy times come from the user's calendars through Actions.busy (EventKit, the calendars Settings leaves on: `calendarsOff`).
 // Pure Foundation:
 // swiftc -parse-as-library app/AvailabilityRules.swift tests/availability_rules.swift -o app/build/availability-test && app/build/availability-test
 import Foundation
 
 enum AvailabilityRules {
-    /// A busy stretch from his calendar. `allDay`: blocks the whole day (an opaque all-day event: a trip, a day off);
+    /// A busy stretch from the user's calendar. `allDay`: blocks the whole day (an opaque all-day event: a trip, a day off);
     /// `away`: an event at a place (not a call link), so travel time is kept around it.
     struct Busy: Equatable { var start: Date; var end: Date; var allDay = false; var away = false }
 
@@ -53,7 +53,7 @@ enum AvailabilityRules {
     }
 
     struct Hours: Equatable {
-        var start = 9 * 60, end = 18 * 60     // minutes of the day, his time
+        var start = 9 * 60, end = 18 * 60     // minutes of the day, the user's time
         var buffer = 30                        // minutes kept before and after an event at a place
         var lead = 60                          // nothing sooner than this from now
         var gap = 60                           // minutes between two offered slots
@@ -68,7 +68,7 @@ enum AvailabilityRules {
     static let typedRX = rx(#"^\s*(i('| a)m (free|available|around)|i can (do|make it|meet)|how about|free (on|at)|можу (в|у|о|об|зустрітись|зустрітися|зідзвонитись)|вільний (в|у|о)|вільна (в|у|о)|давай (в|у|о)|як щодо)\s*$"#)
 
     /// Their last message on screen (the app marks "Я: " / "Вони: " / "Асистент: ", or "Name: " lines), or nil when the
-    /// last turn is his, an assistant's, or there is none. A line without a mark continues the turn above it.
+    /// last turn is the user's, an assistant's, or there is none. A line without a mark continues the turn above it.
     static func lastTheirs(_ context: String) -> String? {
         let lines = context.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
         let mark = rx(#"^(Я|Вони|Асистент|[A-ZА-ЯІЇЄҐ][\w'’.-]{1,20}(?: [A-ZА-ЯІЇЄҐ][\w'’.-]{1,20})?): "#)
@@ -83,7 +83,7 @@ enum AvailabilityRules {
         return t.isEmpty ? nil : t
     }
 
-    /// Their name from the screen's marks ("Олег Петренко: ..."): the first word of the last named line not his; "".
+    /// Their name from the screen's marks ("Олег Петренко: ..."): the first word of the last named line not the user's; "".
     static func theirName(_ context: String) -> String {
         let mark = rx(#"^([A-ZА-ЯІЇЄҐ][\w'’.-]{1,20})(?: [A-ZА-ЯІЇЄҐ][\w'’.-]{1,20})?: "#)
         for l in context.split(separator: "\n").reversed() {
@@ -94,10 +94,10 @@ enum AvailabilityRules {
         return ""
     }
 
-    /// Their message asks him for a time (or offers one with a question).
+    /// Their message asks the user for a time (or offers one with a question).
     static func asks(_ text: String) -> Bool { has(askRX, text) }
 
-    /// He started an availability line himself ("I'm free", "можу в"): the slots finish it.
+    /// The user started an availability line themselves ("I'm free", "можу в"): the slots finish it.
     static func typedStart(_ lineBefore: String) -> Bool { has(typedRX, lineBefore) }
 
     /// A time zone the chat names ("10:00 CET", "London time", "UTC+2", "за Києвом", "PT"), else nil.
@@ -128,7 +128,7 @@ enum AvailabilityRules {
     }
 
     /// A slot they proposed: a day word (today, tomorrow, a weekday; both languages) and a time ("15:00", "3pm",
-    /// "о 15", "at 11"), read in `zone` (theirs when named, else his). nil when either is missing.
+    /// "о 15", "at 11"), read in `zone` (theirs when named, else the user's). nil when either is missing.
     static func proposed(_ text: String, now: Date, calendar: Calendar, zone: TimeZone? = nil) -> Date? {
         var cal = calendar; if let zone { cal.timeZone = zone }
         let t = text.lowercased()
@@ -164,9 +164,9 @@ enum AvailabilityRules {
         return cal.date(bySettingHour: hour, minute: minute, second: 0, of: day)
     }
 
-    // ---- his calendar ---------------------------------------------------------------------------------------------
+    // ---- the user's calendar ---------------------------------------------------------------------------------------------
 
-    /// The stretch a busy item keeps him away: an all-day block the whole day, an event at a place with travel time.
+    /// The stretch a busy item keeps the user away: an all-day block the whole day, an event at a place with travel time.
     static func blocked(_ b: Busy, calendar: Calendar, hours: Hours) -> (Date, Date) {
         if b.allDay {
             let d0 = calendar.startOfDay(for: b.start)
@@ -218,8 +218,8 @@ enum AvailabilityRules {
     }
 
     // ---- the line -------------------------------------------------------------------------------------------------
-    // Plain words (Andrii, 17 November 2026: "simpler terms"): "Tomorrow 9:00-9:30", "У четвер 14:00-14:30",
-    // "Пн 24.11 10:00-10:30"; the zone only when theirs differs from his.
+    // Plain words (the user, 17 November 2026: "simpler terms"): "Tomorrow 9:00-9:30", "У четвер 14:00-14:30",
+    // "Пн 24.11 10:00-10:30"; the zone only when theirs differs from the user's.
 
     private static let dayNames: [String: [String]] = [   // Sunday first, as Calendar's weekday 1...7
         "en": ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
@@ -275,7 +275,7 @@ enum AvailabilityRules {
         return "\(c.hour ?? 0):" + String(format: "%02d", c.minute ?? 0)
     }
 
-    /// "tomorrow 9:00-9:30"; in their zone with his in brackets when the zones differ at that moment.
+    /// "tomorrow 9:00-9:30"; in their zone with the user's in brackets when the zones differ at that moment.
     static func when(_ d: Date, minutes: Int = 30, now: Date, lang: String, mine: TimeZone, theirs: TimeZone?, withDay: Bool = true) -> String {
         let z = theirs ?? mine, e = d.addingTimeInterval(Double(minutes) * 60)
         var s = (withDay ? dayWord(d, now: now, lang: lang, zone: z) + " " : "") + hm(d, z) + "-" + hm(e, z)
@@ -294,7 +294,7 @@ enum AvailabilityRules {
     }
     static func capitalized(_ s: String) -> String { s.prefix(1).uppercased() + s.dropFirst() }
 
-    /// His line offering the slots. One line: "Можу завтра 9:00-9:30, у четвер 14:00-14:30 або у пʼятницю 11:00-11:30."
+    /// The user's line offering the slots. One line: "Можу завтра 9:00-9:30, у четвер 14:00-14:30 або у пʼятницю 11:00-11:30."
     /// A list: one slot per line, "– Tomorrow 9:00-9:30". `links`: each slot followed by its add-to-calendar link.
     static func offerLine(_ slots: [Date], minutes: Int = 30, now: Date, lang: String, mine: TimeZone, theirs: TimeZone?, start: Bool = true,
                           list: Bool = false, links: [String] = []) -> String {
@@ -321,7 +321,7 @@ enum AvailabilityRules {
     }
 
     /// A Google Calendar template link: the other person clicks it and gets the event filled in their own calendar.
-    /// No API call, no invite from his account; nothing is sent.
+    /// No API call, no invite from the user's account; nothing is sent.
     static func calendarLink(_ start: Date, minutes: Int = 30, title: String, details: String = "") -> String {
         let f = DateFormatter(); f.timeZone = TimeZone(identifier: "UTC"); f.locale = Locale(identifier: "en_US_POSIX"); f.dateFormat = "yyyyMMdd'T'HHmmss'Z'"
         var allowed = CharacterSet.alphanumerics; allowed.insert(charactersIn: "-._~")
@@ -332,7 +332,7 @@ enum AvailabilityRules {
         return u
     }
 
-    /// The event's title from the chat: "Дзвінок: Олег / Андрій", "Call: Olena / Andrii"; without their name, his alone.
+    /// The event's title from the chat: "Дзвінок: Олег / Марта", "Call: Olena / Marta"; without their name, the user's name alone.
     static func eventTitle(theirName: String, myName: String, lang: String) -> String {
         let call = lang == "uk" ? "Дзвінок" : lang == "ru" ? "Созвон" : "Call"
         let who = [theirName, myName].map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }

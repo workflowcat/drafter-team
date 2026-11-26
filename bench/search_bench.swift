@@ -1,6 +1,6 @@
 // swiftc -O -parse-as-library app/SearchRules.swift app/SearchIndex.swift app/SearchAdapters.swift app/JournalEngine.swift app/QuickSearch.swift app/Entry.swift app/PictureLookRules.swift app/ClipRules.swift app/QuickRules.swift app/Recording.swift app/Transcript.swift app/CaptureRules.swift bench/search_bench.swift -o app/build/search-bench
 // app/build/search-bench speed [docs]   generated made-up text in both languages: build time, memory, query times
-// app/build/search-bench real           his stores under data/, read only: known-item test against today's search
+// app/build/search-bench real           the user's stores under data/, read only: known-item test against today's search
 // Prints numbers only. Writes only data/bench/search/*.json (numbers only). Loads no model.
 import Foundation
 
@@ -364,7 +364,7 @@ struct SearchBench {
         var quickOld: [Double] = [], quickNew: [Double] = []
         func rankQuickWired(_ q: String, _ target: Int) -> Int? {
             var idx: [Int] = []
-            // every key as he types it: the plain filter (before) and the wired one (after), same rows, same puts
+            // every key as the user types it: the plain filter (before) and the wired one (after), same rows, same puts
             for i in 1...q.count {
                 let part = String(q.prefix(i))
                 quickOld.append(Self.ms { _ = QuickRules.filter(quickList, query: part, kind: nil, uses: uses, now: now) })
@@ -432,7 +432,7 @@ struct SearchBench {
         out["quick_before_p95"] = pct(quickOld, 0.95); out["quick_after_p95"] = pct(quickNew, 0.95); out["quick_build_ms"] = qs.buildMs
         print("\ntypo misses (new search, not in top 3): " + typoMiss.sorted { $0.key < $1.key }.map { "\($0.key) \($0.value)" }.joined(separator: " · "))
         out["typo_misses"] = typoMiss
-        print("\nnew search on his data: query p50 \(f2(pct(ms, 0.5))) ms, p95 \(f2(pct(ms, 0.95))) ms")
+        print("\nnew search on the user's data: query p50 \(f2(pct(ms, 0.5))) ms, p95 \(f2(pct(ms, 0.95))) ms")
         write("real.json", out)
     }
 }

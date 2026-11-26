@@ -1,4 +1,4 @@
-// Incremental reads of the history files (speed round, 15 November 2026; Andrii: "when I open it, it's a little slow
+// Incremental reads of the history files (speed round, 15 November 2026; the user: "when I open it, it's a little slow
 // when I'm trying to search the clipboard"). Foundation only: Quick.swift and the window call it, bench/quick_bench.swift
 // and tests/quick_read.swift drive the same code.
 //

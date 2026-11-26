@@ -1,11 +1,11 @@
-// The capture deck (17 November 2026; Andrii: "we build a deck of screenshots that are explainable", "I click on
+// The capture deck (17 November 2026; the user: "we build a deck of screenshots that are explainable", "I click on
 // screenshots and at the same time I can start talking about it"). It replaces the shot strip's one line ("What is
 // this?"): after a capture one floating strip shows every picture taken so far as a card, each with its caption under
 // it, and a + card. The rules: app/DeckRules.swift.
 // Talk: with `captureTalk` on (the default) the mic starts with each shot through the usual voice take (Talk, no second
-// recorder); what he says until the next shot is that card's caption (Talk tags the take with the card, so a take that
+// recorder); what the user says until the next shot is that card's caption (Talk tags the take with the card, so a take that
 // ends late still lands on its own card). A small level shows on the card it listens for. Right ⌥ or the mic button
-// stops it, and starts it again for the picked card. Typing edits the picked card's caption (the last one, unless he
+// stops it, and starts it again for the picked card. Typing edits the picked card's caption (the last one, unless the user
 // picked another): one place for the text.
 // The deck stays up: ⌘N or + dims the screen for the next shot with the deck still showing above it. A click on a card
 // picks it; its buttons retake (⌘R), mark up (⌘E, app/Markup.swift) and take it out (⌘⌫); dragging a card reorders the
@@ -79,15 +79,15 @@ final class CaptureNote {
     var pngs: [Data] { pics.map(\.png) }
     /// The card typing, the mic and ⌘E go to.
     var current: Int? { DeckRules.target(picked: picked, count: pics.count) }
-    /// Round 4 "Hand": the deck never takes his keys (DeckRules.takesKeys); his voice is a card's caption only while that
-    /// card's mic opens the take (DeckRules.handVoice). Every other take is his app's.
+    /// Round 4 "Hand": the deck never takes the user's keys (DeckRules.takesKeys); their voice is a card's caption only while that
+    /// card's mic opens the take (DeckRules.handVoice). Every other take is the user's app's.
     private var micOpening = false
     /// Round 4b: one insert at a time (DeckRules.mayInsert); its number, so a late answer of an older one is ignored.
     private(set) var inserting = false
     private var insertGen = 0
-    /// The card the row acts on (DeckRules.selected): the one he clicked, else the newest.
+    /// The card the row acts on (DeckRules.selected): the one the user clicked, else the newest.
     var selectedIndex: Int? { DeckRules.selected(picked, count: pics.count) }
-    /// The app the deck was last placed for (re-placed when he switches to another app on another screen).
+    /// The app the deck was last placed for (re-placed when the user switches to another app on another screen).
     private var switchToken: NSObjectProtocol?
     var takesVoice: Bool { DeckRules.handVoice(open: isOpen, micOpening: micOpening) }
     /// A caption take listening for one of the deck's cards: the deck's only active state.
@@ -97,7 +97,7 @@ final class CaptureNote {
         panel = CapturePanel(contentRect: NSRect(x: 0, y: 0, width: 10, height: 10), styleMask: [.nonactivatingPanel, .borderless],
                              backing: .buffered, defer: false)
         panel.isOpaque = false; panel.backgroundColor = .clear; panel.hasShadow = true   // round 4c: the one shadow, the panel's own (HandView draws none)
-        // over the dimmed screen too: the deck stays in sight while he takes the next shot (a CapturePanel: never in a picture)
+        // over the dimmed screen too: the deck stays in sight while the user takes the next shot (a CapturePanel: never in a picture)
         panel.level = NSWindow.Level(rawValue: NSWindow.Level.screenSaver.rawValue + 1)
         panel.hidesOnDeactivate = false; panel.acceptsMouseMovedEvents = true
         panel.animationBehavior = .none   // AppKit's own fade kept a closed deck on screen ~0.38 s (app/DeckBench.swift)
@@ -171,7 +171,7 @@ final class CaptureNote {
     static var benchAt: NSPoint?
 
     /// The closed deck drawn once off every screen, as it stands: its code, fonts and window store paged in before the
-    /// next open (at launch, and when the capture overlay opens: he drags for half a second or more). Changes nothing.
+    /// next open (at launch, and when the capture overlay opens: the user drags for half a second or more). Changes nothing.
     func prewarm() {
         guard !isOpen else { return }
         let f = panel.frame
@@ -223,9 +223,9 @@ final class CaptureNote {
 
     // MARK: where it sits
 
-    // MARK: ↵ inserts all, until he types (round 4c, DeckRules.returnInserts)
+    // MARK: ↵ inserts all, until the user types (round 4c, DeckRules.returnInserts)
 
-    /// Keys that went to his app since the deck opened or since the last card was added (Keys counts them).
+    /// Keys that went to the user's app since the deck opened or since the last card was added (Keys counts them).
     private(set) var keysSinceOpen = 0
     /// The deck is up and an Insert all could start now.
     var returnReady: Bool {
@@ -233,7 +233,7 @@ final class CaptureNote {
     }
     /// ↵ still inserts all: Insert all shows ↵.
     var returnHint: Bool { returnReady && keysSinceOpen == 0 }
-    /// A key went to his app (from the key tap, on the main thread): after the first, ↵ is his app's and the hint goes.
+    /// A key went to the user's app (from the key tap, on the main thread): after the first, ↵ is their app's and the hint goes.
     func keyInApp() {
         keysSinceOpen += 1
         if keysSinceOpen == 1 { DispatchQueue.main.async { if self.isOpen { self.refit(); self.view.needsDisplay = true } } }
@@ -283,7 +283,7 @@ final class CaptureNote {
         return (NSScreen.screens.first { $0.frame.contains(m) } ?? NSScreen.main)?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
     }
 
-    /// Round 5 "Stack": once, when it opens: next to the caret of the field he was in; no caret, that field's top-left
+    /// Round 5 "Stack": once, when it opens: next to the caret of the field the user was in; no caret, that field's top-left
     /// line; neither, the mouse pointer; whole on that screen (DeckRules.placeStack). Then it stays put.
     private func place() {
         view.maxH = .greatestFiniteMagnitude
@@ -308,7 +308,7 @@ final class CaptureNote {
         view.cardsChanged()
     }
     /// The column fits its shots again: the edge that stays, stays (DeckRules.restack); past its room it scrolls.
-    /// It never moves to stay on the screen: it was placed whole, and its room was measured then (or after his drag).
+    /// It never moves to stay on the screen: it was placed whole, and its room was measured then (or after the user's drag).
     func refit() {
         guard isOpen, placed else { return }
         let size = view.fit()
@@ -328,7 +328,7 @@ final class CaptureNote {
             return
         }
         guard pics.contains(where: { $0.id == id }) else { return }
-        // round 4: only this mic opens a deck take (DeckRules.handVoice); his own voice key stays his app's
+        // round 4: only this mic opens a deck take (DeckRules.handVoice); the user's own voice key stays their app's
         listeningFor = id; levels = []; heardLive = ""
         t.clock = Clock(press: Date())
         micOpening = true; t.begin(); micOpening = false
@@ -336,7 +336,7 @@ final class CaptureNote {
         log("shot: caption take \(listeningFor == nil ? "not started" : "on")")
         view.needsDisplay = true
     }
-    /// A card's mic: its caption take on, or (on again) off; his words land on that card. Another card's take ends
+    /// A card's mic: its caption take on, or (on again) off; the user's words land on that card. Another card's take ends
     /// first (its words land there).
     func micTap(_ i: Int) {
         guard pics.indices.contains(i) else { return }
@@ -392,7 +392,7 @@ final class CaptureNote {
         wait()
     }
 
-    // MARK: focus (round 4: the deck never takes his keys)
+    // MARK: focus (round 4: the deck never takes the user's keys)
 
     /// A mouse down anywhere (the event tap): outside the deck a caption take ends (its words land on its card).
     func clicked(at p: NSPoint) {
@@ -485,13 +485,13 @@ final class CaptureNote {
     func drag(by dx: CGFloat, _ dy: CGFloat) {
         setCard(card.offsetBy(dx: dx, dy: dy))
     }
-    /// The drag ended: the room from the edge that stays is measured again where he dropped it.
+    /// The drag ended: the room from the edge that stays is measured again where the user dropped it.
     func dragEnded() {
         let scr = (NSScreen.screens.first { $0.frame.intersects(card) } ?? NSScreen.main)?.visibleFrame ?? card
         view.maxH = DeckRules.stackRoom(card, growsDown: growsDown, screen: scr)
         refit()
     }
-    /// He switched to another app while the deck is up: its caret (read off main) decides; the deck moves only when
+    /// The user switched to another app while the deck is up: its caret (read off main) decides; the deck moves only when
     /// that is on another screen than the deck.
     private func watchSwitches() {
         if let t = switchToken { NSWorkspace.shared.notificationCenter.removeObserver(t) }
@@ -507,7 +507,7 @@ final class CaptureNote {
                     ?? NSScreen.screens.first { $0.frame.contains(NSEvent.mouseLocation) }
                 let here = NSScreen.screens.first { $0.frame.intersects(self.card) }
                 guard let there, there != here else { return }
-                // round 5: the deck stays put for the whole session (Andrii: "it must not wander"); only logged
+                // round 5: the deck stays put for the whole session (the user: "it must not wander"); only logged
                 log("shot: front app \(app.bundleIdentifier ?? "?") on another screen, the deck stays")
             }
         }
@@ -660,15 +660,15 @@ final class CaptureNote {
                 log("shot: insert all did not land, the deck is back")
             }
         }
-        // a shot that recorded Drafter as its app (an older deck, or nothing else known): the app he is in now
+        // a shot that recorded Drafter as its app (an older deck, or nothing else known): the app the user is in now
         let id = p0.id, shotIn = self.origin?.processIdentifier == getpid() ? Capture.keyApp() : self.origin
         afterTalk {
-            // where it goes (PutRules.goesHere): the app he moved to himself, else the app the shot was taken in
+            // where it goes (PutRules.goesHere): the app the user moved to themselves, else the app the shot was taken in
             let moved = SwitchWatch.shared.moved
             if one == nil { SwitchWatch.shared.stop() }   // one card: the deck stays up, the watch goes on
             let here = Capture.keyApp(), toHere = PutRules.goesHere(front: PutBack.front(shotIn), moved: moved)
             let origin = toHere ? here : shotIn
-            if toHere { log("shot: he moved to \(here?.bundleIdentifier ?? "?") himself, put in there (shot in \(shotIn?.bundleIdentifier ?? "?"))") }
+            if toHere { log("shot: the user moved to \(here?.bundleIdentifier ?? "?") themselves, put in there (shot in \(shotIn?.bundleIdentifier ?? "?"))") }
             let way = ShotPack.fieldWay(bundle: origin?.bundleIdentifier ?? "", ai: Keys.aiApps)
             // the screen read only where the put-in uses it (DeckRules.waitsForRead): a terminal's shot.md
             let read: (@escaping () -> Void) -> Void = DeckRules.waitsForRead(terminal: way == .terminal) ? self.withRead : { $0() }
@@ -722,9 +722,9 @@ final class CaptureNote {
                 case .go: go()
                 case .clipboard: fail(why.map { $0 == "front app moved" ? "\($0) by \(moved)" : $0 } ?? "")
                 case .bringBack:
-                    // Drafter, or a switch he did not make, took the front while he talked: his app back once, then
-                    // retry. Never over an app he moved to himself.
-                    if why == "front app moved" { log("shot: \(Capture.keyApp()?.bundleIdentifier ?? "?") came to the front without his input, origin brought back") }
+                    // Drafter, or a switch the user did not make, took the front while the user talked: their app back once, then
+                    // retry. Never over an app the user moved to themselves.
+                    if why == "front app moved" { log("shot: \(Capture.keyApp()?.bundleIdentifier ?? "?") came to the front without the user's input, origin brought back") }
                     origin?.activate()
                     // ready as soon as it holds the keys and a field (was a fixed 0.35 s): every 50 ms, 1 s at most
                     let t1 = Date()
@@ -739,7 +739,7 @@ final class CaptureNote {
         }
     }
 
-    /// esc, Cancel: only cancels (round 2, Andrii). The mic listening: this caption take stops and its words are
+    /// esc, Cancel: only cancels (round 2, the user). The mic listening: this caption take stops and its words are
     /// dropped (the caption keeps what it had). Else the shot is dropped: the deck goes, Undo in the pill for 10 s,
     /// then the pack goes to the Trash. Never sends, never keeps.
     private func cancel() {

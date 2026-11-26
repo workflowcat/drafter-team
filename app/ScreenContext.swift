@@ -1,7 +1,7 @@
 // Screen context as a first-class source (14 November 2026). Before: a picture only when Accessibility gave under 120
 // characters, taken per read, by window filter, 1.5 s blocking wait, one global back-off. Now:
 //   - when: on focus of a field, after a scroll, when the window moves or a new message changes the picture (a 96 px
-//     look every 4 s while he types), never per key, at most one capture per 1.5 s, none after a minute without keys;
+//     look every 4 s while the user types), never per key, at most one capture per 1.5 s, none after a minute without keys;
 //   - what: the window part above the field (its top, not the caret: the field's own lines are not read twice), read
 //     as messages with who wrote them (app/ScreenContextRules.swift), the tail under a budget;
 //   - which: Accessibility where its text is clean, the picture where it is empty or a page of labels;
@@ -18,7 +18,7 @@ final class ScreenContext {
     static let shared = ScreenContext()
     typealias R = ScreenContextRules
 
-    /// Where he types: the app, the window, the field and its frame, as the last request saw them.
+    /// Where the user types: the app, the window, the field and its frame, as the last request saw them.
     struct Target {
         let pid: pid_t, bundle: String, title: String, kind: String
         let caret: CGRect?, field: CGRect?, typing: String
@@ -34,7 +34,7 @@ final class ScreenContext {
     private var target: Target?
     private var lastKey = 0.0, lastCapture = 0.0, lastScroll = 0.0
     private var inFlight = false, flightGen = 0
-    /// One look waits for his typing pause (R.when): further asks while it waits add nothing.
+    /// One look waits for the user's typing pause (R.when): further asks while it waits add nothing.
     private var pauseQueued = false
     /// The last 96 px gray look per field; nil = a full read just ran, the next look only sets the baseline.
     private var looks: [String: (thumb: [UInt8]?, frame: CGRect)] = [:]
@@ -83,7 +83,7 @@ final class ScreenContext {
         lock.lock(); lastKey = now; let running = timer != nil; lock.unlock()
         stats.typed(now)
         if !running { startWatch() }
-        trigger(.poll)   // a look once he pauses (R.when), at most every 10 s
+        trigger(.poll)   // a look once the user pauses (R.when), at most every 10 s
     }
 
     /// The newest kept text for this field, or nil (Keys.contextFor uses it over an older read).
@@ -182,8 +182,8 @@ final class ScreenContext {
         }
     }
 
-    /// While he types: a scroll reads again once it stops; the looks come in his typing pauses (touch). Stops by itself
-    /// a minute after the last key (was a look every 2-4 s while he typed: 17.4 captures a typing minute).
+    /// While the user types: a scroll reads again once it stops; the looks come in their typing pauses (touch). Stops by itself
+    /// a minute after the last key (was a look every 2-4 s while the user typed: 17.4 captures a typing minute).
     private func startWatch() {
         let tm = DispatchSource.makeTimerSource(queue: q)
         tm.schedule(deadline: .now() + 10, repeating: 10, leeway: .seconds(2))

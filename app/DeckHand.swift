@@ -1,4 +1,4 @@
-// The capture deck, round 5 "Stack" (23 November 2026; Andrii: the deck "must not wander", one column instead of a
+// The capture deck, round 5 "Stack" (23 November 2026; the user: the deck "must not wander", one column instead of a
 // long strip, larger images, the actions on each shot). Rounds 4-4c ("Hand": a fan of cards above the caret, one bar
 // under it) are in docs/rounds/2026-11-17-deck.md. Now: one panel in the floating-panel style (app/Panel.swift): a head
 // with the count (drag it to move the deck) and a close x; one column of shots, newest at the bottom, each 272 pt wide in
@@ -7,7 +7,7 @@
 // right; its caption under it. The foot: Next shot, Copy all, Insert all (filled, with ↵ while ↵ still inserts). The
 // column scrolls up and down only past 70% of the screen (DeckRules.placeStack); a new shot scrolls it to the bottom.
 // A click on a shot selects it; nothing is inserted by a click on a picture. A drag up or down reorders.
-// The deck never takes his keys: its panel never becomes key, so his caret stays in his app. Rules: app/DeckRules.swift.
+// The deck never takes the user's keys: its panel never becomes key, so their caret stays in their app. Rules: app/DeckRules.swift.
 import AppKit
 
 final class HandView: NSView {
@@ -81,7 +81,7 @@ final class HandView: NSView {
         guard let m = model, m.pics.indices.contains(i) else { return false }
         return talking && m.listeningFor == m.pics[i].id
     }
-    /// ↵ still inserts all (until he types in his app): Insert all shows a ↵ key cap. `previewReturn`: the renders.
+    /// ↵ still inserts all (until the user types in their app): Insert all shows a ↵ key cap. `previewReturn`: the renders.
     var previewReturn = false
     var returnHint: Bool { previewReturn || model?.returnHint == true }
     private var captureKey: String { Capture.keys.first ?? "" }

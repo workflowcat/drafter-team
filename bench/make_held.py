@@ -1,4 +1,4 @@
-"""A bigger held-out set for typing benches (2026-11-13 typing round): lines he sent with Return (data/typed.jsonl)
+"""A bigger held-out set for typing benches (2026-11-13 typing round): lines the user sent with Return (data/typed.jsonl)
 AFTER the last retrain cutoff, so neither the live layer (trained before it) nor the bench word lists
 (bench/ngram.py corpus, cut at the same time) have seen them. Unlike bench/make_fresh.py it keeps the screen text
 Drafter saw (`context`) and every app, so AI-app prompts dominate as they do live (91% of ghosts are in Claude).

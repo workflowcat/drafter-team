@@ -1,6 +1,6 @@
 // Edit mode, the UI (roadmap item 8, "side cursors"; 17 November 2026, docs/rounds/2026-11-17-editing.md; setting
-// `editMarks`, on). When he edits rather than writes (EditRules.span, EditRules.due), the paragraph goes to the
-// engine's `/marks` (engine/marks.py: local rules and his own word counts, no model, nothing leaves the Mac). Each mark
+// `editMarks`, on). When the user edits rather than writes (EditRules.span, EditRules.due), the paragraph goes to the
+// engine's `/marks` (engine/marks.py: local rules and the user's own word counts, no model, nothing leaves the Mac). Each mark
 // is a short bar in the field's left margin at its line and a dotted line under its range (typo warn, tone violet,
 // unclear muted). The mouse resting on either, or the caret in the range, shows a chip "old → new · why"; Tab or a
 // click on the chip or bar puts the new text in; Esc puts the shown mark away, Esc twice all of them. A pill at the
@@ -122,7 +122,7 @@ final class EditMarks {
         return panel.frame.insetBy(dx: -pad, dy: -pad).contains(NSPoint(x: p.x, y: h - p.y))
     }
 
-    /// A move (click, arrow, delete): look again once he rests with no letter typed.
+    /// A move (click, arrow, delete): look again once the user rests with no letter typed.
     private func moved(at t: Double) {
         lastMove = t
         guard Drafter.shared.settings.editMarks else { return }
@@ -367,7 +367,7 @@ final class EditMarks {
         apply(i, how)
     }
 
-    /// Ready to write into this field: still his, still in front, no secure input.
+    /// Ready to write into this field: still the user's, still in front, no secure input.
     private func writable() -> AXUIElement? {
         guard let el, let now = Focus.focused(), CFEqual(now, el), NSWorkspace.shared.frontmostApplication?.processIdentifier == pid,
               !IsSecureEventInputEnabled(), !Drafter.shared.settings.skip.contains(NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "") else { return nil }
@@ -450,7 +450,7 @@ final class EditMarks {
         guard let el = writable() else { clear("field changed"); Ghost.shared.flash("Text has changed"); return }
         Keys.shared.cancel()
         if viaMarkers {
-            // the selection must still be his (as Rework.apply): pasted over it
+            // the selection must still be the user's (as Rework.apply): pasted over it
             guard Focus.selection() == sp.text else { clear("selection changed"); Ghost.shared.flash("Selection changed"); return }
             Focus.paste(new)
         } else {

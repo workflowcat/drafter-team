@@ -1,5 +1,5 @@
-// The screenshot tool's pills (look round, 15 November 2026; Andrii: "for all of the buttons we need glyphs", "a better
-// toolbar", he likes macOS ⌘⇧5): one floating pill of 42 pt glyph buttons (32 until the key and strip round) in groups split by hairlines. The key sits
+// The screenshot tool's pills (look round, 15 November 2026; the user: "for all of the buttons we need glyphs", "a better
+// toolbar", the user likes macOS ⌘⇧5): one floating pill of 42 pt glyph buttons (32 until the key and strip round) in groups split by hairlines. The key sits
 // small under each glyph; the word comes up in a tip over the button on hover (and is the button's VoiceOver name), so
 // the bar itself carries no words. The chosen button has a lifted fill and an edge; the main one (done) is filled.
 // The capture pill (app/Capture.swift), the markup pill (app/Markup.swift) and the strip's keys (app/CaptureNote.swift)
@@ -21,7 +21,7 @@ struct PillFace {
 
 enum ShotPill {
     static let radius: CGFloat = 28, buttonRadius: CGFloat = 11
-    /// Key and strip round (15 November 2026, Andrii: bigger): glyph 18 → 22 pt, the key 8 → 11 pt, the tip 12 → 14 pt.
+    /// Key and strip round (15 November 2026, the user: bigger): glyph 18 → 22 pt, the key 8 → 11 pt, the tip 12 → 14 pt.
     static let glyphSize: CGFloat = 22, keyFont: CGFloat = 11, swatch: CGFloat = 19
 
     /// The bar: the card colour, a hairline edge, the one float shadow, round ends.

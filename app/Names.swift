@@ -377,7 +377,7 @@ struct NameRow: View {
                     .foregroundStyle(UIInk.muted).lineLimit(1).frame(width: 230, alignment: .leading)
             }
             HStack(spacing: 6) {
-                // how much he writes it: a bar against the most used name shown
+                // how much the user writes it: a bar against the most used name shown
                 let w = e["weight"] as? Double ?? 0
                 Capsule().fill(UIInk.line).frame(width: 44, height: 4)
                     .overlay(alignment: .leading) { Capsule().fill(UIInk.blue).frame(width: 44 * CGFloat(min(1, top > 0 ? w / top : 0)), height: 4) }

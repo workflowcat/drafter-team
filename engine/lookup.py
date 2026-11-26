@@ -161,7 +161,7 @@ def event_time(value, zone):
     return dt.replace(tzinfo=zone) if dt.tzinfo is None else dt.astimezone(zone)
 
 
-# the picker's part of the day (17 November 2026): his working hours split at 13:00
+# the picker's part of the day (17 November 2026): the user's working hours split at 13:00
 PARTS = {"morning": (9, 13), "afternoon": (13, 18)}
 PART_WORDS = {"morning": ("morning", "mornings", "ранок", "вранці", "зранку", "утром", "утро"),
               "afternoon": ("afternoon", "afternoons", "після обіду", "пообіді", "после обеда", "днем", "днём")}
@@ -257,7 +257,7 @@ def search(request):
             else:
                 hours = PARTS.get(part, (9, 18))
                 times = free_times(rows, start, end, minutes, now, hours)
-                # plain words (Andrii, 17 November 2026); the app writes them again in the field's language from "slots"
+                # plain words (the user, 17 November 2026); the app writes them again in the field's language from "slots"
                 texts = [f"{a:%a %d %b} {a.hour}:{a:%M}-{b.hour}:{b:%M}" for a, b in times]
                 options = [result(text, text) for text in texts]
                 if len(texts) > 1:

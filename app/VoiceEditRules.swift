@@ -1,4 +1,4 @@
-// Voice edit of a selection (17 November 2026; Wispr Flow's command mode, Superwhisper): he selects text, holds Right
+// Voice edit of a selection (17 November 2026; Wispr Flow's command mode, Superwhisper): the user selects text, holds Right
 // Option and says what to change. Spoken words that start with a change word are an instruction for the local model
 // (engine/server.py rewrite); anything else replaces the selection as said. The result waits in the strip as one line;
 // Tab or ↵ puts it in. Pure: tests/voice_edit_rules.swift.

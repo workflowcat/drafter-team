@@ -1,7 +1,7 @@
-"""Nothing private in the files the public repository gets (scripts/public_files.py): no home folder path, no real
-email address, and no name from the owner's deny-list. The deny-list is an untracked local file, so the list itself is
-never published: $DRAFTER_DENY, else data/public-deny.txt in this checkout or in the main checkout of a worktree. One
-entry per line, # for comments; matched as whole words, case-insensitive. Without a list that check is skipped.
+"""Nothing private in the tracked files (scripts/public_files.py): no home folder path, no real email address, and
+no name from your own deny-list. The deny-list is an untracked local file, so the list itself never goes into git:
+$DRAFTER_DENY, else data/public-deny.txt in this checkout or in the main checkout of a worktree. One entry per line,
+# for comments; matched as whole words, case-insensitive. Without a list that check is skipped.
 
     .venv/bin/python -B tests/test_no_private.py
 """
@@ -21,7 +21,7 @@ BINARY = re.compile(r"\.(png|jpg|jpeg|gif|icns|woff2?|ttf|otf|gz|zip|wav|pcm)$",
 
 
 def texts(root=ROOT):
-    for src, _ in public_files.files(root):
+    for src in public_files.files(root):
         if BINARY.search(src): continue
         try: yield src, (root / src).read_text(errors="ignore")
         except (OSError, UnicodeDecodeError): continue
@@ -57,12 +57,12 @@ def hits(pattern_for_line, root=ROOT, skip=()):
 class NoPrivate(unittest.TestCase):
     def test_no_home_paths(self):
         found = hits(lambda l: HOME_PATH.findall(l))
-        self.assertEqual(found, [], "home folder paths in public files:\n" + "\n".join(found[:30]))
+        self.assertEqual(found, [], "home folder paths in tracked files:\n" + "\n".join(found[:30]))
 
     def test_no_real_email_addresses(self):
         found = hits(lambda l: [m.group(0) for m in EMAIL.finditer(l)
                                 if m.group(0).lower() not in SAFE_EMAILS and not SAFE_DOMAINS.match(m.group(1))])
-        self.assertEqual(found, [], "email addresses in public files:\n" + "\n".join(found[:30]))
+        self.assertEqual(found, [], "email addresses in tracked files:\n" + "\n".join(found[:30]))
 
     def test_no_name_from_the_deny_list(self):
         path = deny_file()
@@ -72,14 +72,7 @@ class NoPrivate(unittest.TestCase):
         rx = re.compile(r"(?<![\w])(" + "|".join(re.escape(w) for w in sorted(words, key=len, reverse=True)) + r")(?![\w])", re.I)
         found = hits(lambda l: rx.findall(l), skip=public_files.NAME_TABLES)
         # the report names the file and line only, never the list itself in bulk
-        self.assertEqual(found, [], f"{len(found)} deny-list hits in public files:\n" + "\n".join(found[:30]))
-
-    def test_the_excluded_files_are_really_excluded(self):
-        published = {dst for _, dst in public_files.files()}
-        for private in ("docs/roadmap.md",):
-            self.assertNotIn(private, published)
-        self.assertFalse(any(p.startswith(("docs/history/", "docs/rounds/", "docs/reviews/")) for p in published))
-        self.assertFalse(any(p.startswith("data/") for p in published))
+        self.assertEqual(found, [], f"{len(found)} deny-list hits in tracked files:\n" + "\n".join(found[:30]))
 
 
 if __name__ == "__main__":

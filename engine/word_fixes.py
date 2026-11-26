@@ -1,7 +1,7 @@
 """Which word fixes stay (from the Claude proofread of 1 November 2026, whose Claude part went on 2026-11-17): the local
 reader check (engine/reader.py) runs its slips through `edits`, so only small word fixes survive: one word for one
-word, a few letters apart or the same word typed in the other keyboard layout, or a word split or joined. His slang,
-punctuation, case and missing full stops stay. Words he took back before (data/autocorrect-keep.*) and his own words
+word, a few letters apart or the same word typed in the other keyboard layout, or a word split or joined. The user's slang,
+punctuation, case and missing full stops stay. Words the user took back before (data/autocorrect-keep.*) and their own words
 (`keep_words`) are never fixed. Local only, nothing leaves the Mac.
 """
 import difflib, json, re
@@ -17,8 +17,8 @@ TO_EN = {b: a for a, b in TO_UK.items()}
 
 
 def keep_words():
-    """Words never fixed: ones he took back (autocorrect-keep.txt) and his own words, used 3+ times (mywords.txt; the
-    bench "fixed" тіма, his word for team)."""
+    """Words never fixed: ones the user took back (autocorrect-keep.txt) and their own words, used 3+ times (mywords.txt; the
+    bench "fixed" тіма, the user's word for team)."""
     out = set()
     for f in ("mywords.txt", "known-words.txt"):
         try: out |= {l.strip().lower() for l in (DATA / f).read_text().splitlines() if l.strip()}
@@ -65,8 +65,8 @@ def _layout(old, new):
 
 def _close(old, new):
     a, b = old.lower(), new.lower()
-    if a == b: return False                       # case only: his lowercase stays
-    # English without the apostrophe (lets, dont, im) is how he writes; a Ukrainian one missing is a mistake (мясо)
+    if a == b: return False                       # case only: the user's lowercase stays
+    # English without the apostrophe (lets, dont, im) is how the user writes; a Ukrainian one missing is a mistake (мясо)
     if a.isascii() and a.replace("'", "").replace("’", "") == b.replace("'", "").replace("’", ""): return False
     if _layout(old, new): return True
     if len(a) < 3 or not b: return False          # "it" -> "I" in the bench: too short to tell a typo

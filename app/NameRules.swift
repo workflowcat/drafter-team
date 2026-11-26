@@ -1,4 +1,4 @@
-// The names reference's pure rules (2026-11-15): his edits on the Names page (spell, merge, hide) and the search.
+// The names reference's pure rules (2026-11-15): the user's edits on the Names page (spell, merge, hide) and the search.
 // The twin of engine/names.py apply_edits; tests/names_cases.json holds the golden cases both sides run
 // (tests/name_rules.swift). Entries stay JSON dictionaries so a field this side does not know is kept as it was.
 import Foundation
@@ -27,7 +27,7 @@ enum NameRules {
         return out
     }
 
-    /// His edits in order, on entries in store order. spell {op, id, uk?, latin?}: the old spelling becomes a
+    /// The user's edits in order, on entries in store order. spell {op, id, uk?, latin?}: the old spelling becomes a
     /// mishearing; merge {op, id, into}: names, handles, context and links go to `into`, links to `id` move there;
     /// hide {op, id, on}. An edit whose entry is gone does nothing. -> the number applied.
     @discardableResult

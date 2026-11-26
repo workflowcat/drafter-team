@@ -3,7 +3,7 @@
 // global chords' defaults (Settings, QuickRules, ShotRules agree with it) and the double-press window read it; the
 // clash test (tests/key_map.swift) checks it: no two default-on keys share a chord in one place, no default key is
 // one Drafter gave back to macOS or other apps, Help names no retired key.
-// Rule (Andrii, 17 November 2026): one job per key, one key family per job, no chord taken from other apps unless he
+// Rule (the user, 17 November 2026): one job per key, one key family per job, no chord taken from other apps unless the user
 // asked for it.
 import Foundation
 
@@ -20,7 +20,7 @@ enum KeySurface: String, CaseIterable {
 
 struct KeyDef: Equatable {
     let id: String
-    let keys: String          // as he sees it: "⇧⇥", "⌘⇧V", "Right Option twice"
+    let keys: String          // as the user sees it: "⇧⇥", "⌘⇧V", "Right Option twice"
     let job: String           // the family: one job, one family
     let surface: KeySurface
     var scope = ""            // a part of the surface where the key means this ("file" row, "names" pane); "" = all of it
@@ -118,7 +118,7 @@ enum KeyMap {
         KeyDef(id: "pickerRewrite", keys: "⇥", job: "rework", surface: .picker),
         KeyDef(id: "pickerClose", keys: "esc", job: "dismiss", surface: .picker),
 
-        // the capture deck takes no keys (round 4 "Hand", 18 November 2026): it never becomes key, every key stays his
+        // the capture deck takes no keys (round 4 "Hand", 18 November 2026): it never becomes key, every key stays the user's
         // app's; the capture key while it is up takes the next shot (Capture.open). docs/rounds/2026-11-17-deck.md
 
         // the markup editor (app/MarkupRules.swift Markup.key owns the keys; listed so a new one shows a clash). Its tool

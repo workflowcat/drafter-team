@@ -1,22 +1,22 @@
-// The Quick panel (14 November 2026; Andrii: "a quicker interaction over the last typed words… a clipboard history…
+// The Quick panel (14 November 2026; the user: "a quicker interaction over the last typed words… a clipboard history…
 // have Drafter read it and rewrite it… so that you can quickly copy stuff where it needs to go"). ⌃⌥V (setting
 // `quickKey`; ⌃⌥Space and ⌘Space are reserved) opens a small panel on the caret's screen, centred in the upper third,
-// over any app. It lists what he copied, typed (TypedList: one row per message) and said (voice takes), newest first,
-// pins on top. The panel never becomes key: the app he is in stays in front with its caret, and the event tap hands
+// over any app. It lists what the user copied, typed (TypedList: one row per message) and said (voice takes), newest first,
+// pins on top. The panel never becomes key: the app the user is in stays in front with its caret, and the event tap hands
 // the panel its keys while it is open (Keys.handle calls `tap`), as the ⌥Tab rework list does.
 //
-// Keys: type to narrow (ranked by match, freshness and what he put in before: QuickRules.score, data/quick-stats.json)
-// · ↑ ↓ · ⏎ put it at his caret and close · ⌘⏎ put it and stay · ⌘C copy · esc close · ⌘1 all ⌘2 copied ⌘3 typed
+// Keys: type to narrow (ranked by match, freshness and what the user put in before: QuickRules.score, data/quick-stats.json)
+// · ↑ ↓ · ⏎ put it at the user's caret and close · ⌘⏎ put it and stay · ⌘C copy · esc close · ⌘1 all ⌘2 copied ⌘3 typed
 // ⌘4 voice · ⌘P pin / unpin · ⌘⌫ remove from history (⌘Z brings it back while the line says so) · ⇥ rewrite: three
-// instant ones on this Mac (plain text, one line, as a quote) and the rework list (engine /rework: Claude only when he
-// picks one and `rework` is on, else the local model). The result shows below; ⏎ puts it, ⌫ goes back to his text.
+// instant ones on this Mac (plain text, one line, as a quote) and the rework list (engine /rework: Claude only when the user
+// picks one and `rework` is on, else the local model). The result shows below; ⏎ puts it, ⌫ goes back to the user's text.
 // One tape (look round "Tape", 14 November): the chosen row unfolds in place to its text and its keys; rewrite unfolds
 // under it. Drawing in QuickView below and app/TapeDraw.swift.
 // ⌘⇧V held opens the same picker in its quick form (the extension "the quick form" below): the newest copies, hold
 // and tap, let go to put; a letter turns it into the full form (picker round, 15 November 2026: one window for both,
 // drawn in app/QuickView.swift).
 //
-// Putting text: AX insert or paste through Focus (the paste puts his clipboard back and is never kept as a copy).
+// Putting text: AX insert or paste through Focus (the paste puts the user's clipboard back and is never kept as a copy).
 // Never into skipped apps, password fields or under secure input: there the text goes to the clipboard instead.
 // Rows live in memory, read once off the main thread at start and again when a history file changed.
 import AppKit
@@ -38,13 +38,13 @@ final class Quick {
     private var raw: [QuickItem] = []             // from the files
     private var drafts: [String: [String]] = [:]  // typed row text -> the drafts folded into it (removed with it)
     private var pins: [QuickPin] = []
-    private(set) var uses = QuickUses()           // data/quick-stats.json: when he put which item in (ids and times)
+    private(set) var uses = QuickUses()           // data/quick-stats.json: when the user put which item in (ids and times)
     private var stamps: [String] = []
     private let search = QuickSearch()            // the search core over the items (QuickSearch.swift)
     private var loading = false, reloadAgain = false
     private var gone: (item: QuickItem, until: DispatchWorkItem)?   // removed, still undoable
 
-    // what he sees
+    // what the user sees
     private(set) var isOpen = false
     var held = false                              // turned full from the quick form while ⌘⇧ are still down
     var look = Look.full
@@ -155,7 +155,7 @@ final class Quick {
         if type == .keyDown, ScrollShot.shared.isOn {
             if ScrollShot.shared.key(Int(event.getIntegerValueField(.keyboardEventKeycode))) { return true }
         }
-        // round 4: the deck never takes his keys; a mouse down outside it ends a card's caption take (CaptureNote.clicked)
+        // round 4: the deck never takes the user's keys; a mouse down outside it ends a card's caption take (CaptureNote.clicked)
         if type == .leftMouseDown || type == .rightMouseDown, CaptureNote.shared.isOpen {
             DispatchQueue.main.async { CaptureNote.shared.clicked(at: NSEvent.mouseLocation) }
         }
@@ -325,7 +325,7 @@ final class Quick {
 
     private static let pinsFile = Home.data.appendingPathComponent("quick-pins.json")
     private static let statsFile = Home.data.appendingPathComponent("quick-stats.json")
-    /// He put `it` in: counted for the ranking (item and app ids, times; never the text).
+    /// The user put `it` in: counted for the ranking (item and app ids, times; never the text).
     func used(_ it: QuickItem) {
         QuickRules.used(&uses, it, at: Date().timeIntervalSince1970)
         guard stamps != ["preview"] else { return }
@@ -398,12 +398,12 @@ final class Quick {
         rebuild()
     }
 
-    /// A title he copied before with the same address (a local cache: the rows in memory). "" when none.
+    /// A title the user copied before with the same address (a local cache: the rows in memory). "" when none.
     func knownTitle(_ url: String) -> String {
         raw.first { $0.clip == .link && $0.text == url && !$0.title.isEmpty }?.title ?? ""
     }
 
-    /// Made-up rows (previews and the speed check): never his.
+    /// Made-up rows (previews and the speed check): never the user's.
     func load(_ rows: [QuickItem], pins: [QuickPin] = []) { raw = rows; self.pins = pins; stamps = ["preview"]; rebuild() }
 
     private func rebuild() {
@@ -440,7 +440,7 @@ final class Quick {
 
     /// A key while the panel is open (on the tap). true = swallowed; false = it goes on to the app (the panel closed).
     func key(_ code: Int64, _ ch: String, _ mods0: CGEventFlags) -> Bool {
-        // opened from the paste switcher with ⌘⇧ still held: those keys are typing until he lets go
+        // opened from the paste switcher with ⌘⇧ still held: those keys are typing until the user lets go
         let mods = held ? mods0.subtracting([.maskCommand, .maskShift]) : mods0
         let cmd = mods.contains(.maskCommand), plain = mods.subtracting(.maskShift).isEmpty
         if cmd, code == 14, mode == .list, let it = current { DispatchQueue.main.async { self.close("pick"); PickPanel.open(it) }; return true }   // ⌘E: Pick parts
@@ -604,8 +604,8 @@ final class Quick {
 
     // MARK: actions
 
-    /// Puts `text` where his caret was. keep: the panel stays for the next one (the panel never took the focus, so the
-    /// paste reaches his app either way).
+    /// Puts `text` where the user's caret was. keep: the panel stays for the next one (the panel never took the focus, so the
+    /// paste reaches the user's app either way).
     /// asIs (the switcher keeping formatting): the app gets a plain ⌘V of what is on the clipboard already.
     /// Returns how it went in; nil: it went to the clipboard instead (or nowhere).
     @discardableResult
@@ -731,7 +731,7 @@ final class Quick {
     func usable(_ c: Cmd) -> Bool { QuickRules.local(c.id, "") != nil || (source?.text.count ?? 0) <= 3000 }
 
     private func reworkKey(_ code: Int64, _ ch: String, cmd: Bool, plain: Bool) {
-        // 1-9, 0: that verb at once (while his own words are empty)
+        // 1-9, 0: that verb at once (while the user's own words are empty)
         if !cmd, custom.isEmpty, run != .working, ch.count == 1, let d = Int(ch), d < cmds.count + 1 || d == 0 {
             let i = d == 0 ? 9 : d - 1
             if i < cmds.count, usable(cmds[i]) { rsel = i; start(cmds[i].id) }
@@ -768,7 +768,7 @@ final class Quick {
         }
         run = .working
         let mine = seq, t0 = Date()
-        // the text leaves the Mac only here, after he picked; engine: Claude through claude_on("rework"), else local
+        // the text leaves the Mac only here, after the user picked; engine: Claude through claude_on("rework"), else local
         // writing instructions: the global one (a clipboard row knows the app's name, not its bundle id)
         let notes = WritingNotes.forApp("", global: Drafter.shared.settings.writingNote, perApp: [:])
         Engine.shared.post("/rework", ["text": it.text, "cmd": id, "custom": id == "custom" ? custom : "", "app": it.app, "from": "quick", "notes": notes, "kb": KeyLayout.language], timeout: 45) { j in
@@ -828,7 +828,7 @@ extension Quick {
         view.needsDisplay = true
     }
 
-    /// He typed a letter while holding: the full form with it in search, the same copy chosen when it still matches,
+    /// The user typed a letter while holding: the full form with it in search, the same copy chosen when it still matches,
     /// grown from where the quick form stands.
     func intoFull(_ ch: String) {
         guard isOpen, look == .quick else { open(typed: ch, held: true); return }
@@ -841,7 +841,7 @@ extension Quick {
         log("switch: into the full form")
     }
 
-    /// ⌘ let go: the chosen copy goes in (the written form shown, if he stepped to one).
+    /// ⌘ let go: the chosen copy goes in (the written form shown, if the user stepped to one).
     func finishQuick() {
         guard isOpen, look == .quick, let it = current else { close("empty"); return }
         let row = sel, rows = shown.map { items[$0] }, formed = shownForm(it)?.text, from = origin, bare = plainForm(it)

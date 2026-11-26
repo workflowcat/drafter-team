@@ -1,14 +1,14 @@
-// The pause rewrite (17 November 2026, Andrii's design; setting `pauseRewrite`, off, cloud mark): when to offer Claude's
+// The pause rewrite (17 November 2026, the user's design; setting `pauseRewrite`, off, cloud mark): when to offer Claude's
 // rewrite of the paragraph before the caret, what the chip says and which words it marks. Pure, so it compiles alone
 // in tests (tests/pause_rewrite_rules.swift). The engine side is engine/pause_rewrite.py; the app side app/PauseRewrite.swift.
 // Numbers from docs/research/2026-11-17-claude-writer.md (made-up lines): Haiku answers a rewrite of this size in
-// ~0.8 s p50, so a 1.5 s rest shows the chip ~2.3 s after his last key, after he has stopped, not while he types.
+// ~0.8 s p50, so a 1.5 s rest shows the chip ~2.3 s after the user's last key, after the user has stopped, not while the user types.
 import Foundation
 
 enum PauseRewriteRules {
     static let marker = "⟦drafter-test⟧"
-    static let pause = 1.5           // seconds with no key before Claude is asked (Andrii's starting point; the numbers keep it)
-    static let budget = 8.0          // an answer later than this is not shown: he has moved on
+    static let pause = 1.5           // seconds with no key before Claude is asked (the user's starting point; the numbers keep it)
+    static let budget = 8.0          // an answer later than this is not shown: the user has moved on
     static let minWords = 6          // engine/pause_rewrite.py MIN_WORDS
     static let maxChars = 800        // the span (app/Proof.swift span) and engine/pause_rewrite.py MAX_CHARS
     static let chipChars = 280       // the chip shows at most this much of the rewrite, in up to 3 lines

@@ -70,8 +70,8 @@ enum Rules {
         return (l, scratched, corrected, closing, l == t ? 0 : 1)
     }
 
-    /// "…let's do it. Yeah." / "…check please, okay?" / "Mm-hmm. Yeah.": words he says to close a take are not text
-    /// (Andrii, 2026-10-20; 19 of his takes ended in "yeah", 6 in "okay"). Only when they stand as their own clause
+    /// "…let's do it. Yeah." / "…check please, okay?" / "Mm-hmm. Yeah.": words the user says to close a take are not text
+    /// (The user, 2026-10-20; 19 of their takes ended in "yeah", 6 in "okay"). Only when they stand as their own clause
     /// at the very end, after a full stop or comma; a take of nothing else is dropped. "Thank you" and "do it" stay.
     static let filler = #"(?:yeah|yea|yep|yup|yes|okay|ok|o\.k\.|alright|all right|cool|mm-?hmm|mhm|uh-?huh|um+|uh+|hmm+|ага|угу|окей|ок|ну|все|всьо|так|ладно)"#
     static let tailFiller = try! NSRegularExpression(pattern:

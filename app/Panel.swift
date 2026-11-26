@@ -1,4 +1,4 @@
-// The one floating-panel style (caret-cozy round, 23 November 2026; Andrii: "map all the rest of the tools and caret's,
+// The one floating-panel style (caret-cozy round, 23 November 2026; the user: "map all the rest of the tools and caret's,
 // like the screenshot things, that kinda has to be a bit more cozy"). Everything Drafter floats outside its window (the
 // chips and cards at the caret, the pickers, the capture deck, the tips) draws its ground, its keys, its buttons and its
 // rows with these pieces, so they read like the calm one-column journal: a soft card with a hairline edge and 12 pt

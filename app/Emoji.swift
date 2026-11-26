@@ -1,6 +1,6 @@
-// Emoji codes (1 November 2026; Cotypist and Pretype have them, he lost them in the switch): ":" and two or more
+// Emoji codes (1 November 2026; Cotypist and Pretype have them, the user lost them in the switch): ":" and two or more
 // letters at the start of a word offer one emoji as a chip, Tab puts it in place of the code. Names come from Unicode
-// itself plus the usual chat codes (:joy, :+1, :tada); the emoji he used most in his own writing (data/typed.jsonl)
+// itself plus the usual chat codes (:joy, :+1, :tada); the emoji the user used most in their own writing (data/typed.jsonl)
 // win a tie. "http:", "10:30" and "a:b" never trigger: the colon must start a word.
 import Foundation
 
@@ -46,7 +46,7 @@ enum Emoji {
         return out
     }
 
-    /// How often he used each emoji (his typed lines), read at most every 10 minutes, off the main thread
+    /// How often the user used each emoji (their typed lines), read at most every 10 minutes, off the main thread
     /// (2026-11-14: the whole-file scan held the key path ~150 ms on a 2.9 MB typed.jsonl); until the first read is
     /// back, the order is the plain one.
     private static func refresh() {

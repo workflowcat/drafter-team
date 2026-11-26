@@ -1,5 +1,5 @@
 // The ranked typo fix in the app (15 November 2026, setting `typoEngine`: "ranked", or "system" for the macOS-only fix
-// of 31 October). The rules are pure (TypoRules, TypoKeyboard, TypoRank, TypoDecide); this file feeds them his words
+// of 31 October). The rules are pure (TypoRules, TypoKeyboard, TypoRank, TypoDecide); this file feeds them the user's words
 // (Autocorrect's lists), the Mac's spellchecker, and the nightly tables (data/typo-bigrams.tsv, data/typo-gate.json from
 // engine/typos.py), read off the main thread. Each offer and fix logs its numbers, no words, for the nightly refit.
 import AppKit
@@ -49,7 +49,7 @@ enum TypoEngine {
                                  known: Autocorrect.known, spell: Spell.known, guesses: guesses, tables: tables) != nil
     }
 
-    /// Typo hold: one of the words he writes starts with these letters (his counts, sorted, so a binary search).
+    /// Typo hold: one of the words the user writes starts with these letters (their counts, sorted, so a binary search).
     static func hisStart(_ letters: String) -> Bool {
         guard let words = files.read()?.index.words else { return false }
         var lo = 0, hi = words.count

@@ -1,4 +1,4 @@
-// The journal's own store (14 November 2026): changes he makes to an item's text, and drafts he makes by combining
+// The journal's own store (14 November 2026): changes the user makes to an item's text, and drafts the user makes by combining
 // items. The history files are never written: a change lives here, by item id, beside the original, and goes away on
 // Revert. Items are general (kind "draft" today) so another kind, a quick note for one, can be added later.
 // data/journal.json; tests use a temporary folder. Pure Foundation: tests/journal_store.swift.

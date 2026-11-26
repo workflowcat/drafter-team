@@ -1,9 +1,9 @@
 """Item C: two load-time speed items, measured against the engine as it runs today.
 
-1. A fused model folder: base + his live layer merged once on disk (mlx_lm fuse), so the engine loads one model and
+1. A fused model folder: base + the user's live layer merged once on disk (mlx_lm fuse), so the engine loads one model and
    skips `Model.fuse_lora` (112 merges at every load and wake). Measured: load seconds, memory, ms per token, prompt
    head prefill, and whether the first tokens of a few made-up prompts are the same.
-2. A prompt-cache file for the fixed prompt head (about 690 tokens: rules, his words, his example messages): saved
+2. A prompt-cache file for the fixed prompt head (about 690 tokens: rules, the user's words, their example messages): saved
    once per head (mlx_lm save_prompt_cache), read at load instead of prefilling the head. Measured: prefill ms against
    file read ms, file size, and the next-token logits from both caches (they must match).
 
@@ -11,7 +11,7 @@
     .venv/bin/python -B bench/weights/speed.py
 Each measurement loads one model in its own guarded process. Output: data/bench/weights/speed.json.
 The fused folder (bench/out/weights/fused-live, ~1 GB) has no plain layers, so chips and rewrites, which run with the
-layer off (`Model.lora(False)`), would run on his layer: see docs/rounds/2026-11-14-weights.md before using it live.
+layer off (`Model.lora(False)`), would run on the user's layer: see docs/rounds/2026-11-14-weights.md before using it live.
 Internals: --worker fuse|measure|pcache run under guarded.py."""
 import argparse, json, os, sys, time
 from pathlib import Path
@@ -83,7 +83,7 @@ def worker_pcache(a):
     head = b.head_ids
     t = time.perf_counter(); m.warm(head); prefill_ms = (time.perf_counter() - t) * 1000
     key = hashlib.sha1((C.BASE + str((C.ROOT / C.LIVE / "adapters.safetensors").stat().st_mtime) + ",".join(map(str, head))).encode()).hexdigest()[:16]
-    path = C.WORK / f"head-cache-{key}.safetensors"   # the head holds his example messages: kept under data/
+    path = C.WORK / f"head-cache-{key}.safetensors"   # the head holds the user's example messages: kept under data/
     C.WORK.mkdir(parents=True, exist_ok=True)
     t = time.perf_counter(); save_prompt_cache(str(path), m.cache, {"key": key, "tokens": str(len(head))}); save_ms = (time.perf_counter() - t) * 1000
     probe = mx.array(m.encode("\n[Claude]\nLet's")[:4])

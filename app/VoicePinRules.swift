@@ -33,7 +33,7 @@ enum VoicePinRules {
     }
 
     /// The pin after a tap. Unpinned: the language the words so far are not in (heard as English -> Ukrainian and
-    /// back; mixed or nothing yet -> Ukrainian, his own). Pinned: the other one.
+    /// back; mixed or nothing yet -> Ukrainian, the user's own). Pinned: the other one.
     static func next(pin: String?, heard: String) -> String {
         if let pin, pins.contains(pin) { return pin == "uk" ? "en" : "uk" }
         return language(heard) == "uk" ? "en" : "uk"
@@ -42,7 +42,7 @@ enum VoicePinRules {
     /// The strip's mark: "UK", "EN", or nothing when unpinned.
     static func mark(_ pin: String?) -> String { pin.map { pins.contains($0) ? $0.uppercased() : "" } ?? "" }
 
-    /// A clean Left Option tap: short, no key typed while it was down (an ⌥ character is his), no ⌘ ⌃ ⇧ with it.
+    /// A clean Left Option tap: short, no key typed while it was down (an ⌥ character is the user's), no ⌘ ⌃ ⇧ with it.
     static func tap(seconds: Double, keyBetween: Bool, otherModifiers: Bool) -> Bool {
         seconds >= 0 && seconds <= tapMax && !keyBetween && !otherModifiers
     }

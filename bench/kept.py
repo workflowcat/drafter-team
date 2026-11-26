@@ -1,12 +1,12 @@
-"""Kept letters (docs/roadmap.md item 5, built 2026-11-13): how much of the grey text he took with Tab is still there
-in what he sends, per app and per length of the ghost when it showed. Copilot's measure: accepted and kept
+"""Kept letters (docs/roadmap.md item 5, built 2026-11-13): how much of the grey text the user took with Tab is still there
+in what the user sends, per app and per length of the ghost when it showed. Copilot's measure: accepted and kept
 characters, not accept rate.
 
 data/accepted.jsonl has each Tab: the text taken, the 120 characters before it, the app and (since 2026-11-13) the
-ghost's length when shown. The line he sent next in the same app (data/typed.jsonl, Return) or left as a draft
+ghost's length when shown. The line the user sent next in the same app (data/typed.jsonl, Return) or left as a draft
 (data/drafts.jsonl) within 30 minutes is searched for the characters before the take; the letters right after them
 that match the taken text are kept. A take whose spot is not found in that line (an earlier line of a multi-line
-message, a field he cleared) counts as unmatched, not as lost.
+message, a field the user cleared) counts as unmatched, not as lost.
 
     .venv/bin/python bench/kept.py [days]          # prints the table (bench/week.py adds it to the weekly page)
 """

@@ -1,4 +1,4 @@
-// Recordings as notes (2026-10-30, Andrii: "more similar to Granola: the text, search all of the conversation for a
+// Recordings as notes (2026-10-30, the user: "more similar to Granola: the text, search all of the conversation for a
 // quick overview, quickly send info to the agents"). Since the look round "Tape" (14 November 2026) every call and long
 // note is a block on the tape (TapeWindow.swift), found by the tape's one search; Return opens it as a page here: the
 // recording as a document (title, people, summary,

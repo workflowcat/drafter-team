@@ -9,11 +9,11 @@ Set: each held line (data/bench/weights/held-137.json, all after the last retrai
 whole words from its middle (seeded by the line, never its first or last word; trailing punctuation stays in the rest).
 The rest of the line after the span is what the app sends as `after_line` (at most 120 characters, the app's limit).
 Keys: every caret position from the end of the word before the gap to the end of the span (the last key is "nothing
-missing": he has typed it all, any ghost there is wrong).
+missing": the user has typed it all, any ghost there is wrong).
 
-Policy (what he would see): the live gate (data/gate.json, not refit) on the first word, as the engine decides; then
+Policy (what the user would see): the live gate (data/gate.json, not refit) on the first word, as the engine decides; then
 the candidate's rule; a ghost under `--min` letters is not shown (the app's minGhost, 5).
-  eol     the same keys as line ends: today's ghost against all his next words (no mid-line rule, no trim)
+  eol     the same keys as line ends: today's ghost against all the user's next words (no mid-line rule, no trim)
   today   end-of-line rule (first word + sure words >= 0.5, up to 3) and the app's own midText trim
   cut     engine/fim.shape without the probability stop (text rules only)
   fim     engine/fim.shape (stop at p(rest) >= STOP, text rules)
@@ -153,7 +153,7 @@ def judge(g, before, target):
     for a, b in zip(gw, tw):
         if a != b: break
         k += 1
-    # the first word of the gap may be the half word he is typing: compare the letters that follow the caret
+    # the first word of the gap may be the half word the user is typing: compare the letters that follow the caret
     first = bool(gw) and bool(tw) and gw[0] == tw[0] and (g[:1].isspace() == target[:1].isspace())
     return exact, first, k
 
@@ -168,7 +168,7 @@ def score(path, rules=("eol", "today", "cut", "fim"), min_letters=5, stop=fim.ST
         for r in rows:
             it = items[r["i"]]; s, e = it["gap"]
             before, rest, target = it["text"][: r["pos"]], it["text"][e:], it["text"][r["pos"]: e]
-            if rule == "eol": target = it["text"][r["pos"]:]      # the same key read as a line end: his next words
+            if rule == "eol": target = it["text"][r["pos"]:]      # the same key read as a line end: the user's next words
             n += 1
             p = G.p(r["toks"], before, it["src"]) if r["toks"] and r["toks"][-1][0] else None
             if p is None or p < G.g["th"]["ai" if it["src"] == "claude" else "chat"]: continue

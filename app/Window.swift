@@ -1,6 +1,6 @@
-// Drafter as a proper app (2026-10-21, Andrii: "make it like a proper app; things are overlapping and confusing"):
-// one window, opened from the Dock or the menu. Since the look round "Tape" (14 November 2026) it is one tape: what he
-// copied, typed and said, and his calls and long notes, newest first, with the big field on top that searches it and,
+// Drafter as a proper app (2026-10-21, the user: "make it like a proper app; things are overlapping and confusing"):
+// one window, opened from the Dock or the menu. Since the look round "Tape" (14 November 2026) it is one tape: what the user
+// copied, typed and said, and the user's calls and long notes, newest first, with the big field on top that searches it and,
 // after ⌘K, takes a command (engine /command). Shortcuts, Settings and Help open as pages in the same window, Esc goes
 // back. The tape itself is drawn in TapeWindow.swift. The app shows in the Dock and ⌘-Tab only while the window is
 // open; closing it leaves Drafter running in the menu bar as before.
@@ -45,7 +45,7 @@ final class AppWindow: NSObject, NSWindowDelegate {
                 return nil
             }
         }
-        // the app he came from: Insert puts the text there
+        // the app the user came from: Insert puts the text there
         if let front = PutBack.remember() { model.origin = front }
         model.reload()
         NSApp.setActivationPolicy(.regular)
@@ -179,7 +179,7 @@ final class WindowModel: ObservableObject {
     var previewPastes: [PasteTrail.Paste] = []      // the preview's made-up paste trail
     var journal = JournalBuild()
     lazy var journalStore = JournalStore(url: preview ? nil : Home.data.appendingPathComponent("journal.json"))
-    var origin: NSRunningApplication?             // the app he came from (Insert puts the text there)
+    var origin: NSRunningApplication?             // the app the user came from (Insert puts the text there)
     var now = Date().timeIntervalSince1970
     var tapeSeq = 0
     var gone: (item: TapeItem, until: DispatchWorkItem)?
@@ -252,7 +252,7 @@ final class WindowModel: ObservableObject {
             let hidden = DraftHide.load(History.hiddenFile)
             let takes = rows("takes", f.takes, 500).compactMap { Entry.voice($0) }
             let clips = rows("clipboard", f.clips, 300).enumerated().compactMap { i, r in Entry.clip(r, id: "c\(i)") }
-            // what he typed: one row per message, its drafts folded into it (TypedList); the files stay as they are
+            // what the user typed: one row per message, its drafts folded into it (TypedList); the files stay as they are
             let typed = TypedList.build(sent: DraftHide.drop(rows("typed", f.typed, 600), kind: "sent", hidden: hidden),
                                         drafts: DraftHide.drop(f.drafts.newest(600), kind: "draft", hidden: hidden))
             let docs = WindowModel.readDocs()

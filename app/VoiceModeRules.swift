@@ -1,10 +1,10 @@
-// Voice cleanup levels and his own named modes (17 November 2026, research item 3, docs/research/2026-11-17-what-people-love.md).
+// Voice cleanup levels and the user's own named modes (17 November 2026, research item 3, docs/research/2026-11-17-what-people-love.md).
 //   Raw       Parakeet's words as heard: no clean-up, no corrections, no shape, no style. Adds nothing.
 //   Clean     today's pipeline (fillers out, spoken corrections, lists, punctuation, the app's style). The default.
-//   Polished  Clean, then the local model rewrites it as written text, with his mode's prompt and his writing note for
-//             the app (`appNotes`, one place for his instructions). Never Claude.
+//   Polished  Clean, then the local model rewrites it as written text, with the user's mode's prompt and their writing note for
+//             the app (`appNotes`, one place for the user's instructions). Never Claude.
 // The level per app comes the way the voice style does (VoiceStyleRules.pick): the app's own, its kind's, then Clean.
-// A named mode ("Email": "formal, short paragraphs") is Polished with its prompt. He picks one for the app in front by
+// A named mode ("Email": "formal, short paragraphs") is Polished with its prompt. The user picks one for the app in front by
 // saying "mode email" as the whole take, or from the `;` picker ("Voice mode"); "mode clean" / "mode off" goes back.
 // Pure: tests/voice_mode_rules.swift.
 import Foundation
@@ -15,7 +15,7 @@ enum VoiceLevel: String, CaseIterable {
     var label: String { switch self { case .raw: return "Raw"; case .clean: return "Clean"; case .polished: return "Polished" } }
 }
 
-/// What a take in this app is made into: the level, and for Polished his mode's name and prompt (empty: none).
+/// What a take in this app is made into: the level, and for Polished the user's mode's name and prompt (empty: none).
 struct VoiceChoice: Equatable {
     var level = VoiceLevel.clean
     var mode = ""
@@ -26,7 +26,7 @@ enum VoiceModeRules {
     /// Most modes kept; longest prompt.
     static let maxModes = 12, maxPrompt = 200
 
-    /// The app's level: a mode he picked for it in this session, then the app's own setting, its kind's, then Clean.
+    /// The app's level: a mode the user picked for it in this session, then the app's own setting, its kind's, then Clean.
     /// `modes`: name -> prompt (settings `voiceModes`); a level setting may name a mode ("Email") as well as a level.
     static func pick(kind: String, bundle: String, byKind: [String: String], byApp: [String: String],
                      modes: [String: String], picked: [String: VoiceChoice]) -> VoiceChoice {
@@ -61,7 +61,7 @@ enum VoiceModeRules {
         return nil
     }
 
-    /// A spoken or picked name -> what to keep for the app: a choice, or nil to clear his pick ("off", "default").
+    /// A spoken or picked name -> what to keep for the app: a choice, or nil to clear the user's pick ("off", "default").
     /// The outer nil: not a known name (the strip says so).
     static func resolve(_ name: String, modes: [String: String]) -> VoiceChoice?? {
         let n = name.lowercased()
@@ -78,7 +78,7 @@ enum VoiceModeRules {
         return lang.isEmpty ? level : lang + " · " + level
     }
 
-    /// The local model's instruction for Polished. `note`: his writing note for the app (WritingNotes.forApp).
+    /// The local model's instruction for Polished. `note`: the user's writing note for the app (WritingNotes.forApp).
     static func instruction(_ c: VoiceChoice, note: String) -> String {
         var s = "This is dictated speech. Rewrite it as written text: whole sentences, no spoken fillers or false starts, "
             + "the same meaning, language, names and numbers; do not add facts, greetings or sign-offs it does not have."

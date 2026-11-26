@@ -189,7 +189,7 @@ enum DevHooks {
         // test hook: what an app's focused field looks like through Accessibility, from the background (read only)
         DistributedNotificationCenter.default().addObserver(forName: Notification.Name(Home.bundleID + ".axprobe"), object: nil, queue: .main) { n in
             guard let arg = n.object as? String else { return }
-            if arg.hasSuffix(" wait") {   // probe once he brings that app forward himself (up to 2 min)
+            if arg.hasSuffix(" wait") {   // probe once the user brings that app forward themselves (up to 2 min)
                 let id = arg.replacingOccurrences(of: " wait", with: ""), t0 = Date()
                 Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { t in
                     if Date().timeIntervalSince(t0) > 120 { t.invalidate(); log("axprobe \(id): not brought forward"); return }

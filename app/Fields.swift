@@ -1,9 +1,9 @@
 // Places to fill in a snippet (1 November 2026; TextExpander fill-ins, VS Code snippets). A snippet like
 // "Hi {name}, the call is {day:Mon|Tue} at {time=15:00}.{cursor}" goes in whole; the first place is selected, so typing
-// replaces it. Tab jumps to the next place, ↑ ↓ change a choice, a second {name} takes what he typed in the first, and
+// replaces it. Tab jumps to the next place, ↑ ↓ change a choice, a second {name} takes what the user typed in the first, and
 // after the last place Tab puts the caret at {cursor} (or the end). Esc, Return, a click, arrows, a shortcut or
 // another app end it; so do 3 minutes without a key. Everything is done with arrow keys, so it works the same in
-// native fields and in Chromium boxes: the text after the caret is the snippet's own until he reaches it.
+// native fields and in Chromium boxes: the text after the caret is the snippet's own until the user reaches it.
 //
 // Also the use count per shortcut (TextExpander's statistics): data/snippet-stats.json, shown on the Shortcuts page.
 import AppKit
@@ -19,9 +19,9 @@ enum Fields {
     final class Session {
         let stops: [Stop], final: Int, pid: pid_t, el: AXUIElement
         var i = 0
-        var untouched = true       // no key of his in this place yet: its text is the snippet's own (and selected)
+        var untouched = true       // no key of the user's in this place yet: its text is the snippet's own (and selected)
         var now = ""               // that text while untouched (the default, or the chosen option)
-        var typed = ""             // what he typed here once he started
+        var typed = ""             // what the user typed here once the user started
         var known = true           // `typed` is all the place holds
         var option = 0
         var values: [String: String] = [:]
@@ -85,7 +85,7 @@ enum Fields {
         if st.len > 0 { right(st.len, shift: true) }
     }
 
-    /// His key while places are open. true = Drafter takes it.
+    /// The user's key while places are open. true = Drafter takes it.
     static func key(_ code: Int64, typed: String, mods: CGEventFlags) -> Bool {
         guard active, let s = cur else { return false }
         s.last = Date()
@@ -114,7 +114,7 @@ enum Fields {
     /// ↓ ↑: the next or previous choice, selected again.
     static func cycle(_ dir: Int) {
         guard let s = cur, s.untouched else { return }
-        guard here(s) else { arrows(dir == 1 ? 125 : 126, 1); return }   // the key goes on to wherever he is now
+        guard here(s) else { arrows(dir == 1 ? 125 : 126, 1); return }   // the key goes on to wherever the user is now
         let opts = s.stops[s.i].options
         s.option = (s.option + dir + opts.count) % opts.count
         let o = opts[s.option]
@@ -126,7 +126,7 @@ enum Fields {
     /// Tab: leave this place (keep what it holds), fill copies of it on the way, select the next place.
     static func next() {
         guard let s = cur else { return }
-        guard here(s) else { arrows(48, 1); return }   // his Tab goes on to wherever he is now
+        guard here(s) else { arrows(48, 1); return }   // the user's Tab goes on to wherever the user is now
         Keys.shared.cancel()
         let st = s.stops[s.i]
         let value: String? = s.untouched ? s.now : (s.known ? s.typed : nil)
@@ -172,7 +172,7 @@ enum Fields {
     static func stats() -> [String: [String: Any]] {
         ((try? JSONSerialization.jsonObject(with: Data(contentsOf: statsFile))) as? [String: [String: Any]]) ?? [:]
     }
-    /// One use of a shortcut: how many characters he typed for it and how many went in.
+    /// One use of a shortcut: how many characters the user typed for it and how many went in.
     static func used(_ key: String, typed: Int, put: Int) {
         guard !key.isEmpty, !["clip", "fact", "lookup"].contains(key) else { return }
         var all = stats()

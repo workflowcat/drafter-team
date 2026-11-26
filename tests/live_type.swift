@@ -19,7 +19,7 @@ struct LiveTypeTest {
     }
 
     static func main() {
-        // steady: the strip's rule, the last word waits unless he paused
+        // steady: the strip's rule, the last word waits unless the user paused
         check(LiveType.steady(w("we can go"), w("we can go to"), still: 0) == 3, "agreeing words, the new one waits")
         check(LiveType.steady(w("we can go to"), w("we can go to"), still: 2) == 3, "all alike: the last word still waits")
         check(LiveType.steady(w("we can go to"), w("we can go to"), still: 3) == 4, "three alike: he paused, the last word too")

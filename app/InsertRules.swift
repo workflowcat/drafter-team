@@ -73,7 +73,7 @@ enum InsertRules {
 /// Pure; tests in tests/insert_rules.swift.
 enum InsertCheckRules {
     /// The only apps it acts in: a TextEdit document and local pages in Chrome and Safari it wrote itself. Never Notes
-    /// (it syncs to his account), never a messaging app.
+    /// (it syncs to the user's account), never a messaging app.
     static let targets: Set<String> = ["com.apple.TextEdit", "com.google.Chrome", "com.apple.Safari"]
     static func mayAct(front: String?, expected: String, field: String?) -> Bool {
         guard let f = front, f == expected, targets.contains(f), let field else { return false }

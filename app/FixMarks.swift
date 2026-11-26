@@ -1,6 +1,6 @@
 // Visible undo for autocorrect (2026-11-01, as on the iPad). A word Drafter fixed keeps a thin dotted underline until
 // the sentence ends (. ! ? or Return), the field or app changes, or two minutes pass. The mouse over it, or the caret
-// in it, shows his own word in a small chip above; a click on the chip, or Tab while the caret is in the word, puts his
+// in it, shows the user's own word in a small chip above; a click on the chip, or Tab while the caret is in the word, puts the user's
 // word back and keeps it (data/autocorrect-keep.txt: never fixed again). Backspace right after a fix still works too.
 // Native fields: the word is a UTF-16 range of the value. Chromium and Electron (Beeper, Claude, Chrome): text markers.
 import AppKit
@@ -69,7 +69,7 @@ final class FixMarks {
 
     private func placeNative(_ m: Mark, new: String) -> Bool {
         guard let value: String = Focus.attr(m.el, kAXValueAttribute), let r = Focus.range(m.el), r.length == 0 else { return false }
-        // he may have typed on before the key events landed: the nearest copy of the new word before the caret
+        // the user may have typed on before the key events landed: the nearest copy of the new word before the caret
         let ns = value as NSString, c = min(max(r.location, 0), ns.length), n = (new as NSString).length
         guard c >= n else { return false }
         let lo = max(0, c - n - 40), found = ns.range(of: new, options: .backwards, range: NSRange(location: lo, length: c - lo))
@@ -80,7 +80,7 @@ final class FixMarks {
     }
 
     private func placeMarkers(_ m: Mark) -> Bool {
-        // walk back from the caret (he may have typed on) until the text from here starts with the new word and its space
+        // walk back from the caret (the user may have typed on) until the text from here starts with the new word and its space
         guard let caret = caretMarker(m.el) else { return false }
         let n = (m.word as NSString).length
         var back = [caret], found = -1
@@ -204,7 +204,7 @@ final class FixMarks {
         tick += 1
         if tick % 4 == 0 { refresh() }
         guard !marks.isEmpty else { return }
-        // the mouse over a fixed word (or over its chip) shows his word
+        // the mouse over a fixed word (or over its chip) shows the user's word
         let p = NSEvent.mouseLocation
         // the chip covers the line above, so it waits for the mouse to rest on the word (0.3 s), not pass over it
         if let m = marks.last(where: { $0.rect.map { Ghost.shared.cocoa($0).insetBy(dx: -2, dy: -3).contains(p) } ?? false }) {
@@ -250,19 +250,19 @@ final class FixMarks {
         note()
     }
 
-    /// His own word in the chip, laid out; the chip's frame just above the word (AX rect, top-left).
+    /// The user's own word in the chip, laid out; the chip's frame just above the word (AX rect, top-left).
     private func chipFrame(_ old: String, over r: CGRect) -> NSRect {
         let c = Ghost.shared.cocoa(r)
         chipText.stringValue = old
         chipText.sizeToFit()
-        // no tab keycap (1 November 2026): Tab in the word still puts his word back
+        // no tab keycap (1 November 2026): Tab in the word still puts the user's word back
         let h = max(30, chipText.frame.height + 12)
         let w = 10 + 16 + 8 + chipText.frame.width + 12
         chipBox.frame = NSRect(x: 0, y: 0, width: w, height: h)
         chipMark.frame = NSRect(x: 10, y: ((h - 16) / 2).rounded(), width: 16, height: 16)
         chipText.frame.origin = NSPoint(x: 34, y: ((h - chipText.frame.height) / 2).rounded())
         chipBox.needsDisplay = true
-        return NSRect(x: c.minX - 34, y: c.maxY + 3, width: w, height: h)   // his word stands over the fixed one
+        return NSRect(x: c.minX - 34, y: c.maxY + 3, width: w, height: h)   // the user's word stands over the fixed one
     }
 
     /// Preview (`--ui-preview`): the chip over a made-up word, laid out and never put on the screen.
@@ -280,7 +280,7 @@ final class FixMarks {
         return chipPanel.frame.insetBy(dx: -2, dy: -2).contains(NSPoint(x: p.x, y: h - p.y))
     }
 
-    // MARK: putting his word back
+    // MARK: putting the user's word back
 
     func take(_ how: String) {
         guard let m = shown else { return }
@@ -291,7 +291,7 @@ final class FixMarks {
         Keys.shared.cancel()
         var after = 0   // characters between the word and the caret: the caret goes back there after the swap
         // Chromium applies a selection set through AX a moment later (2026-11-01: the read-back came too early, the word
-        // stayed selected and his next key typed over it). So: wait for it, and on any failure put the caret back.
+        // stayed selected and the user's next key typed over it). So: wait for it, and on any failure put the caret back.
         func settled(_ ok: () -> Bool) -> Bool {
             for i in 0..<8 { if ok() { return true }; if i < 7 { usleep(25_000) } }
             return false

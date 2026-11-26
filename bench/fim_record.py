@@ -36,7 +36,7 @@ out_p.parent.mkdir(parents=True, exist_ok=True)
 boost = float(json.loads((ROOT / "data/gate.json").read_text()).get("boost", 0) or 0)
 knowledge = know.Pack(ROOT / "data/know.json"); knowledge.reload(); knowledge.path = None
 W = None
-if boost:   # his words from before the held lines only, as typebench builds them
+if boost:   # the user's words from before the held lines only, as typebench builds them
     W = words_mod.Words()
     for line in ngram.corpus(last_retrain(ROOT)):
         if not words_mod.RUSSIAN.search(line): W.add(line, rebuild=False)

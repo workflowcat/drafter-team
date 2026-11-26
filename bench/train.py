@@ -1,4 +1,4 @@
-"""LoRA on Andrii's writing, with the memory guard (the Mac froze on 2026-10-06 during a local model run).
+"""LoRA on the user's writing, with the memory guard (the Mac froze on 2026-10-06 during a local model run).
 
     .venv/bin/python bench/train.py <iters> [extra mlx_lm.lora args]
 Adapter goes to data/adapters/ (local only). Drafter's typing help must be paused while it runs."""

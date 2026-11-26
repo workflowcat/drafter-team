@@ -1,4 +1,4 @@
-// A recorded call or long note as one document (2026-10-30, Andrii: "more like Granola: the text, search all of the
+// A recorded call or long note as one document (2026-10-30, the user: "more like Granola: the text, search all of the
 // conversations for a quick overview, send it to the agents quickly"). Built from the recording folder (meta.json,
 // lines.json or transcript.txt, shots.json) and the note the engine saved for it (data/notes/*.md, its "Запис:" line
 // points back here). Pure Foundation: tests/recording_docs.swift builds it with Transcript.swift alone.
@@ -57,18 +57,18 @@ struct CallDoc: Identifiable, Hashable {
     var todos: [String] = []
     var turns: [Turn] = []
     var shots: [Shot] = []
-    // details he can edit on the page (meta.json, 17 November 2026): his title, place, project and notes, the call app
-    var titleSet = false        // the title is his own (meta "title")
+    // details the user can edit on the page (meta.json, 17 November 2026): their title, place, project and notes, the call app
+    var titleSet = false        // the title is the user's own (meta "title")
     var place = ""
     var project = ""
     var details = ""
     var calendar = ""           // the calendar event's calendar
     var eventStart: Double?     // the event's start and end (unix s)
     var eventEnd: Double?
-    var speakers: [String: String] = [:]   // a speaker label ("Вони", "Speaker 2") -> the person he named
+    var speakers: [String: String] = [:]   // a speaker label ("Вони", "Speaker 2") -> the person the user named
     var merged: [String] = []   // a combined recording: the recordings and takes it was made from
     var mergedInto: String?     // this one was combined into another recording
-    var mine = ""           // his own notes typed in the recording window (my-notes.md, app/RecordWindow.swift)
+    var mine = ""           // the user's own notes typed in the recording window (my-notes.md, app/RecordWindow.swift)
     var note = ""           // the note file with the summary, when there is one
     var live = false        // still recording (raw .pcm, no .wav yet)
     var hasAudio = false
@@ -156,7 +156,7 @@ struct CallDoc: Identifiable, Hashable {
         let n = notes[d.path] ?? notes[d.standardizedFileURL.path]
         c.note = n?.path ?? ""
         c.points = n?.points ?? []
-        // his own edits in place (stream round, 23 November 2026): points he rewrote, transcript lines he fixed; the
+        // the user's own edits in place (stream round, 23 November 2026): points the user rewrote, transcript lines the user fixed; the
         // note file and lines.json stay as the engine wrote them
         if let own = meta["points"] as? [String], !own.isEmpty { c.points = own }
         if let edits = meta["lineEdits"] as? [[String: Any]] { c.turns = applyLineEdits(c.turns, edits) }
@@ -171,7 +171,7 @@ struct CallDoc: Identifiable, Hashable {
         return c
     }
 
-    /// Transcript lines he changed: each edit names the line, what it said and what it says now. An edit whose line no
+    /// Transcript lines the user changed: each edit names the line, what it said and what it says now. An edit whose line no
     /// longer says what it did (the recording was read again) is left out.
     static func applyLineEdits(_ turns: [Turn], _ edits: [[String: Any]]) -> [Turn] {
         var out = turns
@@ -188,7 +188,7 @@ struct CallDoc: Identifiable, Hashable {
         if now != was { out.append(["i": index, "was": was, "now": now]) }
         return out
     }
-    /// What a line said before he first changed it.
+    /// What a line said before the user first changed it.
     static func originalLine(_ edits: [[String: Any]], index: Int) -> String? {
         edits.first { ($0["i"] as? Int) == index }?["was"] as? String
     }
@@ -285,7 +285,7 @@ struct CallDoc: Identifiable, Hashable {
     static let day: DateFormatter = { let f = DateFormatter(); f.locale = Locale(identifier: "en_GB"); f.dateFormat = "d MMMM yyyy, HH:mm"; return f }()
     static func length(_ s: Double) -> String { s >= 60 ? "\(Int((s / 60).rounded())) min" : "\(Int(s)) s" }
     static func who(_ w: String) -> String { w == "Я" ? "me" : w == "Вони" ? "them" : w }
-    /// A speaker as shown: the person he named for that label, else me / them / the label.
+    /// A speaker as shown: the person the user named for that label, else me / them / the label.
     func name(_ w: String) -> String { speakers[w].flatMap { $0.isEmpty ? nil : $0 } ?? CallDoc.who(w) }
     /// The speaker labels in this recording, in order of first turn.
     var labels: [String] { var seen: [String] = []; for t in turns where !t.who.isEmpty && !seen.contains(t.who) { seen.append(t.who) }; return seen }

@@ -78,7 +78,7 @@ class NoteFromEvent(unittest.TestCase):
         text = "Скажи, будь ласка, Андрій, де ми. Марта не підтвердила. Я говорив з Савою. Мілі теж написав. Тільки це, тільки то."
         with patch.object(notes, "names", return_value=people):
             got = [l["name"] for l in notes.links(text)]
-        self.assertEqual(sorted(got), ["Sava Synthetic", "Марта"])   # not his own name, not Marko, not one of two Lanas
+        self.assertEqual(sorted(got), ["Sava Synthetic", "Марта"])   # not the user's own name, not Marko, not one of two Lanas
 
     def test_without_event_the_model_names_it(self):
         import notes

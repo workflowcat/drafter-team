@@ -18,7 +18,7 @@ enum PutBack {
     }
 
     /// Instead of `t.activate()`: true when the target holds the keys or was raised (only over Drafter itself);
-    /// false when he moved to another app (or it is gone), then nothing is raised.
+    /// false when the user moved to another app (or it is gone), then nothing is raised.
     @discardableResult
     static func raise(_ t: NSRunningApplication?, _ who: String) -> Bool {
         let f = front(t), ok = alive(t)
@@ -60,7 +60,7 @@ enum PutBack {
     }
 }
 
-/// While a capture is up: each front-app switch, and whether his input (a click into another app, a key or a modifier
+/// While a capture is up: each front-app switch, and whether the user's input (a click into another app, a key or a modifier
 /// that reached another app) came just before it (PutRules.moved). Clicks and keys on Drafter's own panels are not
 /// seen here (global monitors only see other apps' events; the deck's keys are taken by the tap).
 final class SwitchWatch {

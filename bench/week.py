@@ -1,4 +1,4 @@
-"""Weekly page (2026-10-20, run by bench/nightly.sh on Fridays): what Drafter did for him in the last 7 days, local
+"""Weekly page (2026-10-20, run by bench/nightly.sh on Fridays): what Drafter did for the user in the last 7 days, local
 only. Notes and calls with their follow-ups, voice minutes and words, letters Tab saved, replies drafted, questions
 asked, words learned. Writes data/review/week-YYYY-MM-DD.md and prints it.
 
@@ -66,7 +66,7 @@ try:
     out.append(f"- слів вивчено з правок (усього): {len(learned)}")
 except Exception:
     pass
-# kept letters (2026-11-13, roadmap item 5): of the grey text taken with Tab, how much is still in what he sent
+# kept letters (2026-11-13, roadmap item 5): of the grey text taken with Tab, how much is still in what the user sent
 try:
     sys.path.insert(0, str(ROOT / "bench"))
     import kept
@@ -74,7 +74,7 @@ try:
     out += ghosts_by_length(log)
 except Exception as e:
     out += ["", f"## Kept letters: {e}"]
-# his writing the typing help learns from, per source (bench/corpus.py, rebuilt every night)
+# the user's writing the typing help learns from, per source (bench/corpus.py, rebuilt every night)
 try:
     cs = json.loads((ROOT / "data/corpus-counts.json").read_text())
     out += ["", "## З чого вчиться (рядки / слова / надиктовано)"] + [

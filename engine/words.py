@@ -1,10 +1,10 @@
-"""Instant word finisher (2026-10-31): finishes the word being typed from Andrii's own writing, with no model, in
-well under a millisecond. The word he most often wrote after the same one or two words decides, and only when it is
+"""Instant word finisher (2026-10-31): finishes the word being typed from the user's own writing, with no model, in
+well under a millisecond. The word the user most often wrote after the same one or two words decides, and only when it is
 clear. On the fresh replay set (bench/ngram.py, lines written after the last retrain) it was right 77% of the times
 it spoke in Claude and 63% in Beeper, against ~30% for the model's own next word.
 
-Sources (local only): data/phrases.jsonl (his Beeper and Claude lines), data/typed.jsonl, data/drafts.jsonl,
-the shared dictionary (names keep their spelling), and every line he sends while Drafter runs (`add`).
+Sources (local only): data/phrases.jsonl (the user's Beeper and Claude lines), data/typed.jsonl, data/drafts.jsonl,
+the shared dictionary (names keep their spelling), and every line the user sends while Drafter runs (`add`).
 """
 import bisect, json, os, re, threading
 from sys import intern
@@ -23,7 +23,7 @@ TO_EN = {b: a for a, b in TO_UK.items()}
 
 
 def finish_with_source(W, before, config=(2, 0.6, 1), knowledge=None):
-    """Shared live/replay fallback. His writing always gets first choice."""
+    """Shared live/replay fallback. The user's writing always gets first choice."""
     word = W.finish(before, *config)
     if word: return word, "words"
     word = ""
@@ -34,8 +34,8 @@ def finish_with_source(W, before, config=(2, 0.6, 1), knowledge=None):
 
 
 def know_only(W, before, knowledge=None):
-    """A name from the names / knowledge pack for the word being typed, his own words left out (2026-11-16): with the
-    selector on, his words go through the selector and finish_with_source never ran, so no name was ever offered
+    """A name from the names / knowledge pack for the word being typed, the user's own words left out (2026-11-16): with the
+    selector on, their words go through the selector and finish_with_source never ran, so no name was ever offered
     (/health know.offered stayed 0). The server offers this when the model has nothing for the spot."""
     if knowledge is None: return ""
     with W.lock:
@@ -101,7 +101,7 @@ class Words:
         self.own = Counter()  # real observations only; dictionary seed weights do not count as usage
         # Knowledge lookups, accumulated once while loading and updated with each new sent line.
         self.own_folded, self.own_prefix = Counter(), Counter()
-        self.case = defaultdict(Counter)       # lowercase word -> how he spelled it
+        self.case = defaultdict(Counter)       # lowercase word -> how the user spelled it
         self.inner_case = defaultdict(Counter)  # case observed away from sentence starts
         self.vocab = []
 
@@ -134,7 +134,7 @@ class Words:
             lines += [r["text"] for r in (json.loads(l) for l in (DATA / "corpus.jsonl").read_text().splitlines() if l.strip())
                       if r.get("src") in self.SOURCES]
             files = ("typed.jsonl", "drafts.jsonl") if not lines else ("drafts.jsonl",)
-            if lines:   # what he sent after the corpus was built (as memory.from_corpus); /typed adds the rest live
+            if lines:   # what the user sent after the corpus was built (as memory.from_corpus); /typed adds the rest live
                 try: lines += [r["text"] for r in (json.loads(l) for l in (DATA / "typed.jsonl").read_text().splitlines() if l.strip())
                                if (r.get("t") or 0) > built]
                 except Exception: pass
@@ -171,11 +171,11 @@ class Words:
         return n
 
     def export(self, path, min_count=3):
-        """His words (3+ times: a typo in a left draft and the sent line would be 2) for the app's autocorrect and layout fix: data/mywords.txt, one per line."""
+        """The user's words (3+ times: a typo in a left draft and the sent line would be 2) for the app's autocorrect and layout fix: data/mywords.txt, one per line."""
         with self.lock:
             ws = sorted(w for w, n in self.uni.items() if n >= min_count and len(w) >= 2)
             counts = {w: n for w, n in self.own.items() if n >= 5}
-        # whole file or nothing: the app reads it every minute, and a half-written file made it forget his words
+        # whole file or nothing: the app reads it every minute, and a half-written file made it forget the user's words
         path = Path(path)
         tmp = Path(str(path) + ".tmp")
         tmp.write_text("\n".join(ws) + "\n")
@@ -219,7 +219,7 @@ class Words:
         return ""
 
     def candidate(self, before):
-        """The word being typed as his writing would finish it, with what the word gate reads (round four, 2026-11-14):
+        """The word being typed as the user's writing would finish it, with what the word gate reads (round four, 2026-11-14):
         -> {"rest", "level" (2 two words before, 1 one, 0 the word alone), "n" (times seen), "share", "second" (share of
         the runner-up), "total", "prefix" (letters typed)} or None. The same tables and order as finish(), no bars."""
         line = before.split("\n")[-1]
@@ -265,7 +265,7 @@ class Words:
         return cand, t1, t2
 
     def _wb(self, cand, t1, t2):
-        """Witten-Bell: his words alone, then one word before, then two."""
+        """Witten-Bell: the user's words alone, then one word before, then two."""
         n_all = sum(self.uni.values()) or 1
         tables = [(t, sum(t.values()), len(t)) for t in (t1, t2) if t]
         out = {}
@@ -277,9 +277,9 @@ class Words:
         return out
 
     def dist(self, before, k=8):
-        """His own next words at the caret (2026-11-01, the word booster), for mixing into the model's guess: Witten-Bell
-        from the two words before through one to all his words, kept to words that start with the letters typed (then
-        shares among those). -> [(the rest of the word as he spells it, p)], best first. At a word start it needs at
+        """The user's own next words at the caret (2026-11-01, the word booster), for mixing into the model's guess: Witten-Bell
+        from the two words before through one to all their words, kept to words that start with the letters typed (then
+        shares among those). -> [(the rest of the word as the user spells it, p)], best first. At a word start it needs at
         least one word before it on the line. Bare prefixes are not completions; mid-word shares reserve
         one observation for an unseen completion, so a lone rare word never gets certainty.
         (Weighting the words of the chat on screen higher was tried the same day: no better, bench/people_fresh.py.)"""
@@ -308,7 +308,7 @@ class Words:
 
     def fix(self, before, min_len=4, min_count=5, margin=3):
         """The word being typed, fixed before it ends (2026-11-01, Cursor Tab and Copilot "next edit": a ghost that
-        replaces, not only adds). When no word he wrote starts with what he typed, and one word he writes often is a
+        replaces, not only adds). When no word the user wrote starts with what the user typed, and one word the user writes often is a
         letter away (a typo, a missed, extra or swapped letter; the first letter is taken as right) or the same keys in
         the other layout: -> {"old": typed, "new": the fixed word (finished when the finisher is sure), "kind"}.
         None otherwise. The app also asks the Mac's spellchecker and drops it when the word can still be right."""
@@ -328,7 +328,7 @@ class Words:
             if conv and (self.uni.get(conv, 0) >= 3 or any(self.uni[w] >= 3 for w in self._with_prefix(conv))):
                 new, kind = conv, k
             else:
-                # one letter away from the start of a word he writes often
+                # one letter away from the start of a word the user writes often
                 L, cands = len(low), Counter()
                 i = bisect.bisect_left(self.vocab, low[0])
                 while i < len(self.vocab) and self.vocab[i].startswith(low[0]):
@@ -342,22 +342,22 @@ class Words:
                 top = cands.most_common(2)
                 if len(top) > 1 and top[1][1] * margin > top[0][1]: return None
                 new, kind = top[0][0], "typo"
-                # the letter that made the word unknown may start a word he has not written yet (тред, sqlite, a new
-                # ending): wait two more letters, unless the last two are swapped (завтар). 300 of his sent lines,
+                # the letter that made the word unknown may start a word the user has not written yet (тред, sqlite, a new
+                # ending): wait two more letters, unless the last two are swapped (завтар). 300 of the user's sent lines,
                 # 2026-11-01: 25 words fired on, 14 of them wrong, nearly all on that first unknown letter. Live log
                 # 6-13 November (one-letter wait): 405 ghosts, 30 taken, 226 gone at the next letters as the word went
-                # another way or he fixed it himself; a typo keeps matching its word, a new word drifts away from it.
+                # another way or the user fixed it themselves; a typo keeps matching its word, a new word drifts away from it.
                 def starts(p): return self.uni.get(p, 0) >= 2 or any(self.uni[w] >= 2 for w in self._with_prefix(p))
                 if starts(low[:-1]) or starts(low[:-2]):
                     if not (len(new) == L and new[:-2] == low[:-2] and new[-2:] == low[-1:-3:-1]): return None
-        # finished only when he clearly writes one word from there (a wrong ending is worse than a half word)
+        # finished only when the user clearly writes one word from there (a wrong ending is worse than a half word)
         rest = self.finish(before[: len(before) - len(typed)] + new, 2, 0.7, 1)
         word = new + rest
         if typed[0].isupper(): word = word[0].upper() + word[1:]
         return {"old": typed, "new": word, "kind": kind}
 
     def _spell(self, typed, w):
-        """The rest of the word as he spells it: a name keeps its form when it fits what he typed."""
+        """The rest of the word as the user spells it: a name keeps its form when it fits what the user typed."""
         form = self.case[w].most_common(1)[0][0] if self.case.get(w) else w
         if form.startswith(typed): return form[len(typed):]
         rest = w[len(typed):]

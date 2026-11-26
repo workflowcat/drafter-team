@@ -29,7 +29,7 @@ struct TypoSwap: Equatable {
     let kind: String     // dash, spaced dash, ellipsis, quote, apostrophe, arrow, plus-minus, times, symbol, hryvnia, nbsp
     let remove: Int      // characters of `before` to take out (the key itself is not in `before`)
     let insert: String   // what goes in for those characters and the key
-    let plain: String    // what he typed: the removed characters and the key; Backspace right after puts these back
+    let plain: String    // what the user typed: the removed characters and the key; Backspace right after puts these back
 }
 
 struct TypoOptions: Equatable {

@@ -1,16 +1,16 @@
-"""Long ghosts round (2026-11-14, Andrii: "it also gotta suggest more words ... full sentences i could finish quickly").
-Judges a ghost by the words he can take in a row (Tab takes one word at a time), not by whole takes. Numbers only:
-nothing here prints his text.
+"""Long ghosts round (2026-11-14, the user: "it also gotta suggest more words ... full sentences i could finish quickly").
+Judges a ghost by the words the user can take in a row (Tab takes one word at a time), not by whole takes. Numbers only:
+nothing here prints the user's text.
 
     .venv/bin/python -B bench/long_ghosts.py live [--days 7]            where the words stop, from data/app.log
     .venv/bin/python -B bench/long_ghosts.py attrib <recording>         what ended each ghost of today's policy
     .venv/bin/python -B bench/long_ghosts.py runs <recording> [...]      words right in a row when the model runs on
     .venv/bin/python -B bench/long_ghosts.py ends <recording> [...]      the model ends the line within 3 words
     .venv/bin/python -B bench/long_ghosts.py table <recording>          word / phrase / sentence, caps and floors
-    .venv/bin/python -B bench/long_ghosts.py futures <recording>        prepared answers with his real key gaps
+    .venv/bin/python -B bench/long_ghosts.py futures <recording>        prepared answers with the user's real key gaps
 
 Recordings come from bench/typebench.py with --tokens 24 (each key: the model's text after the caret, token by
-token, with p and ms). The replay is bench/measure.py: a simulated Andrii takes every right word with Tab.
+token, with p and ms). The replay is bench/measure.py: a simulated user takes every right word with Tab.
 """
 import argparse, json, math, re, statistics, sys
 from collections import Counter, defaultdict
@@ -43,7 +43,7 @@ def live(a):
     loc = [s for s in shown if s["len"] is not None and s["src"] not in ("ending",)]
     print(f"live {since[:16]} .. {last[:16]}: local ghosts shown {len(loc)}")
     # words per shown ghost: the log keeps letters only (never the text); a word is ~6.1 characters with its space in
-    # his held lines (measured below by `table`), so words ~ len / 6.1, marked as an estimate
+    # the user's held lines (measured below by `table`), so words ~ len / 6.1, marked as an estimate
     for kind in ("all", "ai", "chat"):
         xs = [s["len"] for s in loc if kind == "all" or s["kind"] == kind]
         if not xs: continue
@@ -155,7 +155,7 @@ def END_RE_word(w):
 
 
 class Live:
-    """The engine's order with the selector (bench/settle.live): phrase memory and his word first when they clear the
+    """The engine's order with the selector (bench/settle.live): phrase memory and the user's word first when they clear the
     bar, else the model's ghost when its first word clears it; the model path is `model` (a ModelPolicy)."""
 
     def __init__(self, W, M, gate, sel, model):
@@ -206,7 +206,7 @@ def attrib(a):
 
 def runs(a):
     """At keys where the gate says yes to the model's first word, let the model run its 24 tokens with no bar after it:
-    how many words from the start are his, in a row. By app kind and language."""
+    how many words from the start are the user's, in a row. By app kind and language."""
     import typescore as ts
     for path in a.paths:
         items, rows = ts.load(path)
@@ -254,15 +254,15 @@ def ends(a):
             line = raw.split("\n")[0]
             ended = "\n" in raw or ended_by_model(row)
             nw = len(line.split())
-            left = len(it["text"][pos:].split("\n")[0].split())      # his words still to come on this line
+            left = len(it["text"][pos:].split("\n")[0].split())      # the user's words still to come on this line
             for key in (it["src"], f"{it['src']}/{measure.lang(it['text'])}", "all"):
                 o = out[key]; o[0] += 1; o[1] += ended and nw <= 3; o[2] += ended; o[3].append(nw if ended else 99)
-                if left >= 5: o[4] += 1; o[5] += ended and nw <= 3      # too early: he wrote 5+ more words
+                if left >= 5: o[4] += 1; o[5] += ended and nw <= 3      # too early: the user wrote 5+ more words
         print(Path(path).stem, json.loads(Path(path).with_suffix(".meta.json").read_text()).get("adapter"))
         for key in sorted(out):
             n, e3, e, nws, n5, e5 = out[key]
             print(f"  {key:10s} keys {n:5d} ends within 3 words {100 * e3 / n:5.1f}% · ends within 24 tokens {100 * e / n:5.1f}% · "
-                  f"where he wrote 5+ more words: {n5} keys, ended within 3 words {100 * e5 / max(1, n5):5.1f}%")
+                  f"where the user wrote 5+ more words: {n5} keys, ended within 3 words {100 * e5 / max(1, n5):5.1f}%")
 
 
 def table(a):
@@ -331,15 +331,15 @@ def likely(a):
         print(f"likely {lk}: " + " · ".join(f"{k} words {v[0]}, right in a row {100 * v[1] / max(1, v[0]):.0f}%" for k, v in stats.items()))
 
 
-# ---------------------------------------------------------------- futures with his key gaps
+# ---------------------------------------------------------------- futures with the user's key gaps
 
 class Futures:
     """Replay wrapper: the live answer at each ask, with its time taken from what the engine prepared in the gaps.
 
     After an answer shows (at `lat` ms after the key), the engine works through, one after the other: the look-ahead
     for the whole ghost ("next"), then K futures for other first letters (bench/branches.py letters_next: the model's own
-    next letter first, then his likely words), each costing a fresh run of this key (`depth` "full": to the end of
-    the ghost, "word": to its first word). The next ask comes after his real key gaps (one per key between the two asks:
+    next letter first, then the user's likely words), each costing a fresh run of this key (`depth` "full": to the end of
+    the ghost, "word": to its first word). The next ask comes after the user's real key gaps (one per key between the two asks:
     letters typed and Tabs). It is answered at 0 ms when its text was prepared by then. `join` (the long-round fix):
     work for exactly that text still running at the key is waited for (up to 600 ms) instead of being stopped and done
     again. Before the fix (`join` False) such work was stopped at the key."""

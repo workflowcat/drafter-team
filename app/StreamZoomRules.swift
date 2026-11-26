@@ -1,4 +1,4 @@
-// Semantic zoom for the stream (zoom round, 24 November 2026; Andrii: "the semantic zoom on timing and details").
+// Semantic zoom for the stream (zoom round, 24 November 2026; the user: "the semantic zoom on timing and details").
 // One ladder, far to near: weeks, days, sessions (one card each: when, how much of what, where, the main things), then
 // the rows themselves in three densities: compact, normal, detailed. ⌘− and ⌘+ step along it, ⌘0 goes back to normal,
 // a pinch steps once per `pinchStep`. The summaries are local and cheap: counts, apps and the first sentence of the

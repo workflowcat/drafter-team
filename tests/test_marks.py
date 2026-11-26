@@ -152,8 +152,8 @@ class Routes(unittest.TestCase):
         g, calls = self.fns({"writingNote": "коротко"})
         r = g["my_style"]({"text": "Шановний пане, повідомляю що файл отримано.", "context": TY_CTX})
         self.assertEqual((r["text"], r["by"]), ("інший текст", "local"))
-        self.assertEqual(calls[0][2], "коротко"); self.assertTrue(calls[0][3])   # his layer on
-        self.assertIn("тобі зручно", calls[0][1])                     # his earlier lines to them as the voice
+        self.assertEqual(calls[0][2], "коротко"); self.assertTrue(calls[0][3])   # the user's layer on
+        self.assertIn("тобі зручно", calls[0][1])                     # the user's earlier lines to them as the voice
         g, calls = self.fns({"editMarks": False})
         self.assertEqual(g["my_style"]({"text": "x"})["text"], "")
         self.assertEqual(calls, [])

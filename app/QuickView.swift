@@ -1,4 +1,4 @@
-// The picker's drawing (picker round, 15 November 2026; Andrii: "the quick pick over the last copies looks poor"). One
+// The picker's drawing (picker round, 15 November 2026; the user: "the quick pick over the last copies looks poor"). One
 // window for ⌃⌥V and ⌘⇧V (app/Quick.swift): the full form has the search head, the list and the action pill at its
 // foot; the quick form (⌘⇧V held) is the same card without the head, the five newest copies and the held chord's
 // buttons. The look is the screenshot strip's (app/CaptureNote.swift, app/ShotPill.swift): the card colour with a
@@ -98,7 +98,7 @@ final class QuickView: NSView {
         NSGraphicsContext.restoreGraphicsState()
     }
 
-    /// The search glyph over the tiles' column, what he types with the caret, the four kind filters at the right.
+    /// The search glyph over the tiles' column, what the user types with the caret, the four kind filters at the right.
     private func drawHead(_ m: Quick) {
         let W = Self.W, h = Self.headH
         TapeDraw.glyph("search", NSRect(x: Self.tileX + 8, y: h / 2 - 8, width: 16, height: 16), color: m.query.isEmpty ? Native.muted : Native.ink)
@@ -374,9 +374,9 @@ final class QuickView: NSView {
         }
     }
 
-    /// Rewrite, unfolded in the chosen row: his text (struck lightly above the result once one came back), the verbs as
+    /// Rewrite, unfolded in the chosen row: the user's text (struck lightly above the result once one came back), the verbs as
     /// numbered keycaps (1-3 on this Mac; below the hairline the rework list, with the cloud glyph when it goes to
-    /// Claude), and the field for his own words. ↵ ⌫ esc are on the foot. Returns the height.
+    /// Claude), and the field for the user's own words. ↵ ⌫ esc are on the foot. Returns the height.
     @discardableResult
     func rework(_ m: Quick, _ it: QuickItem, y y0: CGFloat, draw: Bool) -> CGFloat {
         let x = Self.textX, w = Self.textW
@@ -427,7 +427,7 @@ final class QuickView: NSView {
         }
         let rows = (cells + 3) / 4
         y += CGFloat(rows) * rowStep + (rows > 1 ? 12 : 0) - 8 + 12
-        // his own words
+        // the user's own words
         if draw {
             let r = NSRect(x: x, y: y, width: w, height: 32)
             let b = NSBezierPath(roundedRect: r.insetBy(dx: 0.5, dy: 0.5), xRadius: Native.corner(2), yRadius: Native.corner(2))

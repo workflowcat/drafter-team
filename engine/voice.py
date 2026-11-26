@@ -6,7 +6,7 @@ Same frames on stdin as Voice Notes (1 byte kind, 4 bytes little-endian count; k
   249 careful - the part that ended last (since the end before it) is read with Whisper turbo: {"careful": text}.
   248 hint   - UTF-8 text (count = bytes): names seen on screen, first in Whisper's prompt for this take.
   247 file   - UTF-8 JSON {path, names, lang?}: a whole recording read by Whisper -> {"file", "segments": [{start, end, text}]}.
-  251 touch  - a quiet background touch while he is active (the app, every 4 min): a 0.25 s reading so Parakeet's weights
+  251 touch  - a quiet background touch while the user is active (the app, every 4 min): a 0.25 s reading so Parakeet's weights
                stay paged in. Only with Parakeet loaded and no take; never loads it, never counts as a take for the idle drop.
                -> {"touched": ms, "bg": true, "cpu": ms, "pageins", "resident", "footprint"}.
   246 pin    - UTF-8 "uk" / "en" / empty: the recogniser language for this take (until the next 250 or 254). A take
@@ -167,7 +167,7 @@ def emit(obj):
 
 def has_speech(audio):
     """At least 5 frames of 30 ms above -40 dB (rms 0.010). Parakeet turns silence into "Yeah." / "Okay." / "Thank
-    you."; on his saved takes (2026-10-22) every clip below this was one of those (57 of them, rms ~-60 dB), and no
+    you."; on the user's saved takes (2026-10-22) every clip below this was one of those (57 of them, rms ~-60 dB), and no
     real dictation was."""
     F = 480
     n = audio.size // F
@@ -217,7 +217,7 @@ def read(model, audio, gate=True):
 
 
 def glossary():
-    """Andrii's own words, handed to Whisper as a hint so it spells them right: the 60 names he uses most from the
+    """The user's own words, handed to Whisper as a hint so it spells them right: the 60 names the user uses most from the
     names reference (data/names.json `voice`, engine/names.py, 2026-11-15), else the dictionary's first 60 terms."""
     data = os.path.join(os.path.dirname(__file__), "..", "data")
     if not os.environ.get("DRAFTER_WORDS") and os.environ.get("DRAFTER_NAMES") != "0":
@@ -247,7 +247,7 @@ def careful(audio, names="", fast_text=None, pin=None):
     import whisper_mel
     whisper_mel.install()   # the same Mel numbers a minute at a time: a long take's STFT no longer at once
     try:
-        # names on screen for this take go first, then his dictionary (Whisper reads ~224 tokens of prompt)
+        # names on screen for this take go first, then the user's dictionary (Whisper reads ~224 tokens of prompt)
         hint = (("Names: " + names + ". " if names else "") + (HINT or ""))[:900]
         language = pin_value(pin) or fast_language(fast_text)
         r = online(lambda: mlx_whisper.transcribe(
@@ -293,7 +293,7 @@ def lifted(model, audio):
     e = 10 * np.log10((audio[:n * win].reshape(n, win) ** 2).mean(axis=1) + 1e-10)
     top = float(np.percentile(e, 90))
     # below -50 dB there is no soft speech to save: turned up 30+ dB, a quiet room read as "Yeah." / "Okay." (2026-10-22,
-    # the clips he never said sat at -55..-68 dB); already loud enough: turning it up changes nothing
+    # the clips the user never said sat at -55..-68 dB); already loud enough: turning it up changes nothing
     if top < -50 or top > -30:
         return ""
     gain = min(40.0, 10 ** ((-16 - top) / 20))
@@ -347,7 +347,7 @@ class Take:
     def text(self):
         whole = self.whole = np.concatenate([a for a, _ in self.closed] + [self.audio])
         self.loud = loud(whole)
-        # he stops talking, then presses: when all that came after the last draft is quiet, that draft is the text
+        # the user stops talking, then presses: when all that came after the last draft is quiet, that draft is the text
         # (2026-10-21: the end no longer waits for a second reading of up to 28 s of sound, ~100-300 ms)
         if self.last and quiet(self.audio[self.covered:]):
             return self.last
@@ -434,7 +434,7 @@ class Readers:
 
     def touch(self, bg=False):
         """A press with the model loaded: one short reading, so weights paged out come back before the first words.
-        bg: the app's background touch while he is active (frame 251), so a press finds them in already."""
+        bg: the app's background touch while the user is active (frame 251), so a press finds them in already."""
         if self.fast is None:
             return
         u0, c0, t = guard.usage(), cpu_ms(), time.perf_counter()
@@ -580,7 +580,7 @@ def serve():
     pending_text = None   # final fast result for exactly those samples; None = not read yet
     names = ""            # names on screen for this take
     clock = SpeechClock() # where speech starts in this take, for "words after speech"
-    pin = None            # the recogniser language he pinned for this take (246), None = as heard
+    pin = None            # the recogniser language the user pinned for this take (246), None = as heard
     while True:
         try:
             kind, data = q.get(timeout=5)
@@ -616,7 +616,7 @@ def serve():
                 pending_text = None
                 pin = None
                 if r.fast is None: r.warm()
-                else: r.touch()      # loaded: page it in now, while he starts to talk
+                else: r.touch()      # loaded: page it in now, while the user starts to talk
             elif kind == 0:
                 pending_text = None
                 if take is None: take = Take(r.warm()); clock = SpeechClock()

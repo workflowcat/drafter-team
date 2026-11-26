@@ -1,11 +1,11 @@
 import Foundation
 
-// Combining recordings and voice takes of the same talk into one recording (Andrii recorded one talk twice: a call or
+// Combining recordings and voice takes of the same talk into one recording (the user recorded one talk twice: a call or
 // long note plus short voice takes). Pure core, Foundation only: which sources belong together, one timeline of their
 // lines, and writing the combined folder (meta.json, lines.json, transcript.txt, me.wav, them.wav).
 // Test: tests/merge_rules.swift.
 
-/// One line. `track` is the file it was heard in ("me": his mic, "them": the Mac's sound, "" not known) and `end` its
+/// One line. `track` is the file it was heard in ("me": the user's mic, "them": the Mac's sound, "" not known) and `end` its
 /// end when known: engine/speakers.py places each line's voice from them (17 November 2026).
 struct MergeRow: Equatable { var who: String; var start: Double; var text: String; var track = ""; var end: Double? = nil }
 
@@ -18,7 +18,7 @@ struct MergeSource: Equatable {
     var call = false
     var app = ""
     var rows: [MergeRow]      // start relative to this source's own start
-    var me: URL?              // wav of his side (a take's wav goes here)
+    var me: URL?              // wav of the user's side (a take's wav goes here)
     var them: URL?
     var end: Double { start + secs }
 }

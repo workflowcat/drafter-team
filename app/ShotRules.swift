@@ -5,8 +5,8 @@ import Foundation
 import CoreGraphics
 
 enum ShotRules {
-    /// Keys round two (17 November 2026, Andrii: one key family per job, no chords taken from other apps): ⌘⇧5 is the
-    /// capture key. macOS's own ⌘⇧5 wins while it is on, so until he turns it off there is no capture key, a one-time
+    /// Keys round two (17 November 2026, the user: one key family per job, no chords taken from other apps): ⌘⇧5 is the
+    /// capture key. macOS's own ⌘⇧5 wins while it is on, so until the user turns it off there is no capture key, a one-time
     /// hint says where to turn it off (`hint`), and an optional fallback key (setting `captureFallbackKey`, "" = none)
     /// may stand beside it. ⌘⇧S (Save As or Duplicate in many apps) is a setting, `captureCmdShiftS`, now off by
     /// default. ⌃⌥S was the default from 14 to 17 November; it may still be set as the key or the fallback.
@@ -17,7 +17,7 @@ enum ShotRules {
     static let taken: Set<String> = ["⌘⇧3", "⌘⇧4", "⌘⇧6", "⌃⌥V", "⌘⇧V", "⌘Space", "⌃⌥Space"]
     /// The exact System Settings path that frees ⌘⇧5 (macOS 15 and 26), for the hint and Settings.
     static let systemPath = "System Settings › Keyboard › Keyboard Shortcuts… › Screenshots › untick “Screenshot and recording options” (⌘⇧5)"
-    /// A capture key he may set: parses, has ⌘ ⌃ or ⌥, and is none of the taken ones (⌘⇧S and ⌘⇧5 are allowed).
+    /// A capture key the user may set: parses, has ⌘ ⌃ or ⌥, and is none of the taken ones (⌘⇧S and ⌘⇧5 are allowed).
     static func allowed(_ s: String) -> Bool {
         guard let k = QuickRules.hotkey(s), k.cmd || k.ctrl || k.alt else { return false }
         return !taken.contains { QuickRules.hotkey($0) == k }
@@ -64,7 +64,7 @@ enum ShotRules {
     /// A pill: groups of buttons, `h` tall each, `gap` apart inside a group, `split` between groups (a hairline sits in
     /// the middle of it), `pad` round them. `origin`: the bar's corner. Returns the bar, each button and the hairlines' x.
     struct Pill: Equatable { var bar: CGRect; var items: [CGRect]; var dividers: [CGFloat] }
-    static let pillButton: CGFloat = 42, pillPad: CGFloat = 7   // key and strip round: 32 → 42 (Andrii: bigger)
+    static let pillButton: CGFloat = 42, pillPad: CGFloat = 7   // key and strip round: 32 → 42 (the user: bigger)
     static func pillSize(_ groups: [[CGFloat]], pad: CGFloat = pillPad, gap: CGFloat = 2, split: CGFloat = 13, h: CGFloat = pillButton) -> CGSize {
         let inner = groups.map { g in g.reduce(0, +) + CGFloat(max(0, g.count - 1)) * gap }.reduce(0, +)
         return CGSize(width: inner + CGFloat(max(0, groups.count - 1)) * split + 2 * pad, height: h + 2 * pad)
@@ -255,7 +255,7 @@ enum ShotRules {
 
     /// What happens on release: put the picture in (default), keep it on the tape only (K), or put its read text in (T).
     enum Mode: String { case paste, keep, text }
-    enum Pick { case region, window, screen, scroll }   // scroll: a region, then frames while he scrolls (app/ScrollShot.swift)
+    enum Pick { case region, window, screen, scroll }   // scroll: a region, then frames while the user scrolls (app/ScrollShot.swift)
 
     /// A key while the screen is dimmed.
     enum Action: Equatable { case cancel, screen, windowMode, pick(Pick), mode(Mode), none }

@@ -1,4 +1,4 @@
-// The window's tape, the second window round (14 November 2026, Andrii: "kinda hard to navigate", "we're wasting a lot
+// The window's tape, the second window round (14 November 2026, the user: "kinda hard to navigate", "we're wasting a lot
 // of space", "name stuff", "say how long something took", "classify all the copies by what they're related to").
 // Pure rules, display only: nothing here changes or deletes a stored row. Tested in tests/tape_rules.swift with
 // made-up rows; compiles with ClipRules.swift and EntityRules.swift only.
@@ -240,7 +240,7 @@ enum TapeRules {
     // MARK: how long it took
 
     /// Seconds a row took, or nil (shown as nothing): a spoken take its audio, a call its length (not while it
-    /// records), a typed message from its first to its last stamp (1 s to 30 min; longer means he left and came back).
+    /// records), a typed message from its first to its last stamp (1 s to 30 min; longer means the user left and came back).
     /// A copy took no time.
     static func took(kind: String, secs: Double, from: Double? = nil, to: Double? = nil, live: Bool = false) -> Double? {
         switch kind {
@@ -315,7 +315,7 @@ enum TapeRules {
     }
     static let olderId = "older"
 
-    /// The kinds as people read them: nouns (Andrii, 14 November: "why do we have past tense verbs everywhere?").
+    /// The kinds as people read them: nouns (the user, 14 November: "why do we have past tense verbs everywhere?").
     /// The stored kind values (copied, typed, spoken, call) do not change.
     static let kindList: [(id: String, title: String, one: String, glyph: String)] = [
         ("copied", "Clips", "Clip", "copy"), ("picture", "Pictures", "Picture", "image"), ("link", "Links", "Link", "globe"),
@@ -338,7 +338,7 @@ enum TapeRules {
 
     /// Every sidebar entry with its count over `facets` (the rows the search left): All, Pinned, the kinds, the top
     /// tags (not apps), the top apps. Kinds with no rows stay (a known place); tags and apps only with rows.
-    /// Related to comes after Apps (Andrii, 17 November 2026: the automatic tags quieter and lower): pinned tags first,
+    /// Related to comes after Apps (the user, 17 November 2026: the automatic tags quieter and lower): pinned tags first,
     /// then the tags `TagRules.related` lets through, at most `relatedTop`.
     static func sidebar(_ facets: [TapeFacet], top: Int = 8, relatedTop: Int = 5, prefs: TagRules.Prefs = TagRules.Prefs(),
                         appGlyph: (String) -> String = { _ in "list" }) -> [Entry] {
@@ -378,7 +378,7 @@ enum TapeRules {
         default: return "Files: file clips"
         }
     }
-    /// The entries a key reaches, in order: groups he folded away are skipped.
+    /// The entries a key reaches, in order: groups the user folded away are skipped.
     static func visible(_ entries: [Entry], folded: Set<String>) -> [Entry] { entries.filter { !folded.contains($0.group) } }
 
     /// The active filter in words, for the status line.
@@ -444,8 +444,8 @@ enum TapeRules {
 
 /// What a tag looks like and when it shows (tags round, 17 November 2026). Pure (Foundation).
 /// - auto: a name the entity matcher found in the text (person, project, tool, org): a guess, shown quietly and only
-///   once it holds `minAuto` items or he pinned it. A site, a folder, a chat and an app are facts.
-/// - Prefs: tags he hid (never shown: rows, reader, sidebar) or pinned (always in the sidebar, first); by `key`.
+///   once it holds `minAuto` items or the user pinned it. A site, a folder, a chat and an app are facts.
+/// - Prefs: tags the user hid (never shown: rows, reader, sidebar) or pinned (always in the sidebar, first); by `key`.
 enum TagRules {
     static let minAuto = 3
     static func auto(_ t: TapeTag) -> Bool { ["person", "project", "tool", "org"].contains(t.kind) }
@@ -480,7 +480,7 @@ enum TagRules {
         return !auto(t) || prefs.isPinned(t) || count >= minAuto
     }
 
-    /// The sidebar's Related to: pinned first (in the order he pinned them), then the others `sure` lets through, by
+    /// The sidebar's Related to: pinned first (in the order the user pinned them), then the others `sure` lets through, by
     /// count, then the newest; at most `top` besides the pinned.
     static func related(_ n: [TapeTag: Int], last: [TapeTag: Double] = [:], prefs: Prefs, top: Int, minAuto: Int = minAuto) -> [(TapeTag, Int)] {
         var pinned: [(TapeTag, Int)] = [], rest: [(TapeTag, Int)] = []

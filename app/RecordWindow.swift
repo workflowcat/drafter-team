@@ -1,13 +1,13 @@
-// The recording window and the small notch (17 November 2026, Andrii: the big orange strip "gets in the way of the rest
-// of the screen" while a long note or call records; he wants a window like Granola's with the live notes, and the
+// The recording window and the small notch (17 November 2026, the user: the big orange strip "gets in the way of the rest
+// of the screen" while a long note or call records; the user wants a window like Granola's with the live notes, and the
 // notch small up top). Setting `recordWindow`, on by default.
 //   RecordLive    what the window and the notch show, fed by Talk (TalkRecord.swift) and Pill on the main thread
-//   RecordWindow  a small native window: time, both sides' level, the live outline (`callNotes`), the live words, his
+//   RecordWindow  a small native window: time, both sides' level, the live outline (`callNotes`), the live words, the user's
 //                 own notes (saved as my-notes.md in the recording folder), Pause, Stop and a pin to keep it on top.
 //                 Closing it never stops the recording; the notch opens it again. After Stop it gives way to the
 //                 recording's page in the journal.
 //   RecordNotch   a dot and the time beside the camera housing, inside the menu-bar band: it covers no window.
-// Push-to-talk keeps the strip (Pill). The window is an ordinary activating window: when he clicks into it Drafter is
+// Push-to-talk keeps the strip (Pill). The window is an ordinary activating window: when the user clicks into it Drafter is
 // the front app, so Focus's off-main guard (Focus.offLimits, the calls round) covers it as it covers the main window.
 // It is opened without taking focus from the call. It and the notch carry OwnChrome.strip, so screenshots leave them out.
 import AppKit
@@ -24,7 +24,7 @@ final class RecordMeter {
 }
 final class RecordClock: ObservableObject { @Published var seconds = 0 }
 final class RecordWords: ObservableObject { @Published var text = "" }
-/// His own notes, in their own model (18 November 2026, Andrii: typing there was "jumpy": each key rebuilt the whole
+/// The user's own notes, in their own model (18 November 2026, the user: typing there was "jumpy": each key rebuilt the whole
 /// window, its segmented control included).
 final class RecordNotes: ObservableObject {
     @Published var text = "" { didSet { if text != oldValue { RecordLive.shared.notesChanged() } } }
@@ -147,7 +147,7 @@ final class RecordLive: ObservableObject {
         RecordNotch.shared.update()
     }
 
-    /// His and the other side's level, per audio buffer: only kept (the loudest since the last frame); the meter timer
+    /// The user's and the other side's level, per audio buffer: only kept (the loudest since the last frame); the meter timer
     /// draws it at 15 frames a second while the window shows, and nothing runs while it is hidden.
     func level(_ pk: Float, them t: Float?) {
         guard active else { return }
@@ -264,7 +264,7 @@ final class RecordLive: ObservableObject {
         }
     }
 
-    // MARK: his own notes, in the recording folder
+    // MARK: the user's own notes, in the recording folder
 
     private func saveSoon() {
         guard !preview, active else { return }
@@ -673,7 +673,7 @@ struct RecordBriefCard: View {
     }
 }
 
-/// His own notes box, drawn alone as he types; the hint sits over the box and never moves it.
+/// The user's own notes box, drawn alone as the user types; the hint sits over the box and never moves it.
 struct RecordMine: View {
     @ObservedObject var n: RecordNotes
     var body: some View {

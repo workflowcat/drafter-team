@@ -178,10 +178,10 @@ enum ShotSend {
             pb.clearContents(); pb.writeObjects(items)
         }
     }
-    /// The deck into the front app, step by step (DeckRules.steps). His clipboard is saved once, each step goes on it
-    /// and is pasted, the next one follows after DeckRules.gap, and his clipboard comes back DeckRules.pictureHold
+    /// The deck into the front app, step by step (DeckRules.steps). The user's clipboard is saved once, each step goes on it
+    /// and is pasted, the next one follows after DeckRules.gap, and the user's clipboard comes back DeckRules.pictureHold
     /// after the last ⌘V (unless something else was copied meanwhile). `pasted`: right after the last ⌘V; `done`: once
-    /// his clipboard is back. No Return anywhere; secure input stops it.
+    /// the user's clipboard is back. No Return anywhere; secure input stops it.
     static func paste(steps: [DeckRules.Step], pngs: [Data], urls: [URL], pasted: (() -> Void)? = nil, done: (() -> Void)? = nil) {
         let pb = NSPasteboard.general
         let saved = pb.pasteboardItems?.map { item -> NSPasteboardItem in

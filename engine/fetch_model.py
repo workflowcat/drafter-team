@@ -1,4 +1,4 @@
-"""One catalog model's weights into the Hugging Face cache, started by the engine only when he presses Download in
+"""One catalog model's weights into the Hugging Face cache, started by the engine only when the user presses Download in
 Settings > Typing > Model (engine/catalog.py Downloads). Never imports MLX, never loads a model. The engine stops it by
 its exact process to cancel; what came in stays in the cache, and the next Download goes on from there.
 

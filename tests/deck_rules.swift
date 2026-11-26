@@ -90,7 +90,7 @@ func check(_ ok: Bool, _ what: String, line: Int = #line) {
         }
         check(DeckRules.key(code: 0, cmd: false, shift: false, picked: 0, count: 1) == .typing, "a letter is typing")
 
-        // round 3: passive until he clicks the deck (made-up key codes only)
+        // round 3: passive until the user clicks the deck (made-up key codes only)
         for code in 0..<128 {
             check(!DeckRules.takes(code: code, cmd: false, hold: .passive) && !DeckRules.takes(code: code, cmd: true, hold: .passive),
                   "passive: key \(code) goes to his app, plain or ⌘")
@@ -196,7 +196,7 @@ func check(_ ok: Bool, _ what: String, line: Int = #line) {
         check(DeckRules.ShotAct.words.map { $0.word() } == ["Insert", "Copy", "Delete"], "each shot: Insert, Copy, Delete")
         check(DeckRules.FootAct.allCases.map { $0.word(count: 3) } == ["Next shot", "Copy all", "Insert all"], "the foot")
         check(DeckRules.FootAct.insertAll.key(captureKey: "x", returnKey: true) == "↵" && DeckRules.FootAct.insertAll.key(captureKey: "x", returnKey: false) == "", "↵ on Insert all only while ↵ inserts")
-        // round 4c: ↵ inserts all until he types in his app
+        // round 4c: ↵ inserts all until the user types in their app
         check(DeckRules.returnInserts(deckOpen: true, keysSinceOpen: 0, mods: []), "↵ right after the deck opened: insert all")
         check(DeckRules.returnInserts(deckOpen: true, keysSinceOpen: 0, mods: [.maskNumericPad]), "keypad Enter counts")
         check(DeckRules.returnInserts(deckOpen: true, keysSinceOpen: 0, mods: [.maskNumericPad, .maskSecondaryFn]), "fn Return (keypad Enter) counts")

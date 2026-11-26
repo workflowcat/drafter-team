@@ -2,7 +2,7 @@
 a file (weights round, 2026-11-14: docs/rounds/2026-11-14-weights.md; made by bench/weights/bias.py and steer.py).
 
 The file is an .npz with any of
-  bias_<kind>   (vocab,)  added to the logits: a calibrated next-token prior (his words, names, language mix)
+  bias_<kind>   (vocab,)  added to the logits: a calibrated next-token prior (the user's words, names, language mix)
   steer_<kind>  (hidden,) added to the output of block `layer` for tokens after the fixed head, times `strength`
   meta          JSON text: {"layer": 14, "strength": 1.0}
 <kind> is "all", "ai" or "chat"; the kind in force picks its own entry and falls back to "all".

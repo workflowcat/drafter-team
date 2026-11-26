@@ -97,7 +97,7 @@ enum AnchorRules {
             }
             rows = max(rows, 1)
         }
-        // only the first row of a text field (18 November 2026, Andrii: "some of the text appears somewhere almost randomly to the
+        // only the first row of a text field (18 November 2026, the user: "some of the text appears somewhere almost randomly to the
         // sides"): in Beeper the focused element is often a whole AXGroup panel, and wrapped rows measured without the
         // field's font drift; anywhere else the chip is the stable place
         let textRole = ["AXTextField", "AXComboBox", "AXSearchField", "AXTextArea"].contains(i.role)

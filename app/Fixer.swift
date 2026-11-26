@@ -1,15 +1,15 @@
 // Fix while typing (1 November 2026; Cursor Tab and Copilot's next edit: a ghost that replaces, not only adds).
 // While a word is being typed, the engine (`/complete` with "fix", engine/words.py Words.fix) may answer that no word
-// he writes starts with these letters but one he writes often is a letter away (missed, extra, swapped or wrong
+// the user writes starts with these letters but one the user writes often is a letter away (missed, extra, swapped or wrong
 // letter) or the same keys in the other layout. The ghost then shows "→ документи" in place of the grey words;
-// Tab (or ⇧Tab) takes his letters out and types the word, the keyboard switches for a layout fix, and Backspace as
-// the very next key puts his letters back (Autocorrect.last). The fixed word gets the dotted visible-undo line once
-// he types the space after it. Not offered when the Mac's spellchecker knows the letters as a word or a word start.
+// Tab (or ⇧Tab) takes the user's letters out and types the word, the keyboard switches for a layout fix, and Backspace as
+// the very next key puts the user's letters back (Autocorrect.last). The fixed word gets the dotted visible-undo line once
+// the user types the space after it. Not offered when the Mac's spellchecker knows the letters as a word or a word start.
 //
 // 13 November 2026: the same ghost carries autocorrect's fix at a word end (`offer`, src "space"), which Tab takes,
-// and the mid-word ghost (src "word") shows only once he rests `rest` s mid-word. Live log 6-13 November: 405
-// mid-word ghosts, 30 taken; 137 times he typed on through it and autocorrect fixed the word at the space anyway, so
-// mid-burst he does not look at it. Every offer that showed ends in one line, no words in it:
+// and the mid-word ghost (src "word") shows only once the user rests `rest` s mid-word. Live log 6-13 November: 405
+// mid-word ghosts, 30 taken; 137 times the user typed on through it and autocorrect fixed the word at the space anyway, so
+// mid-burst the user does not look at it. Every offer that showed ends in one line, no words in it:
 // "fix offer <word|space> <kind> <taken|typed|expired> <ms>ms" (typed = any key or click after it).
 import AppKit
 
@@ -19,9 +19,9 @@ enum Fixer {
     static var pending: Pending?
     /// The fixed word, waiting for the space after it to get its visible-undo line.
     static var mark: (new: String, old: String, kind: String, wasUk: Bool, el: AXUIElement, pid: pid_t, markers: Bool)?
-    /// Letters he put back with Backspace: no fix again while the word still starts with them.
+    /// Letters the user put back with Backspace: no fix again while the word still starts with them.
     static var refused = ""
-    /// Mid-word: shown only after this long with no key (he looks at the screen then).
+    /// Mid-word: shown only after this long with no key (the user looks at the screen then).
     static let rest = 0.3
     /// An offer nobody answered goes by itself.
     static let expiry = 6.0
@@ -90,14 +90,14 @@ enum Fixer {
         end(Keys.shared.inputRevision != p.rev ? "typed" : "expired")
     }
 
-    /// One line per offer that showed; a mid-word fix that never showed (he typed on before `rest`) logs nothing.
+    /// One line per offer that showed; a mid-word fix that never showed (the user typed on before `rest`) logs nothing.
     private static func end(_ how: String) {
         guard let p = pending else { return }
         pending = nil
         if p.shown { log("fix offer \(p.src) \(p.kind) \(how) \(Int(Date().timeIntervalSince(p.at) * 1000))ms" + p.feat) }
     }
 
-    /// Tab on "→ word": his letters out, the word in (key events, as autocorrect does).
+    /// Tab on "→ word": the user's letters out, the word in (key events, as autocorrect does).
     static func apply() {
         guard let p = pending else { Ghost.shared.hide(); return }
         pending = nil
@@ -112,7 +112,7 @@ enum Fixer {
         if p.kind == "layout uk" { KeyLayout.select(uk: true) } else if p.kind == "layout en" { KeyLayout.select(uk: false) }
         log("fix offer \(p.src) \(p.kind) taken \(ms)ms" + p.feat)
         if p.src == "space" {
-            // as an automatic fix: Backspace right after brings his word back, the word keeps its dotted line
+            // as an automatic fix: Backspace right after brings the user's word back, the word keeps its dotted line
             Autocorrect.last = Autocorrect.Fix(old: p.old, new: p.new, kind: p.kind, revision: Keys.shared.editRevision, el: s.el, at: Date(), wasUk: wasUk, deliberate: true)
             FixMarks.shared.add(new: p.new, old: p.old, kind: p.kind, wasUk: wasUk, el: s.el, pid: s.app.processIdentifier, markers: s.viaMarkers)
             Keys.shared.endStat()

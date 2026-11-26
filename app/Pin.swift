@@ -1,5 +1,5 @@
 // A pinned shot (17 November 2026; like CleanShot X and Shottr): a deck card floats on the screen as a small picture
-// above other windows, to keep it in sight while he works. ⌘P or the card's pin button. Drag moves it, scroll (or a
+// above other windows, to keep it in sight while the user works. ⌘P or the card's pin button. Drag moves it, scroll (or a
 // pinch) resizes it with its shape kept (DeckRules.pinZoom), esc or the ✕ on hover closes it, a double-click too.
 // It never takes the app's focus (a non-activating panel); a click makes it the key window so esc reaches it.
 // Several can be up at once; they stay until closed (not kept across restarts).

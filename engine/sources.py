@@ -1,5 +1,5 @@
-"""His working sources, read into local stores (17 November 2026, Andrii: "all the emails and all the other" sources,
-so he does not copy things by hand). Read-only everywhere: nothing here sends, archives, labels or changes a mail,
+"""The user's working sources, read into local stores (17 November 2026, the user: "all the emails and all the other" sources,
+so the user does not copy things by hand). Read-only everywhere: nothing here sends, archives, labels or changes a mail,
 chat or document.
 
     .venv/bin/python engine/sources.py run [mail|beeper|drive|obsidian]   # nightly step, also on demand (/sources/run)
@@ -10,7 +10,7 @@ Sources (each optional; off or without its tool it is skipped and keeps what it 
   promotions and social left out. Subject, people, body without quoted replies, links, attachment names.
 - beeper: the whole Beeper history through `beeper messages search` (BEEPER_READONLY=1): forward from the cursor,
   then back in time until BEEPER_DAYS.
-- drive: Drive files he owns or opened (GAM `print filelist`), titles and links; Google Docs also their text.
+- drive: Drive files the user owns or opened (GAM `print filelist`), titles and links; Google Docs also their text.
 
 Stores: data/sources/<name>.jsonl, one item per line, never in git; cursors, counts and switches in
 data/sources.json. Other people's text is stored for context only: no style, corpus, phrase or training reader
@@ -392,7 +392,7 @@ STATE = State()
 
 def items(since=0, names=None, folder=None, include_theirs=True):
     """Every stored item newer than `since` (unix), oldest first per source: the server journal index's input.
-    include_theirs=False keeps only his own items."""
+    include_theirs=False keeps only the user's own items."""
     for name in names or list(SOURCES):
         if name == "obsidian":
             import obsidian

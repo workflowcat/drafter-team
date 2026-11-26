@@ -3,7 +3,7 @@ import ApplicationServices
 
 // swiftc -parse-as-library app/Focus.swift app/AXOff.swift app/GhostRules.swift app/AnchorRules.swift app/PutRules.swift app/InsertRules.swift app/PutCheckRules.swift tests/focus_own_pid.swift -o app/build/focus-own-pid-test && app/build/focus-own-pid-test
 // 3 November 2026: a background Accessibility read of Drafter's own window waited for the main thread while main
-// waited in another AX call, and his side of a 53-minute call was lost. Off the main thread, Focus must never ask its
+// waited in another AX call, and the user's side of a 53-minute call was lost. Off the main thread, Focus must never ask its
 // own process, and must answer at once even while main is blocked. (No Accessibility grant is needed: the guard
 // answers before any AX message is sent.)
 

@@ -1,4 +1,4 @@
-"""The names reference (2026-11-15): one local entry per name he uses - a person, project, company, place or term - with
+"""The names reference (2026-11-15): one local entry per name the user uses - a person, project, company, place or term - with
 its spellings, Ukrainian case forms, short forms, mishearings, phones, emails, links and where it shows up. Built from
 the stores that already exist; importing this module reads nothing.
 
@@ -9,9 +9,9 @@ the stores that already exist; importing this module reads nothing.
 Inputs (all in data/, all optional; a missing one gives fewer entries, never an error):
 - entities.json (engine/entities.py): the folded records - people deduped, twins folded, relations, case-form surfaces.
 - know.json (engine/know.py): tokens, case forms, ordinary-word guards, and the dictionary's leftover terms.
-- words.json (engine/dictionary.py): his dictionary words and what voice heard for them.
-- people.json (his own lines per Beeper chat), corpus.jsonl and typed.jsonl (his lines): context counts only.
-- names-edits.json: his edits on the Names page (spell, merge, hide), applied on every build.
+- words.json (engine/dictionary.py): the user's dictionary words and what voice heard for them.
+- people.json (the user's own lines per Beeper chat), corpus.jsonl and typed.jsonl (the user's lines): context counts only.
+- names-edits.json: the user's edits on the Names page (spell, merge, hide), applied on every build.
 
 Derived (each written whole, in place):
 - known-words.txt: every name token and form, for autocorrect (was written by know.py; a superset of it).
@@ -231,7 +231,7 @@ def fill(e):
 # ---- edits ----------------------------------------------------------------------------------------------------------
 
 def apply_edits(entries, edits):
-    """His edits, in order. spell: {op, id, uk?, latin?} (the old spelling becomes a mishearing); merge: {op, id, into};
+    """The user's edits, in order. spell: {op, id, uk?, latin?} (the old spelling becomes a mishearing); merge: {op, id, into};
     hide: {op, id, on}; kind: {op, id, kind}. An edit whose entry is gone is skipped. The same rules as
     app/NameRules.swift (golden cases in tests/names_cases.json). -> number applied."""
     n = 0
@@ -306,7 +306,7 @@ def mentions(text, single, multi, common):
 
 
 def count_context(entries, rows=(), chats=None):
-    """rows: his lines as {t, app, text}; chats: {chat id: [his lines]}. Fills each entry's context."""
+    """rows: the user's lines as {t, app, text}; chats: {chat id: [their lines]}. Fills each entry's context."""
     single, multi = mention_index(entries)
     common = {e['id']: set(e['common']) for e in entries.values()}
     for r in rows:
@@ -331,7 +331,7 @@ def count_context(entries, rows=(), chats=None):
 
 
 def weight(e):
-    """How much he uses the entry: lines and chats, warmer when seen lately."""
+    """How much the user uses the entry: lines and chats, warmer when seen lately."""
     c = e['context']
     fresh = 0.0
     if c['last_seen']:
@@ -374,7 +374,7 @@ def corpus_rows(data):
                 if isinstance(r, dict) and isinstance(r.get('text'), str): rows.append(r)
         built = path.stat().st_mtime
     except OSError: built = 0
-    try:   # what he typed after the corpus was built
+    try:   # what the user typed after the corpus was built
         with (data / 'typed.jsonl').open() as f:
             for line in f:
                 try: r = json.loads(line)
@@ -424,13 +424,13 @@ def voice_rank(store):
 
 
 def words_view(d, store):
-    """The dictionary in the voice engine's shape, with the names reference folded in: terms in order of use, his spelling
+    """The dictionary in the voice engine's shape, with the names reference folded in: terms in order of use, the user's spelling
     fixes as terms, their old spellings as mishearings; hidden names out. Used by dictionary.save."""
     rank = voice_rank(store) if store else {}
     entries = store.get('entries', []) if store else []
     hidden = {fold(x) for e in entries if e.get('hidden') for x in labels(e)}
     terms = [t for t in d.get('terms', []) if fold(t) not in hidden]
-    for e in entries:   # a spelling he fixed on the Names page is a term (it was wrong once, so it can be misheard)
+    for e in entries:   # a spelling the user fixed on the Names page is a term (it was wrong once, so it can be misheard)
         if e.get('edited') and not e.get('hidden'):
             add_unique(terms, [x for x in (e.get('uk'), e.get('latin')) if x and x not in e.get('auto', [])])
     pos = {fold(t): i for i, t in enumerate(terms)}
@@ -465,7 +465,7 @@ def derive(data=DATA, store=None):
 
 
 def voice_hint(store, n=VOICE_TERMS):
-    """Whisper's glossary: the names he uses most, as spelled (never a guessed transliteration or an ordinary word)."""
+    """Whisper's glossary: the names the user uses most, as spelled (never a guessed transliteration or an ordinary word)."""
     out = []
     for e in store.get('entries', []):
         if e.get('hidden') or (e.get('card') and not e['context']['lines']) or not e['context']['lines']: continue
@@ -479,7 +479,7 @@ class Pack:
     """The names reference as the word finisher and booster read it (the same interface as know.Pack). Re-read when the
     file changes; a broken file keeps the last good one."""
     NAME_KINDS = ('person', 'project', 'company', 'place', 'term')
-    FLOOR = 0.06   # a name's own use against the other words he writes with the same letters (know.py: 0.03)
+    FLOOR = 0.06   # a name's own use against the other words the user writes with the same letters (know.py: 0.03)
     START_FLOOR = 0.3    # the same at a sentence start, where a capital says nothing (held-out lines, 2026-11-15)
 
     def __init__(self, path=None):
@@ -524,9 +524,9 @@ class Pack:
         return [w for w in pool if w.startswith(typed) and len(w) > len(typed)]
 
     def finish(self, before, own_counts=None, prefix_totals=None):
-        """The rest of a name after 2+ letters (its first one capital), in any case form. A form he wrote counts by his
-        use of it; one he never wrote counts by its entry's use, at a fifth. The leader needs 60% of the names that fit
-        and twice the next; if he writes other words with these letters, the name needs its share of them too."""
+        """The rest of a name after 2+ letters (its first one capital), in any case form. A form the user wrote counts by their
+        use of it; one the user never wrote counts by its entry's use, at a fifth. The leader needs 60% of the names that fit
+        and twice the next; if the user writes other words with these letters, the name needs its share of them too."""
         self.reload()
         m = HALF.search(before or '')
         if not m or len(m.group()) < 2 or not m.group()[0].isupper(): return ''

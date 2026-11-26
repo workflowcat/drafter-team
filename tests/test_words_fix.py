@@ -25,7 +25,7 @@ class Fix(unittest.TestCase):
         self.assertEqual(self.v.fix("я напишу завтар")["new"], "завтра")          # two letters swapped
         self.assertEqual(self.v.fix("I will sned")["new"], "send")
         self.assertEqual(self.v.fix("send the drsft")["new"], "draft")
-        self.assertIsNone(self.v.fix("the ideq"))                                  # "ide" starts his words: one more letter
+        self.assertIsNone(self.v.fix("the ideq"))                                  # "ide" starts the user's words: one more letter
 
     def test_layout(self):
         f = self.v.fix("ghbdsn")
@@ -33,8 +33,8 @@ class Fix(unittest.TestCase):
         self.assertEqual(self.v.fix("руддщ")["new"], "hello")
 
     def test_quiet(self):
-        self.assertIsNone(self.v.fix("я скину доку"))           # a start of his word: the finisher's job
-        self.assertIsNone(self.v.fix("глянь документи"))        # his word
+        self.assertIsNone(self.v.fix("я скину доку"))           # a start of the user's word: the finisher's job
+        self.assertIsNone(self.v.fix("глянь документи"))        # the user's word
         self.assertIsNone(self.v.fix("abc"))                    # too short
         self.assertIsNone(self.v.fix("файл v2_3"))              # digits and underscores
         self.assertIsNone(self.v.fix("я скину xyzw"))           # nothing near

@@ -1,4 +1,4 @@
-"""The word gate (round four, 2026-11-14; Codex design review, "personal word path first"): his own finish of the word
+"""The word gate (round four, 2026-11-14; Codex design review, "personal word path first"): the user's own finish of the word
 being typed (engine/words.py Words.candidate) answers before the model when a small logistic model over its counts
 says it is right often enough. Fit on the earlier half of the held-out lines by date (bench/measure.py split), the
 bar picked there for a precision target, then scored on the later half, with word lists from before the cut.
@@ -60,7 +60,7 @@ def report(items, W, idx, g, label):
 
 
 class WordsFirst:
-    """Replay policy: the live policy, with his own word first where the word gate approves. The word shows at once
+    """Replay policy: the live policy, with the user's own word first where the word gate approves. The word shows at once
     (about 1 ms); the model's ghost is kept only when it starts with that whole word (a later part may only extend
     what is shown), else the word stands alone."""
     def __init__(self, pol, W, g, min_letters=3):
@@ -100,7 +100,7 @@ if __name__ == "__main__":
     ap.add_argument("--replay", action="store_true", help="before/after through the live policy on the later half")
     ap.add_argument("--gate", default="data/gate.json")
     ap.add_argument("--min-letters", type=int, default=3)
-    ap.add_argument("--gap", type=float, default=None, help="ms between his keys (a slower ghost is late)")
+    ap.add_argument("--gap", type=float, default=None, help="ms between the user's keys (a slower ghost is late)")
     a = ap.parse_args()
     items, rows = ts.load(a.path)
     W = ngram.Words(ngram.corpus_from(last_retrain(ROOT), words.Words.SOURCES))

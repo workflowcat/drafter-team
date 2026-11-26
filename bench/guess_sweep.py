@@ -1,5 +1,5 @@
-"""More-bold round (2026-11-17, Andrii: "a bit less sureness in the guesses and suggest more"). Offline, loads no model.
-The live order on a recording: the shipped selector (data/selector.json: phrase memory, his own word, the model; bar
+"""More-bold round (2026-11-17, the user: "a bit less sureness in the guesses and suggest more"). Offline, loads no model.
+The live order on a recording: the shipped selector (data/selector.json: phrase memory, the user's own word, the model; bar
 `th`) first; when nothing clears it, the model's guess at the lower gate, with the live earlyStart notch
 (gatecore.early_bar: at most EARLY_GUESS, EARLY_SPACE after a space). The sweep moves both bars by the setting's
 rule (gatecore.bolder_sel): the guess bar to `g`, the selector bar down by SEL_STEP of its distance from SEL_REF.
@@ -7,8 +7,8 @@ Numbers only.
 
     .venv/bin/python -B bench/guess_sweep.py data/bench/big-q4b-lr5-s10.jsonl --bars 0.3,0.2,0.15,0.12,0.1 [--step 0.5] [--half later]
 
-Columns: shown % (ghosts / keys where one could be asked), kept /1k (letters Tab put in that are his, less one key a
-Tab, per 1,000 typed letters), wrong /1k (shown ghosts whose first word is not his, per 1,000 typed letters).
+Columns: shown % (ghosts / keys where one could be asked), kept /1k (letters Tab put in that are the user's, less one key a
+Tab, per 1,000 typed letters), wrong /1k (shown ghosts whose first word is not the user's, per 1,000 typed letters).
 """
 import argparse, json, math, sys
 from pathlib import Path

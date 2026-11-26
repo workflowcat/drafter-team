@@ -1,9 +1,9 @@
 """Round five (2026-11-14): stop the model once the ghost can no longer change (gatecore.settled, model.py SETTLE).
 
-The live policy as the engine runs it today (the selector from data/selector.json at its bar, his word, phrase memory,
+The live policy as the engine runs it today (the selector from data/selector.json at its bar, the user's word, phrase memory,
 the gated model with the picked length rule and the AI-app tail) replayed on a recording, without and with the stop.
 The ghost texts must be the same key for key; what changes is when the answer ends (`new ms`, from the recorded
-per-token times), and with it how often the next answer is ready in his gap (the look-ahead and the two word branches
+per-token times), and with it how often the next answer is ready in the user's gap (the look-ahead and the two word branches
 of bench/branches.py fit in the time left).
 
     .venv/bin/python -B bench/settle.py data/bench/<recording>.jsonl [--gap 150] [--selector data/selector.json]
@@ -19,7 +19,7 @@ KNOBS = {"min_letters": 5, "grow": 0.05, "tail": 0.2, "tail_words": 8}   # the a
 
 
 def live(W, M, gate, sel, knobs):
-    """The engine's order with the selector on (server._complete): his word and memory when they clear the bar, else
+    """The engine's order with the selector on (server._complete): the user's word and memory when they clear the bar, else
     the model's ghost when its first word clears it."""
     import selector as S
     src = S.Sources(W, M, gate, sel["wordgate"], knobs)

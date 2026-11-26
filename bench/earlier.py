@@ -1,4 +1,4 @@
-"""Earlier round (2026-11-16, Andrii: "it starts late; it should try to offer more and start earlier"; then "lets do 3-5
+"""Earlier round (2026-11-16, the user: "it starts late; it should try to offer more and start earlier"; then "lets do 3-5
 words and lessen the confidence"). Offline, on recordings of the held set (bench/big/run.py rec: 24 tokens a key with
 token times), each model under its own gate refit on held-out folds (bench/big/score.py oof), so the numbers sit on
 the same footing as the catalog's. Loads no model. Numbers only.
@@ -11,15 +11,15 @@ Policy at a key (the engine's model path, gate on the first word, then the run r
   sure      gate P >= TH (0.4, today)            -> shown in the usual grey
   guess     GUESS <= P < TH (the lower gate)     -> shown lighter, Tab takes it the same
   length    "sentence" (today: floor 0.1, cap 24) or "words" (min / max words, floor between them)
-Replay (bench/measure.py replay): he types each line; a ghost stays while he types its letters, Tab takes each right
+Replay (bench/measure.py replay): the user types each line; a ghost stays while the user types its letters, Tab takes each right
 word, a wrong letter drops it; when the ghost runs out after Tabs a new one is asked at the same spot.
 
 Columns (per variant, per shade):
   shown %        new ghosts / keys where one could be asked (no ghost up)
   row shown/all  words right in a row from the caret at a shown ghost (mean) / the same summed over all asked keys
-  kept /1k       letters Tab put in that are his, less one key per Tab, per 1,000 typed letters
-  wrong /1k      shown ghosts whose first word is not his, per 1,000 typed letters ("wrong offers")
-  grey /1k       grey words shown that were not his, per 1,000 typed letters (bench/big/score.py wrong/1k)
+  kept /1k       letters Tab put in that are the user's, less one key per Tab, per 1,000 typed letters
+  wrong /1k      shown ghosts whose first word is not the user's, per 1,000 typed letters ("wrong offers")
+  grey /1k       grey words shown that were not the user's, per 1,000 typed letters (bench/big/score.py wrong/1k)
   first, full ms ms to the first whole word (when the gate decides and the first part is drawn) and to the whole
                  ghost, p50 / p95, engine only (recorded token times)"""
 import argparse, json, re, statistics, sys
@@ -163,7 +163,7 @@ def kept_by_shade(items, rows, pol):
 #   predicted: the previous key had a field read (a gap of at least DEBOUNCE + AX after it): asked at the key itself
 #   debounced: else DEBOUNCE, a field read (AX), then asked
 # The engine stops a running request at the next token when a newer one comes (server.run, stale), so a ghost whose
-# time is over the gap to his next key never shows ("late"); with --keep it runs on and shows when the letters typed
+# time is over the gap to the user's next key never shows ("late"); with --keep it runs on and shows when the letters typed
 # meanwhile are its start (the app's typedSince rule), and the newer ask waits for it.
 # Look-ahead (server.look_ahead): after an answer the engine works out, in the rest of the gap, the answer for the
 # next letter the model wrote (branch 1 of K; the recordings keep no other alternatives, so this counts only it).
@@ -193,7 +193,7 @@ def draw_gap(rnd, counts):
 
 
 def timed(items, rows, pol, live, seed=1, keep=False, ahead=True, debounce=DEBOUNCE, app_ms=True):
-    """One pass with his gaps. -> per-key records and per-ghost records (see waits())."""
+    """One pass with the user's gaps. -> per-key records and per-ghost records (see waits())."""
     import random
     kg, pred_ms, deb_ms = live
     keys, ghosts, letters, saved, visible_at = [], [], 0, 0, 0
@@ -231,7 +231,7 @@ def timed(items, rows, pol, live, seed=1, keep=False, ahead=True, debounce=DEBOU
             if where == "start": rec["why"] = "guard"; pos += 1; continue
             row = rows.get((i, pos))
             if row is None: rec["why"] = "norow"; pos += 1; continue
-            see = getattr(pol, "see", None)   # cadence round: the policy may read the gaps he typed at (causal)
+            see = getattr(pol, "see", None)   # cadence round: the policy may read the gaps the user typed at (causal)
             if see: see(gap[pos - 1] if pos > 1 else None, gap[pos - 2] if pos > 2 else None)
             g, eng = pol(row, before, it["src"])
             g = measure.clean(before, g)
@@ -256,7 +256,7 @@ def timed(items, rows, pol, live, seed=1, keep=False, ahead=True, debounce=DEBOU
             first = L
             opts = getattr(pol, "opts", None)
             if opts:
-                # combo: the ghost he sees at his next key is the newest one that came by then (each model's own time)
+                # combo: the ghost the user sees at their next key is the newest one that came by then (each model's own time)
                 last = pos == len(text) - 1
                 pick = opts[-1] if hit else next((o for o in reversed(opts) if last or t + (start - t) + app + o[0] < nxt), None)
                 if pick is None: pick = opts[0]
@@ -271,7 +271,7 @@ def timed(items, rows, pol, live, seed=1, keep=False, ahead=True, debounce=DEBOU
                     ghosts.append(dict(record(g, text, pos), L=L, first=min(first, L), shade=pol.info["shade"], place=where,
                                        src=(pol.info or {}).get("src")))
                     prev = None
-                    continue      # at this very spot: he takes it (Tab) or types on into it
+                    continue      # at this very spot: the user takes it (Tab) or types on into it
                 else:
                     rec["why"] = "late"
                     if keep:

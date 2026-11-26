@@ -1,12 +1,12 @@
-"""The entity store (step 1 of docs/reviews/2026-11-14-entities.md): one local record per real thing he names - a
-person, org, project, tool, document or place - built from the sources he already keeps, and the context packs an
+"""The entity store (step 1 of docs/reviews/2026-11-14-entities.md): one local record per real thing the user names - a
+person, org, project, tool, document or place - built from the sources the user already keeps, and the context packs an
 agent can read. Importing this module reads nothing.
 
     .venv/bin/python engine/entities.py build            # data/entities.json (know.py build calls it too)
     .venv/bin/python engine/entities.py stats            # counts only
     .venv/bin/python engine/entities.py pack <name> [--level 2|3]
     .venv/bin/python engine/entities.py context <name>   # the entity and its related ones, one brief
-    .venv/bin/python engine/entities.py fix not_related <id> <id>   # his corrections (data/entity-fixes.json)
+    .venv/bin/python engine/entities.py fix not_related <id> <id>   # the user's corrections (data/entity-fixes.json)
 
 Sources, each optional and read-only (the local config's integrations decide; off = not read at all):
 - The vault: frontmatter only, of the top level of Entities/People, Entities/Organizations, Stories and Epics.
@@ -84,7 +84,7 @@ def atomic(path, text):
 
 
 # ---------------------------------------------------------------------------------------------------------------
-# where the sources are (the owner's local config; engine/integrations.py when it is there)
+# where the sources are (the user's local config; engine/integrations.py when it is there)
 
 def source_path(data=DATA):
     """The vault root or None from the local config. Off in the config = None (never read)."""
@@ -145,7 +145,7 @@ def wikilinks(v):
 
 def vault_slice(root, allow=()):
     """Frontmatter of the vault's entity and story notes. Never a Private folder, never a note marked private,
-    except single notes he allowed (context-allow.json, paths relative to the vault)."""
+    except single notes the user allowed (context-allow.json, paths relative to the vault)."""
     root = Path(root)
     files = []
     for rel_dir, kind in VAULT_DIRS.items():
@@ -153,7 +153,7 @@ def vault_slice(root, allow=()):
         if not d.is_dir(): continue
         for f in sorted(d.iterdir()):   # the top level only: Private/ and every other subfolder are never opened
             if f.is_file() and f.suffix == '.md' and not f.name.startswith('.'): files.append((f, kind, False))
-    for rel in allow:   # single notes he allowed, a Private one included: read only into its own record
+    for rel in allow:   # single notes the user allowed, a Private one included: read only into its own record
         if not isinstance(rel, str) or '..' in Path(rel).parts or not rel.endswith('.md') or rel.startswith('/'): continue
         f = root / rel
         if f.is_file():
@@ -240,7 +240,7 @@ def norm_handle(kind, v):
 
 
 def merge(slices, same_file=None):
-    """Deterministic merges (proposal 1.5): same normalised handle with no second match; his own yes/no from
+    """Deterministic merges (proposal 1.5): same normalised handle with no second match; the user's own yes/no from
     data/entity-same.json. Never on a first name alone. Returns (groups of source records, count of same-name pairs
     left apart for a "Same?" row)."""
     recs = {f"{r['system']}:{r['id']}": r for s in slices for r in s}
@@ -286,8 +286,8 @@ def merge(slices, same_file=None):
 # ---------------------------------------------------------------------------------------------------------------
 # relations: typed, weighted, each with a reason a person can read (docs/rounds/2026-11-14-relations.md)
 #
-# One edge = every piece of evidence for a pair: a vault link, being listed in one note, his own
-# fix, or how often the two are named together in his own lines. Each piece scores type x source trust x recency;
+# One edge = every piece of evidence for a pair: a vault link, being listed in one note, the user's own
+# fix, or how often the two are named together in the user's own lines. Each piece scores type x source trust x recency;
 # the pieces join as a noisy-or (two weak ones beat one weak one, nothing passes 1); the target's heat nudges it.
 
 # rel: (reason seen from the subject, reason seen from the object, type weight)
@@ -397,7 +397,7 @@ class Edges:
 
 
 def declared_edges(records, now, fixes=None, resolve=lambda x: x):
-    """Edges from what the sources declare (vault links, note lists) and his own fixes."""
+    """Edges from what the sources declare (vault links, note lists) and the user's own fixes."""
     E = Edges()
     ids = {r['id'] for r in records}
     for r in records:
@@ -473,7 +473,7 @@ def finish_edges(records, E, co=None, floor=FLOOR, not_related=(), main_of=None)
 
 NEED = {'shared': 1.0, 'short': 1.0, 'ordinary': 2.0, 'twins': 0.0}
 SHORT_MAX = 4
-# what kind of thing he names where (dest as app/RefRules.swift names it)
+# what kind of thing the user names where (dest as app/RefRules.swift names it)
 EXPECT = {'agent': ('tool', 'project'), 'ai': ('project', 'tool', 'person'), 'chat': ('person', 'project', 'org'), 'mail': ('person', 'org')}
 AI_APPS = {'claude', 'chatgpt', 'codex', 'perplexity', 'com.openai.chat', 'com.openai.codex', 'com.anthropic.claudefordesktop', 'com.perplexity.mac'}
 CHAT_APPS = {'beeper', 'slack', 'whatsapp', 'telegram', 'messages', 'discord', 'microsoft teams', 'signal', 'com.automattic.beeper.desktop',
@@ -508,7 +508,7 @@ def heat_bonus(heat):
 
 def form_flags(key, hits, ordinary, own_lower, names):
     """What a name form needs before it counts: 'shared' (several records with different names), 'twins' (several
-    records with one name: a project, its repo and its Worker), 'ordinary' (a dictionary word or a word he writes in
+    records with one name: a project, its repo and its Worker), 'ordinary' (a dictionary word or a word the user writes in
     lower case), 'short' (4 letters or fewer). names: index -> the record's name. [] = nothing needed."""
     flags = []
     if len({i for i, _ in hits}) > 1:
@@ -555,8 +555,8 @@ def decide(cands, flags=(), picked=None):
 
 
 def own_lower_words(texts, least=3, share=0.6):
-    """Words he writes in lower case in the middle of a sentence (at least `least` times and `share` of the time):
-    his ordinary words in any script, Ukrainian included."""
+    """Words the user writes in lower case in the middle of a sentence (at least `least` times and `share` of the time):
+    the user's ordinary words in any script, Ukrainian included."""
     low, cap = Counter(), Counter()
     for text in texts:
         last = 0   # end of the previous word
@@ -616,7 +616,7 @@ def scan(text, store_surfaces, flags, records, *, dest='plain', ctx_extra='', re
 
 
 # ---------------------------------------------------------------------------------------------------------------
-# his corrections: data/entity-fixes.json (never in git). Pure add_fix for the app's card ("Not related",
+# the user's corrections: data/entity-fixes.json (never in git). Pure add_fix for the app's card ("Not related",
 # "Not this one"); the build applies the file.
 #   {"related": [[a, b, why]], "not_related": [[a, b]], "not_this": [[form, id]], "same": [[a, b]], "not_same": [[a, b]]}
 
@@ -657,7 +657,7 @@ def save_fix(what, a, b, why='', data=DATA):
     return fixes
 
 # ---------------------------------------------------------------------------------------------------------------
-# one person, several records; his own name; apps stored as people; one thing under several kinds
+# one person, several records; the user's own name; apps stored as people; one thing under several kinds
 
 def skel(s):
     """A loose spelling key for comparing names across scripts: transliterated, case folded, y/j as i, kh as h,
@@ -722,7 +722,7 @@ def _person_facts(g, gkey, stems):
 def dedupe_people(groups, apart=(), own=()):
     """One human, several records. Merges only on strong evidence: a shared handle with names that fit, or the same
     full name (either script) and a shared org or project. Everything else that may be one person goes to a queue
-    with a score and the evidence, best first, for a one-key "Same?" answer. Groups whose name is his own (any case
+    with a score and the evidence, best first, for a one-key "Same?" answer. Groups whose name is the user's own (any case
     or script) are dropped. Returns (groups, queue, counts)."""
     apart = {tuple(x) for x in apart}
     gkey, stem_ix = {}, defaultdict(set)
@@ -804,7 +804,7 @@ APP_NAMES = set("""claude chatgpt gpt codex gemini bard copilot cursor perplexit
 
 def apps_as_people(records):
     """A "person" that is an assistant or app: its name is a known app or one of the store's own tools, and it has no
-    handle. Becomes kind tool (unless he set the kind himself). Returns the ids changed."""
+    handle. Becomes kind tool (unless the user set the kind themselves). Returns the ids changed."""
     tools = {fold(r['name']) for r in records if r['kind'] == 'tool'}
     changed = []
     for r in records:
@@ -869,7 +869,7 @@ def names_chat(key, target):
 
 def name_gazetteer(records):
     """First names to keep out of the capitalised-dictionary ordinary words: the system's list of proper names, the
-    Ukrainian first names know.py knows, and any first name his records carry in both scripts."""
+    Ukrainian first names know.py knows, and any first name the user's records carry in both scripts."""
     import know
     out = set()
     try: out |= {fold(w) for w in Path('/usr/share/dict/propernames').read_text().split()}
@@ -984,7 +984,7 @@ def make_record(group, path_ids, codius=None, stems=None):
         **({'org': org} if org and kind == 'person' else {}),   # the company, for the @ mention list
         'sources': [{'system': r['system'], 'id': r['id']} for r in group],
         'targets': targets, 'kind_by': 'source',
-        'handles': dict(handles),   # local, for his own card; render() never puts a handle but the one fact, never a phone
+        'handles': dict(handles),   # local, for the user's own card; render() never puts a handle but the one fact, never a phone
         'pack': {'facts': [{k: f[k] for k in ('text', 'source', 'date', 'quote')} for f in top], 'pointers': pointers[:3]},
         'private': private,
     }
@@ -1014,7 +1014,7 @@ def surfaces_for(rec, ordinary, stop, first_stop=()):
         # an ordinary word stays out, unless it is the thing's own name or alias: then it is kept, marked, and
         # counts only when the context decides (surface_flags)
         if ' ' not in k and ((k in ordinary and how not in ('name', 'alias')) or (len(k) < 3 and not (how == 'alias' and s.isupper()))): return
-        if how not in ('name', 'alias') and k in first_stop and k in firsts: return   # his ordinary word as a first name: never alone
+        if how not in ('name', 'alias') and k in first_stop and k in firsts: return   # the user's ordinary word as a first name: never alone
         if k not in out or MATCH[how] > MATCH[out[k]]: out[k] = how
     add(rec['name'], 'name')
     for a in rec['aliases']: add(a, 'alias')
@@ -1034,8 +1034,8 @@ def surfaces_for(rec, ordinary, stop, first_stop=()):
 
 
 def build(out=None, *, vault=None, contacts=None, lines=(), chats=(), now=None, data=None, ordinary=None, codius=None, write=True):
-    """Build data/entities.json. vault: a path, False (off) or None (from the local config). lines: his sent rows
-    (data/typed.jsonl); chats: [[his lines in one chat, oldest first]] (data/people.json), for names said together."""
+    """Build data/entities.json. vault: a path, False (off) or None (from the local config). lines: the user's sent rows
+    (data/typed.jsonl); chats: [[their lines in one chat, oldest first]] (data/people.json), for names said together."""
     data = Path(data) if data is not None else DATA
     out = Path(out) if out is not None else data / 'entities.json'
     now = time.time() if now is None else now
@@ -1125,7 +1125,7 @@ def build(out=None, *, vault=None, contacts=None, lines=(), chats=(), now=None, 
         for text in c:
             if not isinstance(text, str) or '⟦drafter-test⟧' in text: continue
             units.append((text, 'chat', ctx, True, False)); ctx = (ctx + ' ' + text)[-400:]
-    # relations declared by the sources and by him; the matcher's first view of them (declared only, before heat)
+    # relations declared by the sources and by the user; the matcher's first view of them (declared only, before heat)
     E = declared_edges(records, now, fixes, resolve)
     not_related = [(resolve(x[0]), resolve(x[1])) for x in fixes.get('not_related') or [] if isinstance(x, list) and len(x) >= 2]
     for r in records:
@@ -1148,7 +1148,7 @@ def build(out=None, *, vault=None, contacts=None, lines=(), chats=(), now=None, 
     names = [r['name'] for r in records]
     flags = {k: form_flags(k, v, ordinary, own_lower, names) for k, v in surfaces.items()}
     flags = {k: v for k, v in flags.items() if v}
-    # his lines, twice: the first pass warms the heat the second decides with; the second counts and pairs
+    # the user's lines, twice: the first pass warms the heat the second decides with; the second counts and pairs
     related = {index[r['id']]: [fold(records[index[x]]['name']) for x in r['related']] for r in records}
     def count(heat):
         typed, single, pair, chat_pair = Counter(), Counter(), Counter(), Counter()
@@ -1160,7 +1160,7 @@ def build(out=None, *, vault=None, contacts=None, lines=(), chats=(), now=None, 
                 elif not ok: unresolved += 1
                 else: resolved += 1; found.add(main_ix.get(got, got))   # a repo named is its project named
             if not found: continue
-            if warm: typed.update(found)   # his typed rows of the last 30 days make the heat
+            if warm: typed.update(found)   # the user's typed rows of the last 30 days make the heat
             single.update(found)
             for a in found:
                 for b in found:
@@ -1229,7 +1229,7 @@ def id_map(data, records, key_of):
 
 
 def chat_lines(path):
-    """His own lines per chat from data/people.json ({"chats": {id: {"mine": [lines]}}}): [[lines of one chat]]."""
+    """The user's own lines per chat from data/people.json ({"chats": {id: {"mine": [lines]}}}): [[lines of one chat]]."""
     d = read_json(path, {})
     chats = d.get('chats') if isinstance(d, dict) else None
     return [[x for x in c.get('mine') or [] if isinstance(x, str)] for c in (chats or {}).values() if isinstance(c, dict)]
@@ -1432,7 +1432,7 @@ CLASSIFY_PROMPT = ('One word answer. What kind of thing is "{name}" most likely,
 
 def classify(names, ask, data=DATA):
     """Ask `ask(name) -> word` for each leftover name; keep only answers in the fixed list. Results go to
-    data/entity-kinds.json (by: the asker); his own overrides always win at build time."""
+    data/entity-kinds.json (by: the asker); the user's own overrides always win at build time."""
     kinds = read_json(data / 'entity-kinds.json', {})
     kinds = kinds if isinstance(kinds, dict) else {}
     done = 0

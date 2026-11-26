@@ -1,5 +1,5 @@
 // The one `;` picker (rules: app/CommandRules.swift). Right ⌘ twice or the menu opens it with an empty query and it
-// takes the keys he types; `;` + 2 letters in a field opens it with what he typed, and the keys go on to the field.
+// takes the keys the user types; `;` + 2 letters in a field opens it with what the user typed, and the keys go on to the field.
 // One list, a label on each row: snippets, quick starts, lookups (shown "off" until Google is set up), people, other
 // cards. ↑↓ choose, ⇥ (and ↵ when it holds the query) puts in or opens, 1-6 on a person a field (as the `;ana` list), esc closes. Text goes in through
 // Snippets.expand and Entities.replace (Focus.spot: never a password field, a skipped app or under secure input).

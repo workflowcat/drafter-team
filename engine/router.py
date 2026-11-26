@@ -1,4 +1,4 @@
-"""Online or offline (2026-10-21, Andrii: "if my Claude is on, use Haiku for cleanup and speed; offline, local models").
+"""Online or offline (2026-10-21, the user: "if my Claude is on, use Haiku for cleanup and speed; offline, local models").
 Text tasks off the typing hot path (rewrite a selection, the live outline, a note's title, the command line) go to
 Claude Haiku through the kept-running `claude` worker when the Mac is online and the CLI is there; otherwise, or when
 Haiku fails or is slow, the local model does it. Ghost text while typing always stays local (it needs ~40 ms).

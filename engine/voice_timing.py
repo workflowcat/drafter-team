@@ -1,7 +1,7 @@
 """When speech starts in a take, for the "words after speech" number (17 November 2026, research instant #7/#8).
 
 The app's own stamp missed in 370 of 425 takes (it saw 64 ms buffers on the main queue), so "first words" was counted
-from the press, his pause before he speaks included. The engine sees every sample: it marks the first 30 ms frame
+from the press, the user's pause before the user speaks included. The engine sees every sample: it marks the first 30 ms frame
 above rms 0.010 (the same frames has_speech counts) and, with the first draft that has words, says how long after that
 frame the words went out. Pure numpy, no model."""
 import numpy as np

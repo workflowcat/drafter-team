@@ -27,11 +27,11 @@ struct SysWatchTest {
         }
         check(why.contains("exact zeros") && why.contains("60 s"), "zeros: says why: \(why)")
 
-        // exact zeros while he is quiet too (nobody talks): no restart
+        // exact zeros while the user is quiet too (nobody talks): no restart
         w = SysWatch(at: 0)
         for t in stride(from: 1.0, through: 300, by: 1) { w.samples(at: t, sound: false); w.mic(secs: 1, loud: false); check(w.check(at: t) == .none, "quiet call at \(t)") }
 
-        // zeros with only 5 s of his speech: no restart; the Mac making a sound clears the count
+        // zeros with only 5 s of the user's speech: no restart; the Mac making a sound clears the count
         w = SysWatch(at: 0)
         for t in stride(from: 1.0, through: 100, by: 1) { w.samples(at: t, sound: t == 50); w.mic(secs: t <= 5 ? 1 : 0, loud: true); check(w.check(at: t) == .none, "little speech at \(t)") }
 

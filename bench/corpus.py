@@ -1,25 +1,25 @@
-"""His writing as one dated corpus (round three, 2026-11-13; Andrii: "whatever gets us to better speed and accuracy").
+"""The user's writing as one dated corpus (round three, 2026-11-13; the user: "whatever gets us to better speed and accuracy").
 Local only: reads files on this Mac, writes data/corpus.jsonl and data/corpus-counts.json (data/ is never in git).
 
     .venv/bin/python bench/corpus.py            # build, print counts per source
     .venv/bin/python bench/corpus.py --dry-run  # counts only
 
 Sources, in the order that wins a duplicate (the same line sent, dictated and kept in a session file counts once):
-  typed    data/typed.jsonl: what he sent with Return while Drafter was on (dictated when it matches a take)
-  take     data/takes.jsonl: his voice takes, the cleaned text (never `raw`), empty ones dropped
-  cc       his own prompts in Claude Code sessions (~/.claude/projects/*/*.jsonl, top level only: no subagents)
-  codex    his own messages in Codex sessions (~/.codex/sessions/**/*.jsonl)
-  beeper   messages he sent: data/my-messages.json and data/beeper-sent.jsonl (his side only, kept up to date from the
+  typed    data/typed.jsonl: what the user sent with Return while Drafter was on (dictated when it matches a take)
+  take     data/takes.jsonl: their voice takes, the cleaned text (never `raw`), empty ones dropped
+  cc       the user's own prompts in Claude Code sessions (~/.claude/projects/*/*.jsonl, top level only: no subagents)
+  codex    their own messages in Codex sessions (~/.codex/sessions/**/*.jsonl)
+  beeper   messages the user sent: data/my-messages.json and data/beeper-sent.jsonl (their side only, kept up to date from the
            local Beeper app, read-only, by `beeper_sync`; lines signed "Claude:" are an agent's and stay out)
-  vault    notes he wrote himself in the vault (frontmatter `origin: kit` only: agent text would teach an agent's voice),
+  vault    notes the user wrote themselves in the vault (frontmatter `origin: kit` only: agent text would teach an agent's voice),
            split into paragraphs; never .obsidian, .claude, System/old, nor any people/private or Entities/Private
            scope (AGENTS.md: never read people/private). Read only.
-  fb       his Facebook posts (the vault's raw archive), split into paragraphs
+  fb       the user's Facebook posts (the vault's raw archive), split into paragraphs
   import   anyone's own writing, brought in by hand (team round, 25 November 2026): data/import/*.jsonl (one
            {"text", "t", "app"} per line; only "text" is needed), *.txt and *.md split into paragraphs, plus every
            folder in the config's corpus.folders (.md and .txt, read only). Only your own words belong there.
-Not used: the clipboard as text he wrote (it only filters out pastes), anything from the network. The vault has no
-chat exports with his side (checked 2026-11-14); his chats come from Beeper.
+Not used: the clipboard as text the user wrote (it only filters out pastes), anything from the network. The vault has no
+chat exports with the user's side (checked 2026-11-14); their chats come from Beeper.
 
 Each row: {"src", "t" (unix seconds, 0 when unknown), "app", "text", "dictated"}. A prompt or typed line that matches
 a take is marked dictated (typed vs dictated is not recorded in the session files). Who reads it: bench/make_train.py
@@ -30,7 +30,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "data"
-SRC = Path(os.environ.get("DRAFTER_SRC_DATA") or DATA)   # where his files are read from (a worktree points it at the live data/)
+SRC = Path(os.environ.get("DRAFTER_SRC_DATA") or DATA)   # where the user's files are read from (a worktree points it at the live data/)
 HOME = Path.home()
 OUT = DATA / "corpus.jsonl"
 COUNTS = DATA / "corpus-counts.json"
@@ -41,7 +41,7 @@ import local, integrations
 # when the local config's `corpus` says so; Beeper and the vault when their integration is on; Facebook
 # when social.facebook_archive names the export. sources() says which; --sources prints it.
 VAULT = Path(os.environ.get("DRAFTER_VAULT") or local.setting("vault", "path") or "/nonexistent/vault")
-ORIGIN = local.setting("vault", "origin") or ""     # frontmatter `origin:` of notes the user wrote himself
+ORIGIN = local.setting("vault", "origin") or ""     # frontmatter `origin:` of notes the user wrote themselves
 VAULT_SKIP = re.compile(r"(^|/)(\.obsidian|\.claude|\.git|\.trash)(/|$)|^System/old(/|$)|(^|/)people/private(/|$)|^Entities/Private(/|$)", re.I)
 FB = Path(local.expand(local.config()["social"].get("facebook_archive") or "") or "/nonexistent/fb.json")
 MAX_CHARS = 600
@@ -49,12 +49,12 @@ MAX_CHARS = 600
 # typed lines from AI apps (docs/rounds/2026-11-13-typing.md, round three). data/corpus-weights.json overrides.
 # Per-source sampling for the nightly retrain's training lines (bench/make_train.py). Round three (13-14 November,
 # docs/rounds/2026-11-13-typing.md "Layers trained on other writing"): takes add fillers and cost right first words, and
-# 60,000 Beeper lines would drown his prompts, so chats 0.1 and takes 0, the mix bench/weights/train_sweep.py trains.
+# 60,000 Beeper lines would drown the user's prompts, so chats 0.1 and takes 0, the mix bench/weights/train_sweep.py trains.
 # Was beeper 1 and take 0.5 until 14 November: about 60,000 of the 70,000 training lines would have been chats.
 WEIGHTS = {"typed": 2, "take": 0, "cc": 1, "codex": 1, "beeper": 0.1, "vault": 0.5, "fb": 0.5, "import": 1}
 WORD = re.compile(r"[\w'’-]+", re.U)
 RUSSIAN = re.compile(r"[ыэъёЫЭЪЁ]")
-# Not his own words: harness wrappers, agent briefs pasted in, interrupted turns
+# Not the user's own words: harness wrappers, agent briefs pasted in, interrupted turns
 SKIP_HEAD = re.compile(r"^(<|\[|/|!|#|Background \(from|Reply with|Caveat:|This session|Another Claude|Do what the system prompt|"
                        r"Base directory for this skill|Continue the conversation|This session is being continued)")
 CODEISH = re.compile(r"```|Traceback \(most recent|^\s+File \"|^\s*at [\w.$]+\(|\bat .+:\d+:\d+\)|^\s*[{\[]\s*\"|^\$ |"
@@ -70,7 +70,7 @@ def key(t):
 
 
 def paste_like(t, clip=frozenset()):
-    """A paste, a log, code or a dump, not a line he wrote."""
+    """A paste, a log, code or a dump, not a line the user wrote."""
     if len(t) > MAX_CHARS or CODEISH.search(t): return True
     lines = [l for l in t.splitlines() if l.strip()]
     if len(lines) > 6: return True
@@ -111,7 +111,7 @@ def iso(s):
 
 
 def cc(files=None):
-    """His prompts: top-level user turns from a person, plain text (a string or one text block)."""
+    """The user's prompts: top-level user turns from a person, plain text (a string or one text block)."""
     files = files if files is not None else glob.glob(str(HOME / ".claude/projects/*/*.jsonl"))
     for f in files:
         for d in rows_jsonl(f):
@@ -140,7 +140,7 @@ BEEPER_CACHE = DATA / "beeper-sent.jsonl"
 
 
 def beeper_fetch(after, before, limit=5000):
-    """His sent messages between two ISO times from the local Beeper app, read-only."""
+    """The user's sent messages between two ISO times from the local Beeper app, read-only."""
     import subprocess
     sys.path.insert(0, str(ROOT / "engine"))
     import people
@@ -152,7 +152,7 @@ def beeper_fetch(after, before, limit=5000):
 
 def beeper_sync(since="2024-01-01T00:00:00Z", step_days=14):
     """Bring data/beeper-sent.jsonl up to date: from its newest message (or `since`) to now, two weeks per call (a
-    call returns at most 5,000). Keeps id, time, chat and text of his own TEXT messages only. -> new rows."""
+    call returns at most 5,000). Keeps id, time, chat and text of the user's own TEXT messages only. -> new rows."""
     from datetime import datetime, timedelta, timezone
     have, last = set(), since
     for r in rows_jsonl(BEEPER_CACHE):
@@ -279,7 +279,7 @@ def clip_keys():
 
 
 class Takes:
-    """Is this line a take he dictated? Same text, or one holds the other (a take edited before sending)."""
+    """Is this line a take the user dictated? Same text, or one holds the other (a take edited before sending)."""
     def __init__(self, texts):
         self.keys = {key(t) for t in texts if len(key(t)) >= 12}
         self.heads = {k[:40] for k in self.keys if len(k) >= 40}
@@ -342,7 +342,7 @@ def load(path=OUT, before=None, srcs=None):
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--dry-run", action="store_true")
-    ap.add_argument("--no-beeper", action="store_true", help="skip bringing his Beeper messages up to date")
+    ap.add_argument("--no-beeper", action="store_true", help="skip bringing the user's Beeper messages up to date")
     ap.add_argument("--sources", action="store_true", help="print the sources this Mac's config allows and stop")
     a = ap.parse_args()
     if a.sources: print(" ".join(sources())); sys.exit(0)

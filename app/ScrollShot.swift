@@ -1,5 +1,5 @@
 // Scrolling capture (17 November 2026; like CleanShot X and Shottr). In the capture overlay S (or its button) and a
-// dragged region: the overlay goes, a dashed frame marks the region and a small pill sits under it. He scrolls the app
+// dragged region: the overlay goes, a dashed frame marks the region and a small pill sits under it. The user scrolls the app
 // below as usual (the mouse and every key but ↵ and esc go to it); every 0.12 s the region is taken again and the
 // rows that scrolled in are added at the foot (StitchRules: a fixed header and footer stay once). ↵ or a click on the
 // pill ends it: the tall picture lands like any shot (one deck card, Capture.landTaken). esc drops it. Frames are

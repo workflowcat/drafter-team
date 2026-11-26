@@ -4,7 +4,7 @@ import Foundation
 // stream kept running and replayd kept counting its audio frames, yet from 22:30 them.wav got holes of 10-20 ms and
 // from 24:10 only exact zeros, 3 s after coreaudiod logged an audio IO overload; no error ever reached Drafter, so
 // the other side was silently lost for 32 minutes. Meet's own output is never exact zeros for long (its quiet is
-// noise), so a long run of exact zeros while his mic hears speech means the capture broke. Pure: tests/sys_watch.swift.
+// noise), so a long run of exact zeros while the user's mic hears speech means the capture broke. Pure: tests/sys_watch.swift.
 struct SysWatch: Equatable {
     /// No samples at all for this long while the stream runs: start it again.
     static let quiet: Double = 20

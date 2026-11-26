@@ -23,14 +23,14 @@ def set_limit(cap_gb):
     mx.set_memory_limit(int(cap_gb * 0.92 * 2**30))
 
 END = re.compile(r"[.!?…)\n]")
-# other screens kept warm (2026-11-01, Andrii: "it takes a long time to start often"): going back to a chat reads
+# other screens kept warm (2026-11-01, the user: "it takes a long time to start often"): going back to a chat reads
 # nothing again. Each holds one prompt, ~0.15 GB at 1,300 tokens for Qwen3 1.7B.
 SPARE = int(os.environ.get("DRAFTER_SPARE_CACHES", "2"))
-# his-writing layer merged into a copy of the layers it touches (2026-11-13, bench/speed.py): unmerged, each of the
+# the user's-writing layer merged into a copy of the layers it touches (2026-11-13, bench/speed.py): unmerged, each of the
 # 112 LoRA layers adds two small matmuls per token, 19.5 ms a token against 6.8 merged (M4 Pro, Qwen3 1.7B 4-bit);
 # the merged copies cost ~0.43 GB. 0 = the old way.
 FUSE = os.environ.get("DRAFTER_LORA_FUSE", "1") == "1"
-# The plain layers are not kept beside the merged ones (engine memory round, 2026-11-17): they doubled the 16 layers his
+# The plain layers are not kept beside the merged ones (engine memory round, 2026-11-17): they doubled the 16 layers the user's
 # layer touches, 0.85 GB on Qwen3 4B and 0.42 GB on 1.7B (read from the weight files). Layer off (chips, rewrites) runs
 # the merged layer with the LoRA at minus its scale: the base model within one re-rounding of 4-bit, the same rounding
 # the merged typing layers carry. Typing runs on the same merged layers as before, bit for bit. A new strength loads
@@ -47,7 +47,7 @@ TWEAKS = os.environ.get("DRAFTER_TWEAKS", "")
 # the fixed head read from a file at load and wake instead of being read by the model (big-model round, 2026-11-15;
 # bench/weights/speed.py: 335 ms of prefill became a 4 ms read, the next-token logits identical). The file is made
 # when the head (or the model, layer or tweaks) changes; a stale, broken or missing file falls back to the prefill.
-# It holds his example messages, so it lives under data/. Empty DRAFTER_HEAD_CACHE = off.
+# It holds the user's example messages, so it lives under data/. Empty DRAFTER_HEAD_CACHE = off.
 HEAD_CACHE = os.environ.get("DRAFTER_HEAD_CACHE", str(Path(__file__).resolve().parent.parent / "data" / "cache"))
 # copies kept after the screen text, for caches that cannot be cut back (big-model round): one per screen, at most
 # SPARE + 1 (the active screen and the parked ones)
@@ -60,10 +60,10 @@ class Model:
         self.repo = repo
         self.src = src         # a local snapshot folder to load from (catalog models), else the repo id as before
         self.adapter = adapter if adapter and os.path.isdir(adapter) else None
-        # personalization strength (parity round, 2026-11-15): his layer's scale, 0..1, applied when it is merged
+        # personalization strength (parity round, 2026-11-15): the user's layer's scale, 0..1, applied when it is merged
         # (fuse_lora), so a key costs the same at any strength; set_strength re-merges in place
         self.strength = min(1.0, max(0.0, float(strength)))
-        # a LoRA trained on his own writing (bench/train.py) sits on top of the base model
+        # a LoRA trained on the user's own writing (bench/train.py) sits on top of the base model
         self.model, self.tok = self._load()
         self.fused = []        # (parent module, attribute, LoRA module, merged copy): see fuse_lora
         if self.adapter and FUSE: self.fuse_lora()
@@ -91,7 +91,7 @@ class Model:
         b = getattr(self.tok, "bos_token_id", None)
         return [b] if b is not None and "gemma" in self.repo.lower() else []
 
-    # Sleep (2026-11-01, Andrii: "not to overload the Mac, a lot of stuff is being recorded"): while a long call is read
+    # Sleep (2026-11-01, the user: "not to overload the Mac, a lot of stuff is being recorded"): while a long call is read
     # again (the voice engine may take 3.4 GB then), the text model gives its ~1.9 GB back. Typing paths answer empty
     # meanwhile (the word finisher still speaks); a one-off can wake ordinary voice sleep, but never a retrain lease.
     @property
@@ -200,7 +200,7 @@ class Model:
 
     def _feed(self, ids, stable=None):
         """Make the cache hold exactly ids[:-1] and return the tail to feed (at least one token).
-        stable (big-model round): ids[:stable] stay put while he types on this screen (Builder.ids_stable). A cache
+        stable (big-model round): ids[:stable] stay put while the user types on this screen (Builder.ids_stable). A cache
         that cannot be cut back then restores its copy at that point (made here the first time) and only the typed
         line is read again; a cache that can be cut back never comes this far, so nothing changes for it."""
         if self.cache is not None:
@@ -377,7 +377,7 @@ class Model:
         return m
 
     def russian_mask(self, shape):
-        """Tokens with letters only Russian has (ы э ъ ё): never offered; his text is Ukrainian or English."""
+        """Tokens with letters only Russian has (ы э ъ ё): never offered; the user's text is Ukrainian or English."""
         m = getattr(self, "_ru", None)
         if m is None or m.shape != shape:
             bad = [i for lst in self.pieces().values() for i, t in lst if any(c in "ыэъёЫЭЪЁ" for c in t)]
@@ -404,10 +404,10 @@ class Model:
         return proc
 
     def booster(self, cands, n_prompt, lam):
-        """Logits processor (2026-11-01, Andrii: "guess the words I actually use often"): his own next words
-        (words.dist) mixed into the model's at the word level, P = (1 - lam) model + lam his. Each of his words is a
-        token path; each step mixes the model's token probabilities with the share of his words still on that path,
-        so a word he writes often after these words gets the boost all the way through, and nothing else moves.
+        """Logits processor (2026-11-01, the user: "guess the words I actually use often"): the user's own next words
+        (words.dist) mixed into the model's at the word level, P = (1 - lam) model + lam the user's. Each of the user's words is a
+        token path; each step mixes the model's token probabilities with the share of their words still on that path,
+        so a word the user writes often after these words gets the boost all the way through, and nothing else moves.
         cands: [(text the model should write, p)], the text starting with the healed half word. None when idle."""
         seqs = [(self.encode(t), p) for t, p in cands if t and p > 0]
         if not seqs or lam <= 0: return None
@@ -483,7 +483,7 @@ class Model:
             with self.lock: self.tw.kind, self.dist = tweaks.kind_of(app), None
 
     def lora(self, on):
-        """His-writing layer (LoRA) on for suggestions, off for instructions (chips, rewrites): training on plain text
+        """The user's-writing layer (LoRA) on for suggestions, off for instructions (chips, rewrites): training on plain text
         took the model's instruction-following away (2026-10-19), the base model still has it."""
         if getattr(self, "tw", None): self.tw.on, self.dist = on, None
         if not self.adapter: return
@@ -491,7 +491,7 @@ class Model:
         if self.fused:
             for mod, name, lora_mod, merged, sc in self.fused:
                 if on or lora_mod.linear is not merged: setattr(mod, name, merged if on else lora_mod.linear)
-                else:   # merged only (no plain copy kept): the merged layer minus his layer is the base layer
+                else:   # merged only (no plain copy kept): the merged layer minus the user's layer is the base layer
                     lora_mod.scale = -sc * self.strength
                     setattr(mod, name, lora_mod)
             return
@@ -501,7 +501,7 @@ class Model:
         for m, sc in mods: m.scale = sc * getattr(self, "strength", 1.0) if on else 0.0
 
     def set_strength(self, strength):
-        """His layer at another strength (0..1): the merged copies are made again in place (one model, no reload; the
+        """The user's layer at another strength (0..1): the merged copies are made again in place (one model, no reload; the
         old copies go first, so memory never holds two sets), the head is read again (its file is keyed by strength).
         -> seconds it took, 0.0 when nothing changed."""
         strength = min(1.0, max(0.0, float(strength)))
@@ -510,7 +510,7 @@ class Model:
             t = time.time()
             self.strength = strength
             if self.model is None: return 0.0            # asleep: the next load merges at the new strength
-            self.loading = True                          # typing answers from his words meanwhile, never waits here
+            self.loading = True                          # typing answers from the user's words meanwhile, never waits here
             try: self._restrength()
             finally: self.loading = False
             return time.time() - t
@@ -537,7 +537,7 @@ class Model:
 
     def oneshot(self, ids, max_tokens=60, stop=None, cancelled=lambda: False, layer=False):
         """A one-off prompt (chip fields, rewrites) on its own small cache, so the warm head stays where it is, with the
-        base model (his-writing layer off; `layer`: on, for "Rewrite in my style"). Stops (raises Cancelled) as soon as a
+        base model (the user's-writing layer off; `layer`: on, for "Rewrite in my style"). Stops (raises Cancelled) as soon as a
         newer request arrives."""
         with self.lock:
             if not self._ensure(force=not getattr(self, "retrain_sleep", False)): return ""
@@ -792,7 +792,7 @@ class Model:
             return text, g, first or 0.0, ms()
 
     def _alts(self, lp, heal, k):
-        """The next letter he may type, from the first step's distribution (healer mask applied): the letter right
+        """The next letter the user may type, from the first step's distribution (healer mask applied): the letter right
         after the half word (or space) of each of the likeliest tokens, best first by summed probability."""
         n = min(48, lp.size)
         if n <= 0: return []
@@ -811,7 +811,7 @@ class Model:
         return [c for c, _ in sorted(score.items(), key=lambda x: -x[1])[:k]]
 
     def prefill(self, ids, screen=None, stable=None):
-        """Read ids into the cache now (on focus, before he types), so the first suggestion only adds a few tokens."""
+        """Read ids into the cache now (on focus, before the user types), so the first suggestion only adds a few tokens."""
         with self.lock:
             if self.model is None: return 0
             self._switch(screen)
@@ -836,7 +836,7 @@ class Model:
         if getattr(self, "tw", None): self.tw.start = len(head_ids or [])   # the head is never steered, so it serves every kind
         self.cache, self.ids = make_prompt_cache(self.model), []
         self.head_file = None
-        if not head_ids: return   # "bare" prompts (a model trained on his writing needs no examples up front)
+        if not head_ids: return   # "bare" prompts (a model trained on the user's writing needs no examples up front)
         if not self._head_read(head_ids):
             for _ in generate_step(mx.array(head_ids), self.model, max_tokens=0, prompt_cache=self.cache, prefill_step_size=256): pass
             mx.eval([c.state for c in self.cache])
@@ -847,7 +847,7 @@ class Model:
         mx.clear_cache()
 
     def head_key(self, head_ids):
-        """What the head cache depends on: the model, his layer (path, size, time), whether it is merged, the tweaks,
+        """What the head cache depends on: the model, the user's layer (path, size, time), whether it is merged, the tweaks,
         the cache classes and the head ids. Any change gives another key, so a stale file is never read."""
         parts = [str(self.repo), str(FUSE), TWEAKS, ",".join(type(c).__name__ for c in self.cache or [])]
         if getattr(self, "strength", 1.0) != 1.0: parts.append(f"strength={self.strength:.3f}")   # 1.0 keeps today's key

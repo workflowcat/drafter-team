@@ -1,4 +1,4 @@
-// Screen context as a conversation (14 November 2026, Andrii: "some screenshot use would be useful here. cotypist
+// Screen context as a conversation (14 November 2026, the user: "some screenshot use would be useful here. cotypist
 // definitely had it"). Pure rules, so this file compiles alone in tests: Vision's lines with boxes -> messages (blocks)
 // -> who wrote each -> the tail the model reads under a budget. Plus when to capture and which source to trust per app.
 // The runtime (capture, Vision, the cache) is app/ScreenContext.swift. Nothing here logs or stores text.
@@ -9,7 +9,7 @@ enum ScreenContextRules {
     /// local model (engine/server.py CTX_CHARS); Claude helpers read up to 2,500. The context sweep tests 500-3,000
     /// (bench/screen_context.py); change it only from that measurement.
     static let budget = 1_600
-    /// Marks the engine reads (engine/prompt.py SPEAKERS): his lines, the other person's, an assistant's answer. Same
+    /// Marks the engine reads (engine/prompt.py SPEAKERS): the user's lines, the other person's, an assistant's answer. Same
     /// words as the call transcripts ("Я:" / "Вони:", app/Recording.swift) and the bench replay sets.
     static let me = "Я: ", them = "Вони: ", assistant = "Асистент: "
 
@@ -65,7 +65,7 @@ enum ScreenContextRules {
     }
 
     /// The lines worth reading: above the field (`cut`, 0...1 from the top; nil = all), inside the conversation's column
-    /// (`column`: the field's left and right edges, 0...1; nil = all), not interface text and not the text he is typing
+    /// (`column`: the field's left and right edges, 0...1; nil = all), not interface text and not the text the user is typing
     /// in the field now (`typing`, the field's text before the caret). Trailing times ("… 14:02") are cut off.
     static func clean(_ lines: [Line], cut: Double? = nil, column: (Double, Double)? = nil, typing: String = "") -> [Line] {
         let typed = squash(String(typing.suffix(600)))
@@ -76,7 +76,7 @@ enum ScreenContextRules {
             t = timeTail.stringByReplacingMatches(in: t, range: NSRange(t.startIndex..., in: t), withTemplate: "")
             if isChrome(t) { return nil }
             let s = squash(t)
-            if s.count >= 6, typed.contains(s) { return nil }   // his own text in the field, seen again in the picture
+            if s.count >= 6, typed.contains(s) { return nil }   // the user's own text in the field, seen again in the picture
             var out = l; out.text = t
             return out
         }
@@ -105,7 +105,7 @@ enum ScreenContextRules {
     }
 
     /// Who wrote each block, from where it sits in the column (`column`, 0...1; nil = the blocks' own extent).
-    /// Chat and AI apps both draw his messages as bubbles on the right and the other side on the left (an assistant's
+    /// Chat and AI apps both draw the user's messages as bubbles on the right and the other side on the left (an assistant's
     /// answer runs the full width). With no right-hand block at all (Slack, a mail thread) nobody is named: a wrong
     /// mark is worse than none.
     static func speakers(_ blocks: [Block], kind: String, column: (Double, Double)? = nil) -> [Block] {
@@ -124,7 +124,7 @@ enum ScreenContextRules {
 
     // MARK: the tail under a budget
 
-    /// What the model reads, oldest first: the other side's last message in full when it fits (else its end), his own
+    /// What the model reads, oldest first: the other side's last message in full when it fits (else its end), the user's own
     /// last message, then earlier ones from the newest back while `budget` characters last.
     static func tail(_ blocks: [Block], budget: Int = budget) -> [Block] {
         guard !blocks.isEmpty, budget > 0 else { return [] }
@@ -138,7 +138,7 @@ enum ScreenContextRules {
         var out = blocks
         let lastOther = blocks.lastIndex { $0.who == .them || $0.who == .assistant }
         if let i = lastOther, !take(i) {
-            // longer than the whole budget: its end (the part nearest the field) is what he answers
+            // longer than the whole budget: its end (the part nearest the field) is what the user answers
             var b = blocks[i]; let room = max(0, budget - 8)
             let t = String(b.text.suffix(room))
             b.lines = [Line(text: t, x: b.x, y: b.y, w: b.right - b.x, h: b.bottom - b.y)]
@@ -169,7 +169,7 @@ enum ScreenContextRules {
 
     // MARK: which source
 
-    /// Accessibility text is clean when it holds a few real lines, not a page of labels: measured 14 November on his
+    /// Accessibility text is clean when it holds a few real lines, not a page of labels: measured 14 November on the user's
     /// sent lines' screen text (Claude app 9.9% short lines, Beeper 4.2%, ChatGPT 8.0%; Dia 56% short and 14% repeated).
     static func axClean(_ text: String) -> Bool {
         guard text.count >= 120 else { return false }
@@ -204,20 +204,20 @@ enum ScreenContextRules {
     // MARK: when to capture
 
     /// focus: a field read for the first time; request: a ghost request found kept text over 2 s old (a look first);
-    /// scroll, moved: the window changed; poll: the 4 s look while he types.
+    /// scroll, moved: the window changed; poll: the 4 s look while the user types.
     enum Why: Equatable { case focus, scroll, moved, poll, request }
     enum When: Equatable { case now, later(Double), no }
     /// Never per key: on focus of a field, when the window scrolls or moves (at most one capture per `gap` seconds), and
-    /// a cheap look when he pauses typing for `pause` seconds: once per pause, at most every `poll` seconds (speed plan
-    /// item 5, step 4: looks every 4 s while he typed came to 17.4 captures a typing minute). None after `idle` s.
+    /// a cheap look when the user pauses typing for `pause` seconds: once per pause, at most every `poll` seconds (speed plan
+    /// item 5, step 4: looks every 4 s while the user typed came to 17.4 captures a typing minute). None after `idle` s.
     static func when(_ why: Why, now: Double, lastCapture: Double, lastKey: Double, gap: Double = 1.5,
                      poll: Double = 10, pause: Double = pause, idle: Double = 60) -> When {
         if why != .focus, now - lastKey > idle { return .no }
         let since = now - lastCapture
         if looks(why) {
-            if lastCapture >= lastKey { return .no }              // looked since his last key: one per pause
+            if lastCapture >= lastKey { return .no }              // looked since the user's last key: one per pause
             let quiet = now - lastKey
-            if quiet < pause { return .later(pause - quiet) }     // still typing: when he stops
+            if quiet < pause { return .later(pause - quiet) }     // still typing: when the user stops
             return since >= poll ? .now : .no
         }
         return since >= gap ? .now : .later(gap - since)
@@ -227,7 +227,7 @@ enum ScreenContextRules {
     static let pause = 1.0
 
     /// A cheap 96 px look first, the full read only when it changed or the window moved (17 November 2026: requests read
-    /// the window in full every 2 s while he typed, 14-15 reads a typing minute, each p50 0.5 s of text recognition).
+    /// the window in full every 2 s while the user typed, 14-15 reads a typing minute, each p50 0.5 s of text recognition).
     static func looks(_ why: Why) -> Bool { why == .poll || why == .request }
 
     /// Two 96 px gray looks differ enough to read again: more than `frac` of the pixels moved by more than `step` (a new

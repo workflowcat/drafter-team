@@ -1,5 +1,5 @@
 // The keyboard error model of the ranked typo fix (app/TypoRules.swift, part c), pure. What a slip costs depends on
-// what it is: a neighbour key on the layout he was typing on, two letters swapped, a doubled or dropped double letter,
+// what it is: a neighbour key on the layout the user was typing on, two letters swapped, a doubled or dropped double letter,
 // a missing or extra letter, the other apostrophe, і/ї/є/ґ for their plain twins. Costs are rough minus-log odds
 // (lower = more likely); the round notes say where they came from.
 import Foundation

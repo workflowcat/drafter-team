@@ -1,5 +1,5 @@
 // Pure parts of a finished recording, kept apart from the app so tests can build them alone
-// (tests/transcript_checks.swift): screenshot records, the brief for an agent, his microphone's echo of the other side,
+// (tests/transcript_checks.swift): screenshot records, the brief for an agent, the user's microphone's echo of the other side,
 // the live text's language.
 import Foundation
 
@@ -42,8 +42,8 @@ enum Transcript {
         return count > 0 && cyr == 0 && english ? "en" : nil
     }
 
-    /// His microphone also hears the other side through the speakers: a line of his that repeats what they said at the
-    /// same moment is their voice, not his (2026-10-22 call: "Привіт, привіт" and three more lines on both sides).
+    /// The user's microphone also hears the other side through the speakers: a line of the user's that repeats what they said at the
+    /// same moment is their voice, not the user's (2026-10-22 call: "Привіт, привіт" and three more lines on both sides).
     static func echoless(_ me: [[String: Any]], _ them: [[String: Any]]) -> [[String: Any]] {
         func words(_ s: Any?) -> [String] {
             ((s as? String) ?? "").lowercased().components(separatedBy: CharacterSet.letters.inverted).filter { $0.count >= 2 }

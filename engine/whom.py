@@ -1,14 +1,14 @@
-"""Who he is writing to, and in which keyboard (2026-11-16, Andrii: "pass the fact of my current language setting to
+"""Who the user is writing to, and in which keyboard (2026-11-16, the user: "pass the fact of my current language setting to
 Claude", "build some proactive context from previous people there").
 
 Two hints for the Claude helpers (pause, word-end early ask, proofread, translate, rework), one line or a short block
 each, added to their message:
 - the keyboard: the app sends the current macOS input source's language (`kb`: "uk", "en", ...). It says which
-  language his next words likely are in; his mixed messages stay mixed.
+  language the user's next words likely are in; the user's mixed messages stay mixed.
 - the person: in a Beeper chat the chat on screen is found from fingerprints of its lines (engine/people.py), its
   other person's display name is matched to the names reference (data/names.json, engine/names.py), and a block of at
-  most BLOCK_MAX characters says who it is (company, projects, how he writes the name, case forms) and his last
-  lines to them, and (engine/sources.py) up to 3 recent mail subjects and group chat titles with them. The block is fixed per chat for TTL seconds, so the message stays the same while he types.
+  most BLOCK_MAX characters says who it is (company, projects, how the user writes the name, case forms) and the user's last
+  lines to them, and (engine/sources.py) up to 3 recent mail subjects and group chat titles with them. The block is fixed per chat for TTL seconds, so the message stays the same while the user types.
 
 Never: an entry that is hidden, marked private, or from a private scope (names.py and know.py leave those out; this
 file checks again). The hints go only where the caller already sends to Claude, under the same switches.
@@ -25,7 +25,7 @@ LANGS = {"uk": "Ukrainian", "en": "English", "ru": "Russian", "pl": "Polish", "d
          "ja": "Japanese", "zh": "Chinese", "ko": "Korean", "ka": "Georgian", "be": "Belarusian"}
 BLOCK_MAX = 600
 TTL = 3600
-LINES = 4          # his last lines to them, at most
+LINES = 4          # the user's last lines to them, at most
 LINE_MAX = 120
 FORMS = 6          # case forms shown
 TOPIC_MAX = 70     # one mail subject or chat title (engine/sources.py), at most 3 of each
@@ -120,7 +120,7 @@ class Names:
 # ---- the block ---------------------------------------------------------------------------------------------------
 
 def spoken(e, mine):
-    """How he writes the name: the name words he used in his lines to them, most used first."""
+    """How the user writes the name: the name words the user used in the user's lines to them, most used first."""
     words = {}
     for x in labels(e) + list(e.get("forms") or []):
         for w in toks(x):
@@ -133,7 +133,7 @@ def spoken(e, mine):
 
 
 def card(e, by_id, mine, title="", limit=BLOCK_MAX, topics=None):
-    """The block for a matched entry: who, linked companies and projects, name forms, his last lines. <= limit chars."""
+    """The block for a matched entry: who, linked companies and projects, name forms, the user's last lines. <= limit chars."""
     kind = e.get("kind", "person")
     head = f"Chat with: {display(e)}" + (f" ({e['latin']})" if e.get("uk") and e.get("latin") and kind == "person" else "")
     if kind != "person": head = f"Group chat{(' ' + title) if title else ''}: about {display(e)} ({kind})"
@@ -169,7 +169,7 @@ LINK = re.compile(r"https?://[^\s<>\"'«»]+")
 
 
 def last_link(mine):
-    """The last link in his lines to them, without a closing dot or bracket; "" when none."""
+    """The last link in the user's lines to them, without a closing dot or bracket; "" when none."""
     for line in reversed(mine or []):
         hits = LINK.findall(line or "")
         if hits: return hits[-1].rstrip(".,;:!?)]")
@@ -177,8 +177,8 @@ def last_link(mine):
 
 
 def fields_for(e, by_id, mine):
-    """{name, first name, company, last link to them} for a person entry: the name as written, the first name as he
-    calls them (his own lines decide), the heaviest linked company."""
+    """{name, first name, company, last link to them} for a person entry: the name as written, the first name as the user
+    calls them (the user's own lines decide), the heaviest linked company."""
     name = display(e)
     used = spoken(e, mine)
     first = used[0] if used else (toks(name)[0] if toks(name) else "")
@@ -192,7 +192,7 @@ THEIR_LINE = re.compile(r"^([A-ZА-ЯІЇЄҐ][\w'’.-]{1,20}(?: [A-ZА-ЯІЇ�
 
 
 def screen_name(context):
-    """The name on their last line on screen ("Олег Петренко: ..."), never his own (Я) or the app's marks."""
+    """The name on their last line on screen ("Олег Петренко: ..."), never the user's own (Я) or the app's marks."""
     for line in reversed([l.strip() for l in (context or "").splitlines() if l.strip()][-30:]):
         m = THEIR_LINE.match(line)
         if m and m.group(1) not in ("Я", "Вони", "Асистент", "Me", "You"): return m.group(1)

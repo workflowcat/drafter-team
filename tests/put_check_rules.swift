@@ -26,7 +26,7 @@ struct PutCheckChecks {
         check(R.verdict(text: text, before: "Hi.", after: "Hi." + String(repeating: "z", count: 60), web: true) == .grew, "grew by the text")
         check(R.verdict(text: text, before: "Hi.", after: "Hi. zz", web: true) == .miss, "grew by a little: not the text")
 
-        // unreadable: no field, a field that reads empty (Electron, or he already sent it)
+        // unreadable: no field, a field that reads empty (Electron, or the user already sent it)
         check(R.verdict(text: text, before: "", after: nil, web: false) == .unreadable, "no field read")
         check(R.verdict(text: text, before: "", after: "", web: true) == .unreadable, "Electron reads empty")
         check(R.verdict(text: text, before: "", after: "", web: false) == .unreadable, "empty after: sent already, or not readable")

@@ -7,10 +7,10 @@ left out), paired in order with the `ghost ...` line that ends it (written only 
 or typed by hand; no line = dropped unused):
 - time: post -> shown (`<ms>ms`), key -> first grey text (` key N`, builds since 13 November), engine, both AX reads;
 - taken: share of shown ghosts with any Tab take, by ghost letters and by app kind;
-- typed through: he typed the ghost's letters by hand and took nothing;
-- ready: the engine answered in 0 ms (a prepared look-ahead/branch hit, phrase memory or his word); `ahead-days.json`
+- typed through: the user typed the ghost's letters by hand and took nothing;
+- ready: the engine answered in 0 ms (a prepared look-ahead/branch hit, phrase memory or their word); `ahead-days.json`
   holds the engine's own made/used counts per day;
-- late: `late` lines (builds after round five): answers dropped because he had typed on past them.
+- late: `late` lines (builds after round five): answers dropped because the user had typed on past them.
 """
 import argparse, datetime as dt, json, re, sys
 from collections import Counter, defaultdict

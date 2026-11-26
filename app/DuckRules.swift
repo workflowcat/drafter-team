@@ -33,11 +33,11 @@ enum DuckRules {
 
     static func shouldDuck(_ m: Moment) -> Bool { skip(m) == nil }
 
-    /// The volume to set while he speaks.
+    /// The volume to set while the user speaks.
     static func target(_ volume: Float) -> Float { max(0, min(1, volume * level)) }
 
-    /// Put the old volume back only when the volume is still what Drafter set: if he changed it meanwhile, his value
-    /// stays. nil `current` (cannot read it) restores: losing his music is worse than a missed change.
+    /// Put the old volume back only when the volume is still what Drafter set: if the user changed it meanwhile, their value
+    /// stays. nil `current` (cannot read it) restores: losing the user's music is worse than a missed change.
     static func shouldRestore(current: Float?, set: Float?) -> Bool {
         guard let c = current, let s = set else { return true }
         return abs(c - s) <= tolerance

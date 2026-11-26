@@ -1,12 +1,12 @@
 """Cadence routing (cadence round, 2026-11-17; docs/rounds/2026-11-17-cadence.md): two typing models in the one
-engine, one GPU queue, one model per key. The fast one (the live Qwen3 1.7B + his layer) answers while he types fast,
+engine, one GPU queue, one model per key. The fast one (the live Qwen3 1.7B + the user's layer) answers while the user types fast,
 the picked bigger one (qwen3-4b-mine) in longer gaps. Pure rules here; engine/server.py holds the second slot.
 
-Measured on held-137 (bench/cadence_replay.py, policy current-2026-11-16, his live key gaps): a gap under 120 ms to the
+Measured on held-137 (bench/cadence_replay.py, policy current-2026-11-16, the user's live key gaps): a gap under 120 ms to the
 fast model gives +9.3 kept letters per 1,000 and key-to-ghost p95 134 ms against 155 for the 4B alone.
 A 4B extension of the fast ghost in the time left added nothing (-0.1 kept letters): not built."""
 
-CADENCE_MS = 120.0    # the gap before this key under which the fast model answers (his median gap is about 100 ms)
+CADENCE_MS = 120.0    # the gap before this key under which the fast model answers (the user's median gap is about 100 ms)
 FAST_ID = "live"      # the fast slot: the catalog's live entry (Qwen3 1.7B + data/adapters)
 FAST_GB = 2.0         # what the fast slot adds to the engine's footprint (bench/cadence_mem.py: 1.70 GB, rounded up)
 

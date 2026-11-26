@@ -1,6 +1,6 @@
 // The one `;` picker (17 November 2026, docs/plans/2026-11-17-spec.md "Cut, merge, fix"), pure: no AppKit. Snippets,
 // quick starts, lookups, people and other cards in one list with a label on each row; Right ⌘ twice opens it with an
-// empty query, `;` + 2 letters in a field opens it with what he typed. The panel and its sources: app/Commands.swift.
+// empty query, `;` + 2 letters in a field opens it with what the user typed. The panel and its sources: app/Commands.swift.
 // Test: tests/command_rules.swift.
 import Foundation
 
@@ -50,7 +50,7 @@ enum CommandRules {
         return cy > la
     }
 
-    /// What he typed in a field: `;` after a space or the line start, a letter, then 1-29 more. nil = not a picker query.
+    /// What the user typed in a field: `;` after a space or the line start, a letter, then 1-29 more. nil = not a picker query.
     /// `old` is what a pick takes out of the field; `query` has no `;`.
     static func typed(_ before: String) -> (old: String, query: String)? {
         let line = before.components(separatedBy: "\n").last ?? ""
@@ -83,7 +83,7 @@ enum CommandRules {
         return scored.sorted { ($0.r, $0.off, $0.i) < ($1.r, $1.off, $1.i) }.prefix(most).map(\.it)
     }
 
-    /// Voice mode rows (research item 3): `;mode` lists Raw, Clean, Polished and his named modes; a pick sets the voice
+    /// Voice mode rows (research item 3): `;mode` lists Raw, Clean, Polished and the user's named modes; a pick sets the voice
     /// mode for the app in front (Talk.pickMode). `current`: the name in use there, marked "now".
     static func voiceModeRows(modes: [String], current: String, uk: Bool) -> [CommandItem] {
         let names = ["Raw", "Clean", "Polished"] + modes.sorted()

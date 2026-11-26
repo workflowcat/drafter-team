@@ -132,7 +132,7 @@ final class VoiceEngine {
 
     func warm() { afterSpeechMs = nil; lastPress = Date(); start(); frame(250) }
 
-    /// Background touch (app/VoiceWarmRules.swift): every 4 min while he is active and memory is free, so a press finds
+    /// Background touch (app/VoiceWarmRules.swift): every 4 min while the user is active and memory is free, so a press finds
     /// Parakeet's weights paged in. Only to a running engine with Parakeet loaded; never starts or loads anything.
     private(set) var lastBackgroundTouch = Date.distantPast
     private var lastPress = Date.distantPast, lastTouchSent = Date.distantPast
@@ -239,20 +239,20 @@ final class Talk {
         }
     }
     var sending = false
-    // round three: Return while he speaks puts in the segment so far (closeSegment); inserts go one at a time, in order
+    // round three: Return while the user speaks puts in the segment so far (closeSegment); inserts go one at a time, in order
     var segmentsSent = 0
     var insertQueue: [(String, Bool)] = []
     var insertBusy = false
     /// Voice pastes per app and how the check after them went (PutCheckRules); logged on every paste.
     var putTally = PutCheckRules.Tally()
-    /// Voice mode he picked per app this session ("mode email", the `;` picker); VoiceModeRules.pick reads it first.
+    /// Voice mode the user picked per app this session ("mode email", the `;` picker); VoiceModeRules.pick reads it first.
     var levelPicked: [String: VoiceChoice] = [:]
     // the voice note's way to the field (app/VoiceFlowRules.swift, 14 November 2026): enter mode keeps the field
-    // untouched while he speaks and ↩ puts the whole final text in; live mode types it in as before
+    // untouched while the user speaks and ↩ puts the whole final text in; live mode types it in as before
     var flow = VoiceFlow()
     var flowTimer: Timer?
     private var afterPiece: (() -> Void)?  // the take's end, held while an Enter piece is still going into the field
-    // live typing (2026-10-19): settled words go into the field while he talks
+    // live typing (2026-10-19): settled words go into the field while the user talks
     var live = false
     /// The take started while the capture deck was open (app/CaptureNote.swift): its text is a card's caption (`noteCard`),
     /// never into the app (screenshot tool, 15 November 2026).
@@ -263,7 +263,7 @@ final class Talk {
     /// Words were heard in this take: Enter then ends it and puts them in (Keys.swift)
     /// Enter puts words in only when they are words: "Yeah." / "Okay." / a quiet "Thank you." heard in the pause after the
     /// last Enter are what the reader makes of room noise, so that Enter goes to the app and sends (2026-10-22: those
-    /// swallowed his sending Enter two or three times in a row and the strip cycled through them).
+    /// swallowed the user's sending Enter two or three times in a row and the strip cycled through them).
     var canSend: Bool { insertMode == .live && state == .listening && !sending && Double(samples) / 16000 >= 0.4 && Talk.realCleaned(sendDraft, peak: peak) }
 
     static let noiseWords = try! NSRegularExpression(pattern: #"(?i)^\s*(thank you|thanks|thank you for watching|дякую|спасибі|bye)[.!]?\s*$"#)
@@ -379,7 +379,7 @@ final class Talk {
             }
             self.lastDraft = d
             self.spool?.text(d)
-            if !self.long {   // noise words never show; an armed draft he speaks after shows with the new words
+            if !self.long {   // noise words never show; an armed draft the user speaks after shows with the new words
                 let real = Talk.realCleaned(self.sendDraft, peak: self.peak)
                 // a deck caption take: the words show under the card (CaptureNote), the strip keeps the level only
                 Pill.shared.draft(DeckRules.stripWords(real ? VoiceFlowRules.join(self.flowPrefix, self.cleanedDraft) : self.flowPrefix, deckTake: self.toNote))
@@ -415,7 +415,7 @@ final class Talk {
         step("mic")
         mic = m
         state = .listening
-        Duck.begin(long: long, call: isCall)   // other sounds down while he speaks (push to talk only, app/Duck.swift)
+        Duck.begin(long: long, call: isCall)   // other sounds down while the user speaks (push to talk only, app/Duck.swift)
         if long { startShots(); startScreenVideo() }
         Pill.shared.listening()
         if !long { Pill.shared.pin(VoiceModeRules.mark(lang: "", levelChoice())) }   // R, C or P (and the mode) in the strip
@@ -534,7 +534,7 @@ final class Talk {
     }
 
     /// Enter while talking: the words so far go into the field and a new line starts under them (Shift+Return), and
-    /// the take goes on with a clean start. Nothing is sent (Andrii, 2026-10-19: paste pieces, review, send himself).
+    /// the take goes on with a clean start. Nothing is sent (the user, 2026-10-19: paste pieces, review, send themselves).
     func send() {
         guard canSend else { return }
         sending = true
@@ -575,8 +575,8 @@ final class Talk {
             func look() {
                 let now = Focus.spot(skip: []).0?.before ?? ""
                 if now.hasSuffix(text) || Date().timeIntervalSince(t0) > 0.6 {
-                    Focus.typeText(" ")   // a space, not a new line: his next Enter sends the message as it is
-                    self.pieceDone(after: Focus.restoreDelay + 0.05)   // a paste puts his clipboard back after this: the take's end waits for it
+                    Focus.typeText(" ")   // a space, not a new line: the user's next Enter sends the message as it is
+                    self.pieceDone(after: Focus.restoreDelay + 0.05)   // a paste puts the user's clipboard back after this: the take's end waits for it
                     return
                 }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.03) { look() }
@@ -600,7 +600,7 @@ final class Talk {
     }
 
     /// The Enter piece is in the field: Enter works again, and a take's end that came meanwhile goes in after it
-    /// (never two pastes at once, which would paste one text twice and leave the piece on his clipboard).
+    /// (never two pastes at once, which would paste one text twice and leave the piece on the user's clipboard).
     private func pieceDone(after delay: Double = 0) {
         sending = false
         flowEvent(.pieceDone)
@@ -640,7 +640,7 @@ final class Talk {
         shots?.stop(); shots = nil
         flushTimer?.invalidate(); flushTimer = nil
         Pill.shared.hide()
-        flowEvent(.cancel)                 // Esc already dropped it; other ways out: an armed draft he added to waits again
+        flowEvent(.cancel)                 // Esc already dropped it; other ways out: an armed draft the user added to waits again
     }
 
     static let askWake = try! NSRegularExpression(pattern: #"(?i)^\s*(drafter|драфтер|дрефтер|дрaфтер)[,.:!?]?\s+\S"#)
@@ -665,10 +665,10 @@ final class Talk {
     /// A long note or call is being recorded now.
     var recording: Bool { state == .listening && long }
     /// Typing help (ghosts, snippets, typography, rework) is free unless a push-to-talk take runs: a call or long note
-    /// records in the background while he types (18 November 2026, Andrii: "typing doesn't work while recording is on").
+    /// records in the background while the user types (18 November 2026, the user: "typing doesn't work while recording is on").
     var keysFree: Bool { state == .idle || long }
 
-    /// Stop a long note or call from the menu bar, the window or the quit question (2026-10-30, Andrii: "I didn't find
+    /// Stop a long note or call from the menu bar, the window or the quit question (2026-10-30, the user: "I didn't find
     /// how to close it"; the only ways were ⇧ right ⌥ again or the call app letting go of the mic).
     func stopRecording(_ from: String) {
         guard recording else { return }
@@ -705,8 +705,8 @@ final class Talk {
         let files = tape.detach().map { sp -> (URL, URL, URL?, String) in let (m, t) = sp.close(); return (sp.dir, m, t, sp.liveText) }
         isCall = false; spool = nil
         stopRecordingBar()
-        // only words he saw in the strip are pasted: when he stops on random sounds, a late reading of them is not
-        // his text (2026-10-20)
+        // only words the user saw in the strip are pasted: when the user stops on random sounds, a late reading of them is not
+        // the user's text (2026-10-20)
         let sawWords = Talk.real(lastDraft, peak: heardPeak)
         lastHadWords = sawWords || segmentsSent > 0
         // nothing showed in the strip, so nothing will be pasted: close at once instead of waiting for a last reading
@@ -782,7 +782,7 @@ final class Talk {
                 CaptureNote.shared.heard(text, card: self.noteCard)
                 return
             }
-            // "Drafter, …" / "Драфтер, …": a question to his notes; the answer shows in the strip, nothing is pasted
+            // "Drafter, …" / "Драфтер, …": a question to the user's notes; the answer shows in the strip, nothing is pasted
             if Talk.askWake.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)) != nil {
                 self.editing = nil
                 self.flowReset("a question to the notes")
@@ -811,7 +811,7 @@ final class Talk {
                        self.lastDraft.count, self.live ? (self.doneBefore + self.run).count : 0, "\(loud)", Date().timeIntervalSince(t))
                 + (debugLog ? " «\(text)»" : ""))
             // nothing (or only what was never shown) is not pasted; no second reading of noise either: Whisper invents
-            // words in it (2026-10-20, Andrii: "I'm just shutting it down after a use")
+            // words in it (2026-10-20, the user: "I'm just shutting it down after a use")
             if text.isEmpty || !sawWords {
                 self.flowEvent(.cancel)
                 if heardPeak < 0.002, self.segmentsSent == 0 { Pill.shared.flash("No mic signal") }
@@ -927,21 +927,21 @@ final class Talk {
     /// Voice text goes into the field on the strip's beat: each draft, the words the strip shows as steady (LiveType)
     /// go in as key events, a few words at a time, no clipboard. A small fix near the caret (a comma, a capital, the last
     /// word) goes in at once; one further back waits for the end, where only what changed is touched (caret moves, one
-    /// selection typed over), never a retype of the tail. When he types or clicks, voice waits until 1.2 s after his
+    /// selection typed over), never a retype of the tail. When the user types or clicks, voice waits until 1.2 s after the user's
     /// last key and goes on at the new caret as a new run; fixes only ever touch the current run, and only while the
-    /// field still ends with it. A field he left never gets a word: the rest waits for the end and goes to the clipboard.
+    /// field still ends with it. A field the user left never gets a word: the rest waits for the end and goes to the clipboard.
     var run = ""              // what Drafter typed in the field in this run, exactly
     var runEl: AXUIElement?   // the field the run is in (nil: read the caret again before the next words)
     var runPid: pid_t = 0
     var runBefore: Character? // the character before the caret when the run started
-    var doneBefore = ""       // this piece's words that earlier runs (before his last key) put in
+    var doneBefore = ""       // this piece's words that earlier runs (before the user's last key) put in
     var steadyText = ""       // the piece's steady words so far (cleaned draft)
     var steadyWords = 0, landedWords = 0
     var still = 0, lastClean = ""
-    var lost = false          // he left the field: nothing more typed in this take
+    var lost = false          // the user left the field: nothing more typed in this take
     var editRev = 0
     var meter = LiveType.Meter()
-    var fixedChars = 0        // characters fixed while he talked, this piece
+    var fixedChars = 0        // characters fixed while the user talked, this piece
     var keptNote = false      // a piece's end left the field as typed (final text copied): said at the take's end
     var lastWant = ""         // a target that gave nothing to do (a fix waiting for the end): not planned again
     var lastSpotTry = Date.distantPast

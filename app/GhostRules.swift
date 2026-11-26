@@ -11,8 +11,8 @@ enum GhostRules {
     /// A final that does not grow the part replaces it (shorter, or another text: the finisher) or takes it away
     /// (empty) - before 14 November the part stayed on screen (Argon 9).
     /// Ghost-hide round (2026-11-18): a final that is only the start of the part (the same words, shorter) keeps the
-    /// part, and once he typed into the part (`typedIn` letters) an empty final keeps it too: the letters he typed
-    /// matched, so the words on screen were right (Andrii: "it completes but then it cuts off again suddenly").
+    /// part, and once the user typed into the part (`typedIn` letters) an empty final keeps it too: the letters the user typed
+    /// matched, so the words on screen were right (the user: "it completes but then it cuts off again suddenly").
     static func next(raw: String, stillThis: Bool, text: String, hasAction: Bool, final: Bool, typedIn: Int = 0) -> Next {
         guard stillThis, !hasAction else { return .keep }
         if text.hasPrefix(raw), text.count > raw.count { return .extend(String(text.dropFirst(raw.count))) }
@@ -22,18 +22,18 @@ enum GhostRules {
         return .redraw
     }
 
-    /// Ghost-hide round: what he typed since the ask, when the field read lags behind his keys (Electron apps, Claude
+    /// Ghost-hide round: what the user typed since the ask, when the field read lags behind their keys (Electron apps, Claude
     /// and Beeper, put a letter in a beat late). `field`: the letters the read shows past the ask; `keys`: the
-    /// printable keys he pressed since the ask (nil when a Tab, Backspace, arrow or shortcut came between). The keys
+    /// printable keys the user pressed since the ask (nil when a Tab, Backspace, arrow or shortcut came between). The keys
     /// win only when the read is their start; anything the app changed (a typography swap) leaves the read as it is.
-    /// Before, the ghost was drawn from the late read and began with a letter he had already typed, so his next key
+    /// Before, the ghost was drawn from the late read and began with a letter the user had already typed, so their next key
     /// did not match it and the ghost went.
     static func typedSince(field: String, keys: String?) -> String {
         guard let k = keys, k.count > field.count, k.hasPrefix(field) else { return field }
         return k
     }
 
-    /// A newer answer that is shorter than the plain ghost on screen does not replace it once he typed into that
+    /// A newer answer that is shorter than the plain ghost on screen does not replace it once the user typed into that
     /// ghost (`typedIn` > 0, every letter matched), nor when it is only the start of it (short-ghost round). A
     /// longer answer still replaces it.
     static func keepShown(visible: Bool, shown: String, new: String, typedIn: Int) -> Bool {
@@ -41,7 +41,7 @@ enum GhostRules {
         return typedIn > 0 || shown.hasPrefix(new)
     }
 
-    /// The typo hold leaves a plain ghost on screen when he typed into it, or when it was drawn for the key now in
+    /// The typo hold leaves a plain ghost on screen when the user typed into it, or when it was drawn for the key now in
     /// the field (it passed the hold then; the debounced ask for the same key came after it).
     static func holdKeeps(typedIn: Int, shownRev: Int?, keyRev: Int) -> Bool {
         typedIn > 0 || shownRev == keyRev
@@ -66,13 +66,13 @@ enum GhostRules {
 
     /// Why a key did not go into the plain ghost on screen, for the "ghost gone" log line: "lag" when the ghost still
     /// starts with the letter typed just before (drawn from a late read) and this key is its next letter; "other"
-    /// when he typed something else.
+    /// when the user typed something else.
     static func missKind(ghost: String, typed: String, prev: String?) -> String {
         if let p = prev, !p.isEmpty, typedInto(ghost: ghost, typed: p + typed) != nil { return "lag" }
         return "other"
     }
 
-    /// Short-ghost round (2026-11-18): typing hid the whole ghost (he typed it to its end) while the answer it came from
+    /// Short-ghost round (2026-11-18): typing hid the whole ghost (the user typed it to its end) while the answer it came from
     /// is still streaming. Its later parts then draw their rest at the caret instead of being dropped, and no new ask
     /// goes out until that answer ends (a new ask stopped it: 93-101 ghosts a day typed to the end with no rest,
     /// 6 characters or less in 85-94% of them, 16-18 November).
@@ -81,8 +81,8 @@ enum GhostRules {
     }
 
     /// A newer answer that is only the start of the plain ghost on screen (its first part, mostly one word) does not
-    /// replace it: the same words, shorter, read as the ghost cut off while he types (short-ghost round, 2026-11-18:
-    /// 317 of 731 ghosts he stopped typing through on 18 November were replaced in the same second by a shorter ghost;
+    /// replace it: the same words, shorter, read as the ghost cut off while the user types (short-ghost round, 2026-11-18:
+    /// 317 of 731 ghosts the user stopped typing through on 18 November were replaced in the same second by a shorter ghost;
     /// the log does not say how many of those were the same words). A longer answer still replaces it.
     static func keepLonger(visible: Bool, shown: String, new: String) -> Bool {
         keepShown(visible: visible, shown: shown, new: new, typedIn: 0)
@@ -98,7 +98,7 @@ enum GhostRules {
         revNow != revAsked && norm(now) == norm(asked)
     }
 
-    /// Idle ghost (step 7): may the local model draft his next message here, with the caret resting? Only with the
+    /// Idle ghost (step 7): may the local model draft the user's next message here, with the caret resting? Only with the
     /// switch on, in a chat or AI box (AppKind via Keys.boxKind), never in a skipped app, a password field, under
     /// secure input or mid-line, and only in an empty box, after a finished sentence and a space, or on a new line
     /// (engine gatecore.idle_spot).
@@ -129,7 +129,7 @@ enum GhostRules {
     }
 
     /// An answer asked at an older key than the grey text on screen never replaces it (Codex review 2026-11-16: an
-    /// answer kept running while he typed, step 2 `keepTyping`, may come back after a newer one was drawn).
+    /// answer kept running while the user typed, step 2 `keepTyping`, may come back after a newer one was drawn).
     static func olderThanShown(askedRev: Int?, shownRev: Int?, visible: Bool) -> Bool {
         guard visible, let a = askedRev, let s = shownRev else { return false }
         return a < s
@@ -144,9 +144,9 @@ enum GhostRules {
     /// The word Tab put in has landed before the caret (20 November 2026: the rest of the ghost vanished after a word
     /// in Claude and Beeper). Electron fields turn a trailing space into a no-break space and may drop or keep it, so
     /// spaces are compared loosely: "word " counts as landed when the field ends in "word", "word " or "word\u{00A0}".
-    /// Tab-drops round (2026-11-20): the field read at Tab against what the spot expects (his letters and the words
-    /// Tab put in already). `ahead`: the field holds the spot and maybe more he typed since; `behind`: the field has
-    /// not caught up with Drafter's own last insert yet (two fast Tabs), look again; `other`: it changed under him.
+    /// Tab-drops round (2026-11-20): the field read at Tab against what the spot expects (the user's letters and the words
+    /// Tab put in already). `ahead`: the field holds the spot and maybe more the user typed since; `behind`: the field has
+    /// not caught up with Drafter's own last insert yet (two fast Tabs), look again; `other`: it changed under the user.
     /// A no-break space reads as a space (Electron fields turn a trailing space into one).
     enum TabRead: Equatable { case ahead(String), behind, other }
     static func tabRead(expected: String, now: String) -> TabRead {
@@ -189,7 +189,7 @@ enum GhostRules {
     static func involuntaryHide(_ why: String) -> Bool { !userDismissReasons.contains(why) }
 
     /// A Tab that took the whole grey text of a streamed answer that is still running: its later parts draw the rest
-    /// at the caret (as when he types it through), instead of the immediate new ask that stopped the stream.
+    /// at the caret (as when the user types it through), instead of the immediate new ask that stopped the stream.
     static func tabThrough(wholeTaken: Bool, paintedSeq: Int?, shownSeq: Int, finishedSeq: Int) -> Bool {
         wholeTaken && typedThrough(visible: false, paintedSeq: paintedSeq, shownSeq: shownSeq, finishedSeq: finishedSeq)
     }
@@ -207,7 +207,7 @@ enum GhostRules {
     static let restLooks = 6, restLookGap = 0.1
 
     /// Tab on a next-message card (2026-11-14, Argon 14). Folded with lines hidden behind the fold (`cut`): the first
-    /// Tab opens it and puts nothing in, so he never sends lines he did not see; open, or all of it shows: Tab puts it in.
+    /// Tab opens it and puts nothing in, so the user never sends lines the user did not see; open, or all of it shows: Tab puts it in.
     enum DraftTab: Equatable { case open, insert }
     static func draftTab(expanded: Bool, cut: Bool) -> DraftTab { !expanded && cut ? .open : .insert }
 
@@ -267,7 +267,7 @@ enum GhostRules {
 
     /// The rolling ghost: once two words or fewer are left of a final ghost, the words after it are asked for (from the
     /// engine's prepared answer for the whole ghost, so mostly at once) and added at its end, so a sentence keeps
-    /// coming while he Tabs. Once per ghost text (`askedFor` is the text the last roll asked for); never in "word"
+    /// coming while the user Tabs. Once per ghost text (`askedFor` is the text the last roll asked for); never in "word"
     /// mode, never for a chip, a fix or a next-message card.
     static func rollWanted(rest: String, mode: String, final: Bool, plain: Bool, wanted: String, askedFor: String?) -> Bool {
         guard lengthMode(mode) != "word", final, plain, !rest.trimmingCharacters(in: .whitespaces).isEmpty, !rest.hasSuffix("\n") else { return false }

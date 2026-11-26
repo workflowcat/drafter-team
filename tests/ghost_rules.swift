@@ -8,7 +8,7 @@ struct GhostRulesChecks {
     static var failures = 0
     static func check(_ ok: Bool, _ what: String) { if !ok { print("FAIL: " + what); failures += 1 } }
 
-    /// Ghost-hide round (2026-11-18): the rules that keep a right ghost on screen while he types its letters, then a
+    /// Ghost-hide round (2026-11-18): the rules that keep a right ghost on screen while the user types its letters, then a
     /// letter-by-letter run through them the way Keys and Ghost use them. Made-up lines only.
     static func ghostHide() {
         typealias R = GhostRules
@@ -50,7 +50,7 @@ struct GhostRulesChecks {
             case .redraw: gone = "stream redraw"
             }
         }
-        func newer(_ text: String) {                        // a newer ask's answer for the spot after his letters
+        func newer(_ text: String) {                        // a newer ask's answer for the spot after the user's letters
             guard gone == nil else { return }
             if !R.keepShown(visible: true, shown: ghost, new: text, typedIn: typedIn) { gone = "newer"; ghost = text }
         }
@@ -65,13 +65,13 @@ struct GhostRulesChecks {
         check(ghost == "row at noon" && gone == nil, "a final shorter than what is drawn leaves it")
         line("", final: true)
         check(gone == nil, "an empty final after he typed into it leaves it")
-        // the whole ghost vanishing while he types it: an empty newer answer is never drawn, the typo hold and the
-        // screen check leave a ghost he typed into
+        // the whole ghost vanishing while the user types it: an empty newer answer is never drawn, the typo hold and the
+        // screen check leave a ghost the user typed into
         newerEmpty()
         check(gone == nil && ghost == "row at noon", "an empty newer answer leaves it")
         if !R.holdKeeps(typedIn: typedIn, shownRev: 3, keyRev: 5) { gone = "typo hold" }
         check(gone == nil, "the typo hold leaves it")
-        // a late field read draws the next ghost past every key he pressed, so his next key goes into it
+        // a late field read draws the next ghost past every key the user pressed, so their next key goes into it
         let fieldSince = "a", keys = "at"
         let since = R.typedSince(field: fieldSince, keys: keys)
         let answer = "at noon"
@@ -217,7 +217,7 @@ struct GhostRulesChecks {
         check(!R.keepLonger(visible: true, shown: "meet you there", new: "see you"), "other words replace it")
         check(!R.keepLonger(visible: false, shown: "meet you there", new: "meet"), "nothing on screen: draw it")
         check(!R.keepLonger(visible: true, shown: "meet you", new: ""), "an empty answer is not drawn either way")
-        // more-bold round (17 November 2026): his Bolder / Careful bar goes as guess_bar, in steps of 0.05 inside 0.05-0.35
+        // more-bold round (17 November 2026): the user's Bolder / Careful bar goes as guess_bar, in steps of 0.05 inside 0.05-0.35
         check(R.runBody(mode: "sentence", words: true, minWords: 3, maxWords: 5, guess: true, shade: true, strict: false, guessBar: 0.15)?["guess_bar"] as? Double == 0.15, "his bar is sent")
         check(R.runBody(mode: "sentence", words: true, minWords: 3, maxWords: 5, guess: false, shade: true, strict: false, guessBar: 0.15)?["guess_bar"] == nil, "no bar without guesses")
         check(R.runBody(mode: "sentence", words: true, minWords: 3, maxWords: 5, guess: true, shade: true, strict: false)?["guess_bar"] == nil, "no setting: the engine's bar")

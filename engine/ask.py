@@ -1,5 +1,5 @@
 """Ask your notes (2026-10-20): a take that starts with "Drafter, …" / "Драфтер, …" is a question, not text to paste.
-Snippets come from his long notes and calls (data/notes), voice takes (data/takes.jsonl, or data/journal.sqlite with `journalDB` on). Claude Haiku answers in 2-3 lines with
+Snippets come from the user's long notes and calls (data/notes), voice takes (data/takes.jsonl, or data/journal.sqlite with `journalDB` on). Claude Haiku answers in 2-3 lines with
 where it came from; the app shows it in the strip, nothing is pasted."""
 import json, re, time
 from pathlib import Path

@@ -1,4 +1,4 @@
-// What he just copied, offered where it fits (1 November 2026; Raycast and Pretype do it). A link or a short text he
+// What the user just copied, offered where it fits (1 November 2026; Raycast and Pretype do it). A link or a short text the user
 // copied in another app in the last 3 minutes shows as a chip when the line asks for it: a link after "link", "here",
 // "лінк", "посилання", "ось", "тримай"… or a colon; a short text (one line, ≤120 characters) after a colon. Tab types
 // it in. Offered once per copy, never Drafter's own pastes or concealed items (History.watchClipboard decides that).
@@ -51,12 +51,12 @@ enum Clip {
     }
 }
 
-/// The copy chip (format round, 15 November 2026; Andrii: "a bunch of autoformatting on copy for dates, numbers, IBAN
+/// The copy chip (format round, 15 November 2026; the user: "a bunch of autoformatting on copy for dates, numbers, IBAN
 /// account"). When the copied text IS one thing (a date, number, amount, IBAN, phone, ЄДРПОУ, link with tracking, path,
 /// colour), the strip offers its top form on Tab, ⇧Tab shows the next form (keys round three; digits stay the app's); Esc or typing on dismisses it, ⌘V pastes the
 /// original. A picked form goes to the clipboard and "Copied as: …" keeps Undo for 5 s; the original row stays in the
 /// journal (the replaced clipboard is never logged as a new copy). After the same pick three times it asks once
-/// "Always?"; a rule he confirms then applies at once, with Undo. Never for sensitive things, concealed or secret
+/// "Always?"; a rule the user confirms then applies at once, with Undo. Never for sensitive things, concealed or secret
 /// copies (History.watchClipboard stops those before Clip.copied), skipped apps, or while the strip is busy.
 /// Rules: app/FormatRules.swift (CopyChip.plan), data/format-rules.json.
 enum ClipForms {
@@ -93,12 +93,12 @@ enum ClipForms {
         Pill.shared.offer(["Copy \(CopyChip.names[kind] ?? kind) as", "\(v.name): \(CopyChip.preview(v.text))"], kind: "Copy", controls: keys, seconds: 8)
     }
 
-    /// He picked a form: it goes to the clipboard; the third same pick asks once "Always?".
+    /// The user picked a form: it goes to the clipboard; the third same pick asks once "Always?".
     static func choose(_ kind: String, _ v: FormatVariant, original: String) {
         put(v.text)
         log("clip form: picked \(kind) \(v.id)")
         if FormatLearn.picked(kind, dest: nil, form: v.id, in: &memory) {
-            FormatLearn.answer(kind, dest: nil, form: v.id, yes: false, in: &memory)   // asked once, whatever he answers
+            FormatLearn.answer(kind, dest: nil, form: v.id, yes: false, in: &memory)   // asked once, whatever the user answers
             save()
             Offer.clear(); Offer.until = Date().addingTimeInterval(8)
             Offer.action = { always(kind, v) }

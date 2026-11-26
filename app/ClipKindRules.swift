@@ -1,4 +1,4 @@
-// More kinds of copies (clip kinds round, 17 November 2026; Andrii: "copying more types of files"). Pure: no AppKit,
+// More kinds of copies (clip kinds round, 17 November 2026; the user: "copying more types of files"). Pure: no AppKit,
 // no files. Which picture type a copy came in and its file extension (kept as given, never all PNG), several files as
 // one row, what else a text is (ClipShape: a colour, a table, code, formatted text), a table's size from its cells or
 // its HTML, a language guess by simple signals, a colour value read from hex/rgb/hsl, a link's title from the anchor

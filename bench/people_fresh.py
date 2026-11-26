@@ -1,5 +1,5 @@
 """Per-person bench data (2026-11-01, local only, data/bench/people-fresh.json): for each fresh Beeper reply in
-data/replay-fresh.json, the chat it was sent in and what he wrote in that chat BEFORE it (from the Beeper CLI, read
+data/replay-fresh.json, the chat it was sent in and what the user wrote in that chat BEFORE it (from the Beeper CLI, read
 only), plus fingerprints of the chat's earlier lines (to test finding the chat from the screen).
 
     .venv/bin/python bench/people_fresh.py [history]
@@ -45,7 +45,7 @@ for i, it in enumerate(items):
 sys.path.insert(0, str(ROOT / "bench"))
 import typescore     # the rows go with this exact fresh set (typebench --people checks it)
 (ROOT / "data/bench/people-fresh.json").write_text(json.dumps({"set_sha": typescore.set_sha(ROOT / "data/replay-fresh.json"), "rows": out}, ensure_ascii=False))
-print(len(out), "replies,", len({o["chat"] for o in out}), "chats, his earlier lines per reply:",
+print(len(out), "replies,", len({o["chat"] for o in out}), "chats, the user's earlier lines per reply:",
       sorted(len(o["mine"]) for o in out))
 
 # finding the chat from the lines above each reply (the bench context has "Name: " in front of each message; the
