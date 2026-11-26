@@ -60,6 +60,9 @@ Turn on in the menu bar: Voice on Right Option. Dictation runs locally (Parakeet
 | Screen video of the call | | off |
 | Live outline and call summary through a bigger model | | off, cloud (else the local model) |
 | Follow-ups found in the note, kept with it | | on |
+| Meeting page: chapters on the left, the chapter in focus in the middle, notes on the right | ↑ ↓ chapters | on (window 1100 pt or wider) |
+| Your points fold open to what the call added, with the moment it was said | | on |
+| Copy for agent, Share notes | ⇧⌘A | |
 
 ## The window
 

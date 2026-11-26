@@ -303,6 +303,7 @@ enum UIShots {
             ("Я", 44, "Так, там буде галочка замість мікрофона."), ("Вони", 58, "І таймер на пропозиції записати дзвінок, тонка лінія знизу."),
             ("Я", 71, "Домовились. Надішлю оновлену схему ввечері."), ("Вони", 80, "Супер, тоді в четвер подивимось разом.")]
         try json(rows.map { ["who": $0.0, "start": $0.1, "text": $0.2] }, call.appendingPathComponent("lines.json"))
+        try "- both sides' sound on the strip?\n- the offer line: how long\n- send the strip tonight".write(to: call.appendingPathComponent("my-notes.md"), atomically: true, encoding: .utf8)
         try "Я думаю, що головна сторінка має бути спокійнішою. Перше: менше рамок. Друге: пошук по всіх розмовах одразу, щоб за хвилину знайти, хто що сказав. Третє: одна кнопка, яка віддає все агенту разом зі скріншотами. Решту можна сховати в меню."
             .write(to: note.appendingPathComponent("transcript.txt"), atomically: true, encoding: .utf8)
         // 80 seconds of silence on each side, so Play shows as it does for a real call

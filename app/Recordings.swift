@@ -580,12 +580,12 @@ struct DocView: View {
     @State private var playbackTime = 0.0
     @State private var followPlayhead = true
     @State private var speaker = "All"
-    @State private var pane = "Transcript"
+    @State private var wholeCall = false
     @State private var chapterTurns: [CallChapterTurn] = []
     @State private var chapters: [CallChapter] = []
     private var second: Double { scrubTime ?? playbackTime }
     private var hasVisual: Bool { !d.shots.isEmpty || videoURL != nil }
-    private var wide: Bool { m.width >= 960 && hasVisual }
+    private var wide: Bool { m.width >= 1100 }
     private var totalSecs: Double {
         let known = ([d.secs, videoURL == nil ? 0 : m.studioVideoDuration] + d.shots.map(\.t) + d.turns.compactMap(\.start)).filter { $0.isFinite && $0 > 0 }
         return max(1, known.max() ?? 0)
@@ -632,7 +632,7 @@ struct DocView: View {
             }
             .task(id: d.id) {
                 if let videoDocumentID, videoDocumentID != d.id { m.releaseStudioVideo(videoDocumentID) }
-                group = []; jumpedTurn = nil; scrubTime = nil; speaker = "All"; pane = "Transcript"
+                group = []; jumpedTurn = nil; scrubTime = nil; speaker = "All"; wholeCall = false
                 playbackTime = m.playing == d.id ? m.live.playhead : (m.preview ? d.shots.first?.t ?? 0 : 0)
                 videoURL = CallStudioRules.detectVideoFile(in: d.dir)
                 videoDocumentID = videoURL == nil ? nil : d.id
@@ -656,14 +656,14 @@ struct DocView: View {
                 if oldShot != newShot || oldTurn != newTurn || endChanged { playbackTime = time }
             }
             .onChange(of: currentTurn) { _, turn in
-                if followPlayhead, pane == "Transcript", let turn { proxy.scrollTo(turn, anchor: .center) }
+                if followPlayhead, let turn { proxy.scrollTo(turn, anchor: .center) }
             }
             .onChange(of: m.playing) { _, id in
                 if id == nil, scrubTime == nil { playbackTime = m.live.playhead }
             }
             .onChange(of: m.query) { _, _ in
                 if let first = d.hits(CallDoc.terms(m.query)).first {
-                    pane = "Transcript"; speaker = "All"
+                    wholeCall = true; speaker = "All"
                     DispatchQueue.main.async { proxy.scrollTo(first.id, anchor: .center) }
                 }
             }
@@ -673,33 +673,102 @@ struct DocView: View {
         }
     }
 
+    /// Wide (meeting notes round, 26 November 2026): chapters on the left, the chapter in focus in the middle (its screen and
+    /// its lines), the notes on the right. The chapter in focus is the one the playhead is in.
     private func wideLayout(_ proxy: ScrollViewProxy) -> some View {
-        GeometryReader { g in
-            HStack(alignment: .top, spacing: 0) {
-                ScrollView {
-                    CallVisualStage(d: d, videoURL: videoURL, second: second, seek: { seek($0, proxy) })
-                        .padding(20)
-                }.frame(width: g.size.width * 0.52)
+        HStack(alignment: .top, spacing: 0) {
+            if chapters.count > 1 {
+                chapterRail(proxy).frame(width: 260)
                 Rectangle().fill(UIInk.line).frame(width: 1)
-                VStack(spacing: 0) {
-                    SwiftUI.Picker("Recording pane", selection: $pane) {
-                        Text("Transcript").tag("Transcript")
-                        Text("Summary & To-dos").tag("Summary & To-dos")
-                        Text("Notes").tag("Notes")
-                    }.pickerStyle(.segmented).labelsHidden().padding(16)
-                    if pane == "Transcript" { transcriptControls.padding(.horizontal, 16).padding(.bottom, 12) }
-                    ScrollView {
-                        VStack(alignment: .leading, spacing: 20) {
-                            if pane == "Transcript" {
-                                if empty { why }
-                                conversation(proxy)
-                            } else if pane == "Summary & To-dos" { summary }
-                            else { ownNotes(proxy) }
-                        }.padding(.horizontal, 16).padding(.bottom, 24).frame(maxWidth: .infinity, alignment: .leading)
+            }
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    focusHeading
+                    if hasVisual { CallVisualStage(d: d, videoURL: videoURL, second: second, seek: { seek($0, proxy) }).frame(maxWidth: 600) }
+                    if empty { why }
+                    HStack(spacing: 12) {
+                        if chapters.count > 1 {
+                            SwiftUI.Picker("Lines shown", selection: $wholeCall) {
+                                Text("This chapter").tag(false)
+                                Text("Whole call").tag(true)
+                            }.pickerStyle(.segmented).labelsHidden().fixedSize().controlSize(.small)
+                        }
+                        speakerPick
+                        Spacer(minLength: 0)
+                        followToggle
                     }
-                }.frame(maxWidth: .infinity)
+                    conversation(proxy)
+                }.padding(.horizontal, 28).padding(.vertical, 22).frame(maxWidth: .infinity, alignment: .leading)
+            }.frame(maxWidth: .infinity)
+            Rectangle().fill(UIInk.line).frame(width: 1)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 22) {
+                    ownNotes(proxy)
+                    recordingDetails
+                }.padding(20).frame(maxWidth: .infinity, alignment: .leading)
+            }.frame(width: 340)
+        }
+    }
+
+    private var focusIndex: Int? { CallChapter.index(at: second, in: chapters) }
+
+    @ViewBuilder private var focusHeading: some View {
+        if let i = focusIndex, chapters.count > 1 {
+            let c = chapters[i]
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Chapter \(i + 1) of \(chapters.count) · \(CallTimelineRules.formatOffset(c.start))–\(CallTimelineRules.formatOffset(c.end))")
+                    .font(NativeFont.mono(11)).foregroundStyle(UIInk.muted)
+                Text(c.title).font(NativeFont.display(20)).textSelection(.enabled)
             }
         }
+    }
+
+    private func chapterRail(_ proxy: ScrollViewProxy) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 2) {
+                    ForEach(Array(chapters.enumerated()), id: \.offset) { i, c in
+                        Button { seek(c.start, proxy, revealTranscript: false) } label: { chapterRow(i, c) }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel("Chapter \(i + 1): \(c.title), at \(CallTimelineRules.formatOffset(c.start))")
+                    }
+                }.padding(10)
+            }
+            Text("↑ ↓ chapters").font(NativeFont.text(11)).foregroundStyle(UIInk.muted).padding(.horizontal, 20).padding(.bottom, 12)
+        }
+        .background(UIInk.soft.opacity(0.5))
+        .focusable().focusEffectDisabled()
+        .onKeyPress(.upArrow) { stepChapter(-1, proxy); return .handled }
+        .onKeyPress(.downArrow) { stepChapter(1, proxy); return .handled }
+    }
+
+    private func stepChapter(_ by: Int, _ proxy: ScrollViewProxy) {
+        guard let i = focusIndex else { return }
+        let j = min(max(0, i + by), chapters.count - 1)
+        if j != i { seek(chapters[j].start, proxy, revealTranscript: false) }
+    }
+
+    private func chapterRow(_ i: Int, _ c: CallChapter) -> some View {
+        let on = focusIndex == i
+        let shot = d.shots.first { $0.t >= c.start && $0.t < c.end }
+        return HStack(spacing: 10) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 4).fill(UIInk.well)
+                if let shot { CallStudioImage(url: d.dir.appendingPathComponent(shot.file), pixels: 120) }
+            }
+            .frame(width: 46, height: 29).clipShape(RoundedRectangle(cornerRadius: 4))
+            .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(UIInk.line, lineWidth: 0.5))
+            .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(c.title).font(NativeFont.text(13, on ? .semibold : .regular)).lineLimit(2).foregroundStyle(UIInk.ink)
+                Text("\(CallTimelineRules.formatOffset(c.start)) · \(max(1, Int(((c.end - c.start) / 60).rounded()))) min")
+                    .font(NativeFont.mono(11)).foregroundStyle(on ? UIInk.blue : UIInk.muted)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 10).padding(.vertical, 7)
+        .background(RoundedRectangle(cornerRadius: Native.corner(2)).fill(on ? UIInk.selected : .clear))
+        .contentShape(Rectangle())
     }
 
     private func narrowLayout(_ proxy: ScrollViewProxy) -> some View {
@@ -720,9 +789,9 @@ struct DocView: View {
     private func seek(_ time: Double, _ proxy: ScrollViewProxy, revealTranscript: Bool = true, startPlayback: Bool = false) {
         let target = CallStudioRules.seekTime(fraction: time / totalSecs, totalSecs: totalSecs)
         playbackTime = target; scrubTime = nil; m.playhead = target
-        if revealTranscript { pane = "Transcript"; speaker = "All" }
+        if revealTranscript { speaker = "All" }
         jumpedTurn = CallTimelineRules.nearestTurnID(at: target, turns: d.turns.map { ($0.id, $0.start) })
-        if revealTranscript || (followPlayhead && pane == "Transcript"), let jumpedTurn {
+        if revealTranscript || followPlayhead, let jumpedTurn {
             DispatchQueue.main.async { proxy.scrollTo(jumpedTurn, anchor: .center) }
         }
         let shouldPlay = startPlayback || m.playing == d.id
@@ -799,9 +868,9 @@ struct DocView: View {
     }
 
     var forAgent: some View {
-        Button { m.sendToAgent(d) } label: { Label { Text("For agent") } icon: { Glyph("external", size: 14) } }
+        Button { m.sendToAgent(d) } label: { Text("Copy for agent") + Text("  ⇧⌘A").foregroundStyle(UIInk.muted) }
             .keyboardShortcut("a", modifiers: [.command, .shift])
-            .help("Copy a line that points Claude or Codex at everything said\(d.shots.isEmpty ? "" : " and the screenshots") (⇧⌘A)")
+            .help("Copy a line that points Claude or Codex at everything said\(d.shots.isEmpty ? "" : " and the screenshots")")
             .disabled(d.turns.isEmpty)
     }
 
@@ -827,39 +896,33 @@ struct DocView: View {
             }
         }
     }
+    /// Copy for agent, Share notes (the main one), the rest in More (meeting notes round, 26 November 2026).
     private var actions: some View {
         HStack(spacing: 8) {
-            Button { m.copyShareBrief(d, duration: totalSecs, chapters: chapters) } label: {
-                Label { Text("Share Brief").font(NativeFont.text(12, .semibold)) } icon: { Glyph("copy", size: 14) }
-            }.help("Copy a brief with notes, actions, chapters and links")
-            Button { m.sendCallToObsidian(d) } label: {
-                Label { Text("Send to Obsidian") } icon: { Glyph("external", size: 14) }
-            }
-            .disabled(m.settings.obsidianVault.isEmpty || d.live)
-            .help(m.settings.obsidianVault.isEmpty ? "Set an Obsidian vault in Settings › Advanced" : "Save a Markdown note into your Obsidian vault's Drafter folder")
-            if !d.live {
-                Button { editing = true } label: { Label { Text("Edit") } icon: { Glyph("edit", size: 14) } }
-                if d.hasAudio, !empty {
-                    Button { m.reread(Entry(id: d.id, when: d.started, app: d.app, text: "", audio: d.id)) } label: {
-                        Label { Text(reading ? "Reading again…" : "Read again") } icon: { Glyph("refresh", size: 14) }
-                    }.disabled(reading)
-                }
-            } else {
-                Button("Stop recording") { m.stopRecording() }.tint(UIInk.coral)
-            }
+            if d.live { Button("Stop recording") { m.stopRecording() }.tint(UIInk.coral) }
             forAgent
-            Button { m.copyNotes(d) } label: { Label { Text("Copy notes") } icon: { Glyph("copy", size: 14) } }
-                .keyboardShortcut("c", modifiers: [.command, .shift])
+            Button { m.copyShareBrief(d, duration: totalSecs, chapters: chapters) } label: { Text("Share notes") }
+                .buttonStyle(.borderedProminent)
+                .help("Copy the notes, to-dos, chapters and links, ready to paste")
             SwiftUI.Menu {
+                Button("Copy notes") { m.copyNotes(d) }.keyboardShortcut("c", modifiers: [.command, .shift])
                 SwiftUI.Menu("Copy transcript as") {
                     ForEach(WindowModel.CopyForm.allCases, id: \.self) { f in Button(f.rawValue) { m.copyAs(d, f) } }
                 }.disabled(d.turns.isEmpty)
+                Button("Send to Obsidian") { m.sendCallToObsidian(d) }
+                    .disabled(m.settings.obsidianVault.isEmpty || d.live)
+                Divider()
+                if !d.live {
+                    Button("Edit details…") { editing = true }
+                    if d.hasAudio, !empty { Button(reading ? "Reading again…" : "Read again") { m.reread(Entry(id: d.id, when: d.started, app: d.app, text: "", audio: d.id)) }.disabled(reading) }
+                }
                 Button("Save subtitles (.srt)…") { m.saveSubtitles(d) }.disabled(!d.timed)
+                Divider()
                 if !d.note.isEmpty { Button("Open the note file") { NSWorkspace.shared.open(URL(fileURLWithPath: d.note)) } }
                 Button("Show in Finder") { NSWorkspace.shared.activateFileViewerSelecting([d.dir]) }
-            } label: { Label { Text("More") } icon: { Glyph("more", size: 14) } }
-            .menuStyle(.borderlessButton).fixedSize()
-        }.font(NativeFont.text(12)).buttonStyle(.bordered).controlSize(.small).fixedSize(horizontal: true, vertical: false)
+            } label: { Image(systemName: "ellipsis") }
+            .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize().accessibilityLabel("More")
+        }.font(NativeFont.text(12)).buttonStyle(.bordered).controlSize(.regular).fixedSize(horizontal: true, vertical: false)
     }
 
     // MARK: details, people, combining (17 November 2026)
@@ -973,7 +1036,9 @@ struct DocView: View {
         let terms = CallDoc.terms(m.query)
         let hits = Set(d.hits(terms).map(\.id))
         let activeTurn = currentTurn
+        let chapter = wide && !wholeCall && chapters.count > 1 ? focusIndex.map { chapters[$0] } : nil
         let turns = d.turns.filter { speaker == "All" || (speaker == "You" ? CallStudioRules.isMe($0.who) : !CallStudioRules.isMe($0.who)) }
+            .filter { t in chapter.map { c in t.start.map { $0 >= c.start && ($0 < c.end || c == chapters.last) } ?? false } ?? true }
         return LazyVStack(alignment: .leading, spacing: 8) {
             if turns.isEmpty { Text(d.live ? "Words appear here as they are heard." : "No turns for this speaker.").font(NativeFont.text(13)).foregroundStyle(UIInk.muted) }
             ForEach(turns) { t in

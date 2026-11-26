@@ -17,6 +17,7 @@ struct CallChapterRulesTest {
     static func main() {
         chapterChecks()
         hybridChecks()
+        foldedChecks()
         playbackChecks()
         briefChecks()
         sourceChecks()
@@ -93,6 +94,30 @@ struct CallChapterRulesTest {
         let unicode = R.hybridNotes(myNotes: "", summary: ["Café résumé"], todos: [], turns: [turn(8, 12, "Café résumé review")])
         check(unicode == [.aiPoint(text: "Café résumé", citations: [8])], "Unicode token matching")
         check(blocks == R.hybridNotes(myNotes: mine, summary: ["- Orchard budget review", "Unrelated telescope navigation", "the and we"], todos: ["- [ ] Station staffing roster", "- [x] Unscheduled lantern repairs"], turns: rows), "hybrid output deterministic")
+    }
+
+    static func foldedChecks() {
+        let rows = [turn(10, 20, "The north exits are swapped on the map"), turn(40, 50, "Matte paper, four hundred copies"),
+                    turn(70, 80, "The legend moves to the back page"), turn(90, 95, "Payment moves to step two")]
+        let mine = "- map: north side first\n\nask about matte vs gloss price\nlegend → back?"
+        let f = R.foldedNotes(myNotes: mine, summary: ["- North exits are swapped on the map", "Matte paper chosen, four hundred copies",
+                                                        "The legend moves to the back page", "Order form stays one page"],
+                              todos: ["- [ ] Payment moves to step two"], turns: rows)
+        check(f.points.map(\.title) == ["map: north side first", "ask about matte vs gloss price", "legend → back?"], "the user's lines, bullet marks dropped, blank lines skipped")
+        check(f.points[0].details == [NoteDetail(text: "North exits are swapped on the map", time: 10)], "a summary point goes under the line it shares a word with, with its moment")
+        check(f.points[1].details.map(\.text) == ["Matte paper chosen, four hundred copies"], "matte goes under the price line")
+        check(f.points[2].details.map(\.text) == ["The legend moves to the back page"], "legend goes under the legend line")
+        check(f.also == [NoteDetail(text: "Order form stays one page", time: nil)], "a point no line shares a word with is also in the call")
+        check(f.todos == [NoteDetail(text: "Payment moves to step two", time: 90)], "to-dos keep their moment")
+        check(f.points[0].time == 10 && f.points[0].gist == "North exits are swapped on the map", "closed point shows the first detail and its time")
+        let bare = R.foldedNotes(myNotes: "ask the printer", summary: [], todos: [], turns: [])
+        check(bare.points.first?.gist == "Not found in the call" && bare.points.first?.time == nil, "a line with nothing found says so, no invented time")
+        check(R.foldedNotes(myNotes: " \n", summary: [], todos: [], turns: []).isEmpty, "empty notes")
+        let tie = R.foldedNotes(myNotes: "budget\nbudget again", summary: ["Budget approved"], todos: [], turns: [])
+        check(tie.points[0].details.count == 1 && tie.points[1].details.isEmpty, "a tie goes to the first line")
+        let ch = [CallChapter(start: 0, end: 60, title: "A"), CallChapter(start: 60, end: 120, title: "B")]
+        check(CallChapter.index(at: 0, in: ch) == 0 && CallChapter.index(at: 61, in: ch) == 1 && CallChapter.index(at: 500, in: ch) == 1, "chapter at the playhead")
+        check(CallChapter.index(at: .nan, in: ch) == nil && CallChapter.index(at: 5, in: []) == nil, "no chapter for no clock or no chapters")
     }
 
     static func playbackChecks() {

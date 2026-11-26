@@ -21,6 +21,38 @@ enum HybridNoteBlock: Equatable {
     case todo(text: String, citations: [Double])
 }
 
+struct NoteDetail: Equatable, Hashable {
+    let text: String
+    let time: Double?
+}
+
+/// One line the user wrote, with what the call added to it.
+struct FoldedPoint: Equatable, Hashable {
+    let title: String
+    let details: [NoteDetail]
+    /// When the line's own words were said, if they were.
+    let said: Double?
+    /// The moment shown beside the closed point: where it was said, else its first timed detail.
+    var time: Double? { said ?? details.compactMap(\.time).first }
+    /// The one line under the closed point.
+    var gist: String { details.first?.text ?? (said == nil ? "Not found in the call" : "Said in the call") }
+}
+
+struct FoldedNotes: Equatable {
+    let points: [FoldedPoint]
+    let also: [NoteDetail]
+    let todos: [NoteDetail]
+    var isEmpty: Bool { points.isEmpty && also.isEmpty && todos.isEmpty }
+}
+
+/// The chapter the playhead is in, and its place in the list.
+extension CallChapter {
+    static func index(at second: Double, in chapters: [CallChapter]) -> Int? {
+        guard !chapters.isEmpty, second.isFinite else { return nil }
+        return chapters.lastIndex { $0.start <= second } ?? 0
+    }
+}
+
 enum CallChapterRules {
     private static let wordPattern = try! NSRegularExpression(pattern: #"[\p{L}\p{N}]+(?:['’][\p{L}\p{N}]+)*"#)
     private static let stop = Set("a an and are as at be been but by can could did do does for from had has have he her here him his how i if in is it its just like me more my no not of on or our out so some that the their them then there these they this those to too us was we were what when which who will with would yes you your okay well really about let's".split(separator: " ").map(String.init))
@@ -151,6 +183,38 @@ enum CallChapterRules {
         return human.map { .human(text: $0) }
             + bullets(summary).map { .aiPoint(text: $0, citations: citations($0)) }
             + bullets(todos).map { .todo(text: $0, citations: citations($0)) }
+    }
+
+    /// The notes page (meeting notes round, 26 November 2026): each line the user wrote becomes a point that folds.
+    /// Summary points that share a content word with a line go under it, with the moment they were said; the rest are
+    /// "also in the call". The user's own words are never changed, only their bullet marks dropped.
+    static func foldedNotes(myNotes: String, summary: [String], todos: [String], turns: [CallChapterTurn]) -> FoldedNotes {
+        let index = timed(turns).map { (time: $0.start!, tokens: tokens($0.text)) }
+        func moment(_ text: String) -> Double? {
+            let query = tokens(text)
+            guard query.count >= 2 else { return nil }
+            return index.compactMap { row -> (time: Double, score: Double)? in
+                let count = query.intersection(row.tokens).count
+                let coverage = Double(count) / Double(query.count)
+                return count >= 2 && coverage >= 0.4 ? (row.time, coverage) : nil
+            }.sorted { $0.score == $1.score ? $0.time < $1.time : $0.score > $1.score }.first?.time
+        }
+        let lines = bullets(myNotes.components(separatedBy: "\n"))
+        let lineTokens = lines.map(tokens)
+        var under = Array(repeating: [NoteDetail](), count: lines.count)
+        var also: [NoteDetail] = []
+        for point in bullets(summary) {
+            let words = tokens(point)
+            var best: Int?, bestCount = 0
+            for i in lineTokens.indices {
+                let count: Int = lineTokens[i].intersection(words).count
+                if count > bestCount { best = i; bestCount = count }
+            }
+            let detail = NoteDetail(text: point, time: moment(point))
+            if let best { under[best].append(detail) } else { also.append(detail) }
+        }
+        let points = lines.indices.map { FoldedPoint(title: lines[$0], details: under[$0], said: moment(lines[$0])) }
+        return FoldedNotes(points: points, also: also, todos: bullets(todos).map { NoteDetail(text: $0, time: moment($0)) })
     }
 
     /// Returns a target only inside a known long gap. Unknown ends and trailing silence are left alone.

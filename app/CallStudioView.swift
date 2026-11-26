@@ -435,14 +435,17 @@ struct CallMasterTimeline: View {
 }
 
 /// Human notes retain their exact text; generated notes keep their quieter ink and local source matches.
+/// The notes beside a recording (meeting notes round, 26 November 2026): each line the user wrote is a point that folds
+/// open to what the call added, with the moment it was said; then what else came up and the to-dos. "My notes" edits the lines.
 struct CallStudioNotes: View {
     @EnvironmentObject var m: WindowModel
     let d: CallDoc
     let turns: [CallChapterTurn]
     @ObservedObject var draft: CallStudioNoteDraft
     let seek: (Double) -> Void
-    @State private var enhanced: Bool
-    @State private var blocks: [HybridNoteBlock] = []
+    @State private var filled: Bool
+    @State private var notes = FoldedNotes(points: [], also: [], todos: [])
+    @State private var open: Set<Int> = [0]
 
     private struct Source: Hashable {
         let mine: String
@@ -454,77 +457,132 @@ struct CallStudioNotes: View {
 
     init(d: CallDoc, turns: [CallChapterTurn], draft: CallStudioNoteDraft, seek: @escaping (Double) -> Void) {
         self.d = d; self.turns = turns; self.draft = draft; self.seek = seek
-        _enhanced = State(initialValue: !d.points.isEmpty || !d.todos.isEmpty || d.live)
+        _filled = State(initialValue: !d.points.isEmpty || !d.todos.isEmpty || !d.mine.isEmpty || d.live)
     }
+    private var allOpen: Bool { !notes.points.isEmpty && open.count >= notes.points.count }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack(spacing: 12) {
-                Label { Text("Notes").font(NativeFont.text(14, .semibold)) } icon: { Glyph("edit", size: 14) }
+        VStack(alignment: .leading, spacing: 18) {
+            HStack(spacing: 10) {
+                Text("Notes").font(NativeFont.text(14, .semibold))
                 Spacer(minLength: 0)
-                SwiftUI.Picker("Notes view", selection: $enhanced) {
-                    Text("Enhanced").tag(true)
-                    Text("Edit notes").tag(false)
+                if filled, notes.points.count > 1 {
+                    Button(allOpen ? "Close all" : "Open all") {
+                        open = allOpen ? [] : Set(notes.points.indices)
+                    }.buttonStyle(.borderless).font(NativeFont.text(12)).foregroundStyle(UIInk.muted)
+                }
+                SwiftUI.Picker("Notes view", selection: $filled) {
+                    Text("Filled out").tag(true)
+                    Text("My notes").tag(false)
                 }.pickerStyle(.segmented).labelsHidden().fixedSize().controlSize(.small)
             }
-            if enhanced {
-                if blocks.isEmpty { Text("No notes yet").foregroundStyle(UIInk.muted) }
-                ForEach(Array(blocks.enumerated()), id: \.offset) { _, block in
-                    switch block {
-                    case .human(let text):
-                        HStack(alignment: .top, spacing: 12) {
-                            RoundedRectangle(cornerRadius: Native.corner(1)).fill(UIInk.ink).frame(width: 2)
-                            Text(text).foregroundStyle(UIInk.ink).textSelection(.enabled)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                        }.fixedSize(horizontal: false, vertical: true)
-                    case .aiPoint(let text, let citations):
-                        sourcedNote(text, citations: citations, todo: false)
-                    case .todo(let text, let citations):
-                        sourcedNote(text, citations: citations, todo: true)
-                    }
-                }
-            } else {
-                TextEditor(text: $draft.text).font(NativeFont.text(14)).foregroundStyle(UIInk.ink)
-                    .scrollContentBackground(.hidden).padding(8).frame(minHeight: 180)
-                    .background(UIInk.well, in: RoundedRectangle(cornerRadius: Native.corner(2)))
-                    .overlay(RoundedRectangle(cornerRadius: Native.corner(2)).strokeBorder(UIInk.line, lineWidth: 1))
-                    .accessibilityLabel("Your meeting notes").disabled(d.live)
-                HStack(spacing: 12) {
-                    Button("Save notes") { if draft.save() { m.loadDocs() } }.disabled(!draft.changed || d.live)
-                    if draft.changed { Text("Draft kept").foregroundStyle(UIInk.muted) }
-                    if d.live { Text("Edit in the recording window").foregroundStyle(UIInk.muted) }
-                }.buttonStyle(.bordered).controlSize(.small)
-            }
+            if filled { filledOut } else { editor }
             if !draft.notice.isEmpty { Text(draft.notice).font(NativeFont.text(12)).foregroundStyle(UIInk.muted).textSelection(.enabled) }
-        }.font(NativeFont.text(14))
+        }.font(NativeFont.text(13))
             .onAppear { draft.refresh(d) }
             .onChange(of: d.mine) { _, _ in draft.refresh(d) }
             .task(id: source) {
                 let input = source
                 let result = await Task.detached(priority: .userInitiated) {
-                    CallChapterRules.hybridNotes(myNotes: input.mine, summary: input.points, todos: input.todos, turns: input.turns)
+                    CallChapterRules.foldedNotes(myNotes: input.mine, summary: input.points, todos: input.todos, turns: input.turns)
                 }.value
-                if !Task.isCancelled { blocks = result }
+                if !Task.isCancelled { notes = result }
             }
     }
-    private func sourcedNote(_ text: String, citations: [Double], todo: Bool) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(alignment: .top, spacing: 8) {
-                if todo { Glyph("check", size: 14).padding(.top, 2).accessibilityLabel("Action item") }
-                Text(text).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading)
-            }.foregroundStyle(UIInk.muted)
-            if !citations.isEmpty {
-                HStack(spacing: 6) {
-                    ForEach(citations, id: \.self) { time in
-                        Button { seek(time) } label: {
-                            Text("[\(CallTimelineRules.formatOffset(time))]").font(NativeFont.mono(11))
-                                .padding(.horizontal, 6).frame(minHeight: 24)
-                                .background(UIInk.well, in: RoundedRectangle(cornerRadius: Native.corner(1)))
-                        }.buttonStyle(.plain).foregroundStyle(UIInk.muted)
-                            .help("Jump to matching transcript words")
-                            .accessibilityLabel("Transcript match at \(CallTimelineRules.formatOffset(time))")
+
+    @ViewBuilder private var filledOut: some View {
+        if notes.isEmpty {
+            Text(d.live ? "Write your points in the recording window. Drafter fills them in after the call." : "No notes yet. Switch to My notes to write your points.")
+                .foregroundStyle(UIInk.muted).fixedSize(horizontal: false, vertical: true)
+        }
+        if !notes.points.isEmpty {
+            group("Your points") {
+                ForEach(Array(notes.points.enumerated()), id: \.offset) { i, p in point(i, p) }
+            }
+        }
+        if !notes.also.isEmpty {
+            group(notes.points.isEmpty ? "Summary" : "Also in the call") {
+                ForEach(Array(notes.also.enumerated()), id: \.offset) { _, n in detail(n) }
+            }
+        }
+        if !notes.todos.isEmpty {
+            group("To do") {
+                ForEach(Array(notes.todos.enumerated()), id: \.offset) { _, n in
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Image(systemName: "circle").font(.system(size: 11)).foregroundStyle(UIInk.muted).accessibilityHidden(true)
+                        Text(n.text).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading).fixedSize(horizontal: false, vertical: true)
+                        if let t = n.time { timeLink(t) }
                     }
                 }
             }
         }
+    }
+
+    private func group<C: View>(_ title: String, @ViewBuilder _ content: () -> C) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title).font(NativeFont.text(12, .semibold)).foregroundStyle(UIInk.muted)
+            content()
+        }
+    }
+
+    private func point(_ i: Int, _ p: FoldedPoint) -> some View {
+        let isOpen = open.contains(i)
+        return VStack(alignment: .leading, spacing: 4) {
+            Button {
+                withAnimation(.easeOut(duration: Native.motion("fade"))) { if isOpen { open.remove(i) } else { open.insert(i) } }
+            } label: {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Image(systemName: "chevron.right").font(.system(size: 10, weight: .semibold)).foregroundStyle(UIInk.muted)
+                        .rotationEffect(.degrees(isOpen ? 90 : 0)).frame(width: 10).accessibilityHidden(true)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(p.title).font(NativeFont.text(13, .semibold)).foregroundStyle(UIInk.ink)
+                        if !isOpen { Text(p.gist).foregroundStyle(UIInk.muted).lineLimit(1) }
+                    }.frame(maxWidth: .infinity, alignment: .leading)
+                    if let t = p.time { Text(CallTimelineRules.formatOffset(t)).font(NativeFont.mono(11)).foregroundStyle(UIInk.muted) }
+                }.contentShape(Rectangle())
+            }.buttonStyle(.plain)
+            .accessibilityLabel(p.title).accessibilityValue(isOpen ? "open" : "closed").accessibilityHint("Shows what the call added")
+            if isOpen {
+                VStack(alignment: .leading, spacing: 6) {
+                    if p.details.isEmpty { Text(p.gist).foregroundStyle(UIInk.muted) }
+                    ForEach(Array(p.details.enumerated()), id: \.offset) { _, n in detail(n) }
+                    if let s = p.said, !p.details.contains(where: { $0.time == s }) {
+                        HStack(spacing: 6) { Text("Said at").foregroundStyle(UIInk.muted); timeLink(s) }
+                    }
+                }
+                .padding(.leading, 10).padding(.vertical, 2)
+                .overlay(alignment: .leading) { Rectangle().fill(UIInk.line).frame(width: 2) }
+                .padding(.leading, 4).padding(.bottom, 6)
+            }
+        }
+    }
+
+    private func detail(_ n: NoteDetail) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Text(n.text).foregroundStyle(UIInk.ink.opacity(0.85)).textSelection(.enabled)
+                .frame(maxWidth: .infinity, alignment: .leading).fixedSize(horizontal: false, vertical: true)
+            if let t = n.time { timeLink(t) }
+        }
+    }
+
+    private func timeLink(_ t: Double) -> some View {
+        Button { seek(t) } label: { Text(CallTimelineRules.formatOffset(t)).font(NativeFont.mono(11)) }
+            .buttonStyle(.link).help("Play from here")
+            .accessibilityLabel("Play from \(CallTimelineRules.formatOffset(t))")
+    }
+
+    @ViewBuilder private var editor: some View {
+        Text("One point a line. After the call each line fills in with what was said.").font(NativeFont.text(12)).foregroundStyle(UIInk.muted)
+        TextEditor(text: $draft.text).font(NativeFont.text(14)).foregroundStyle(UIInk.ink)
+            .scrollContentBackground(.hidden).padding(8).frame(minHeight: 180)
+            .background(UIInk.well, in: RoundedRectangle(cornerRadius: Native.corner(2)))
+            .overlay(RoundedRectangle(cornerRadius: Native.corner(2)).strokeBorder(UIInk.line, lineWidth: 1))
+            .accessibilityLabel("Your meeting notes").disabled(d.live)
+        HStack(spacing: 12) {
+            Button("Save notes") { if draft.save() { m.loadDocs() } }.disabled(!draft.changed || d.live)
+                .keyboardShortcut(.return, modifiers: .command)
+            if draft.changed { Text("Draft kept").foregroundStyle(UIInk.muted) }
+            if d.live { Text("Edit in the recording window").foregroundStyle(UIInk.muted) }
+        }.buttonStyle(.bordered).controlSize(.small)
     }
 }
