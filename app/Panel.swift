@@ -4,7 +4,7 @@
 // rows with these pieces, so they read like the calm one-column journal: a soft card with a hairline edge and 12 pt
 // corners, 13 pt words, keys as small rounded key caps, bordered buttons that name their key, the main one filled.
 // AppKit drawing (flipped views) and the same pieces for SwiftUI. Semantic colours only (app/Look.swift, docs/look.md).
-// Rebuild B (26 November 2026, the user: "a bit more ephemeral and less like a document"): the ground is frosted glass
+// Rebuild B (26 November 2026, the user: "less like a document"): the ground is frosted glass
 // (GlassHost blurs the app below, the ground draws a light tint and a hairline over it), corners are 18 pt, the keys
 // sit in one dark pill whose blue end is the main action (`pill`), and a panel rises 6 pt as it fades in (`appear`).
 // No state, no files.

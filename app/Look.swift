@@ -36,7 +36,7 @@ enum Native {
     static let onPrimary = NSColor.alternateSelectedControlTextColor
     static let onCut = NSColor.white                          // words on the black notch housing
     static let onCutMuted = NSColor.white.withAlphaComponent(0.6)
-    // Rebuild B (26 November 2026, the user: "a bit more ephemeral and less like a document"): what floats is frosted
+    // Rebuild B (26 November 2026, the user: "less like a document"): what floats is frosted
     // glass over the app below, its keys sit in one dark pill whose blue end is the main action, and it fades away.
     /// The glass tint over the blur behind a panel, its bright top edge, its outline.
     static var glassTint: NSColor { dark ? NSColor(white: 0.13, alpha: 0.62) : NSColor(white: 1, alpha: 0.64) }

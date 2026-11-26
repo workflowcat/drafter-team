@@ -1,4 +1,4 @@
-// The window's icon rail (Rebuild B, 26 November 2026, the user: "a bit more ephemeral and less like a document"):
+// The window's icon rail (Rebuild B, 26 November 2026, the user: "less like a document"):
 // every page one symbol down the left edge, the page you are on lifted in the accent colour, Settings and Help at the
 // foot. The pages stay in the ⋯ menu too, with their keys; the rail only shows where they are. No state of its own.
 import SwiftUI
