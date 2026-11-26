@@ -4,7 +4,8 @@ Never in git: models/ is ignored.
     .venv/bin/python scripts/download_speakers.py
 
 3D-Speaker ERes2Net base (16 kHz, 512-number voice vectors, 39.6 MB, Apache-2.0), the ONNX export from the official
-sherpa-onnx releases, checked by SHA-256. Without it, call lines keep their track labels (Я / Вони).
+sherpa-onnx releases, checked by SHA-256. Without it, call lines keep their track labels (me and them, by
+the recording side).
 """
 import hashlib, sys, urllib.request
 from pathlib import Path

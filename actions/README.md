@@ -8,6 +8,9 @@ A file defines:
 - `TRIGGER` - a regex on the last line before the caret; cheap, runs on every pause in typing
 - `extract(line, ask) -> dict | None` - fields from the line; `ask(prompt)` runs the warm model once and returns its text.
   Return `{"chip": "<exactly what will happen>", "run": {...}, "fields": {...}}` or None to stay quiet.
+  `_ask.fields(ask, instruction, line, keys)` asks for a small JSON object; pass `instruction` as
+  `{"uk": "...", "en": "..."}` and the prompt follows the line: Ukrainian framing when the line holds Cyrillic
+  (`_ask.is_cyrillic`), English otherwise, so an English line sends no Ukrainian words to the model.
 - `run(fields) -> str` - only for `run.kind == "python"`; returns the line shown after it ran.
 
 Shipped: `calendar_event.py` and `reminder.py` (the app adds them through EventKit) and `vault_note.py` (a Markdown
