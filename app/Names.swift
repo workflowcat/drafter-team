@@ -218,7 +218,7 @@ struct NamesView: View {
                     Glyph("arrow-up-right", size: 13)
                     Text("\(NameRules.display(e)) into ").foregroundStyle(UIInk.muted) + Text(s.entry(s.chosen).map(NameRules.display) ?? "…")
                     KeyChip("↵"); KeyChip("esc")
-                }.font(NativeFont.text(12.5))
+                }.font(NativeFont.text(12))
             }
             ScrollViewReader { proxy in
                 ScrollView {
@@ -236,8 +236,8 @@ struct NamesView: View {
             }
             if !s.notice.isEmpty {
                 HStack(spacing: 8) {
-                    Text(s.notice).font(NativeFont.text(12.5)).foregroundStyle(UIInk.muted).lineLimit(1)
-                    if s.canUndo { Button("Undo") { s.undo() }.buttonStyle(.plain).font(NativeFont.text(12.5, .medium)).foregroundStyle(UIInk.blue).help("Undo (⌘Z)") }
+                    Text(s.notice).font(NativeFont.text(12)).foregroundStyle(UIInk.muted).lineLimit(1)
+                    if s.canUndo { Button("Undo") { s.undo() }.buttonStyle(.plain).font(NativeFont.text(12, .medium)).foregroundStyle(UIInk.blue).help("Undo (⌘Z)") }
                     Spacer()
                 }.frame(height: 22)
             }
@@ -279,7 +279,7 @@ struct KindPick: View {
                     Button { s.kind = k } label: {
                         HStack(spacing: 5) {
                             Glyph(k.isEmpty ? "list" : k == "hidden" ? "blur" : NameRules.glyph(k), size: 13)
-                            Text(name).font(NativeFont.text(12.5))
+                            Text(name).font(NativeFont.text(12))
                             Text("\(s.counts[k] ?? 0)").font(NativeFont.mono(11)).foregroundStyle(on ? UIInk.muted : UIInk.faint)
                         }
                         .foregroundStyle(on ? UIInk.ink : UIInk.muted)
@@ -340,12 +340,12 @@ struct NameRow: View {
                 if editing {
                     HStack(spacing: 6) {
                         TextField("Українською", text: $uk)
-                            .textFieldStyle(.plain).font(NativeFont.text(13.5)).focused($field, equals: 0)
+                            .textFieldStyle(.plain).font(NativeFont.text(13)).focused($field, equals: 0)
                             .padding(.horizontal, 8).frame(width: 190, height: 28)
                             .background(RoundedRectangle(cornerRadius: Native.corner(2)).fill(UIInk.well))
                             .overlay { RoundedRectangle(cornerRadius: Native.corner(2)).strokeBorder(field == 0 ? UIInk.blue : UIInk.line, lineWidth: field == 0 ? 1 : 0.5) }
                         TextField("Latin", text: $latin)
-                            .textFieldStyle(.plain).font(NativeFont.text(13.5)).focused($field, equals: 1)
+                            .textFieldStyle(.plain).font(NativeFont.text(13)).focused($field, equals: 1)
                             .padding(.horizontal, 8).frame(width: 190, height: 28)
                             .background(RoundedRectangle(cornerRadius: Native.corner(2)).fill(UIInk.well))
                             .overlay { RoundedRectangle(cornerRadius: Native.corner(2)).strokeBorder(field == 1 ? UIInk.blue : UIInk.line, lineWidth: field == 1 ? 1 : 0.5) }
@@ -370,10 +370,10 @@ struct NameRow: View {
             Spacer(minLength: 8)
             let phone = NameRules.list(e, "phones").first, mail = NameRules.list(e, "emails").first
             // fixed slots, so phones and emails line up from row to row; a narrow window drops the emails
-            HStack(spacing: 4) { if let phone { Glyph("phone", size: 12); Text(phone).font(NativeFont.mono(11.5)).textSelection(.enabled) } }
+            HStack(spacing: 4) { if let phone { Glyph("phone", size: 12); Text(phone).font(NativeFont.mono(11)).textSelection(.enabled) } }
                 .foregroundStyle(UIInk.muted).lineLimit(1).frame(width: 170, alignment: .leading)
             if wide {
-                HStack(spacing: 4) { if let mail { Glyph("mail", size: 12); Text(mail).font(NativeFont.mono(11.5)).truncationMode(.middle).textSelection(.enabled) } }
+                HStack(spacing: 4) { if let mail { Glyph("mail", size: 12); Text(mail).font(NativeFont.mono(11)).truncationMode(.middle).textSelection(.enabled) } }
                     .foregroundStyle(UIInk.muted).lineLimit(1).frame(width: 230, alignment: .leading)
             }
             HStack(spacing: 6) {
@@ -404,7 +404,7 @@ struct NameRow: View {
             Button(action: onWorkspace) {
                 HStack(spacing: 4) {
                     Glyph("app-window", size: 12)
-                    if wide { Text("Workspace").font(NativeFont.text(11.5)) }
+                    if wide { Text("Workspace").font(NativeFont.text(11)) }
                 }.frame(minWidth: 28, minHeight: 28).contentShape(Rectangle())
             }.buttonStyle(.plain).foregroundStyle(UIInk.muted)
                 .help("Open Workspace").accessibilityLabel("Open workspace for \(displayName)")

@@ -24,7 +24,7 @@ struct ObsidianActions: View {
             if let saved {
                 Button("Show note") { NSWorkspace.shared.activateFileViewerSelecting([saved]) }
             }
-            if !notice.isEmpty { Text(notice).font(NativeFont.text(11.5)).foregroundStyle(UIInk.muted) }
+            if !notice.isEmpty { Text(notice).font(NativeFont.text(11)).foregroundStyle(UIInk.muted) }
         }.controlSize(.small)
     }
     private func save() {

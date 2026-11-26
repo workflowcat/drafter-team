@@ -111,7 +111,7 @@ extension SettingsView {
                 .frame(width: G.toggle, alignment: .leading)
                 .accessibilityLabel(r.name).accessibilityAddTraits(r.current ? .isSelected : [])
                 HStack(spacing: 6) {
-                    Text(r.name).font(NativeFont.text(16)).lineLimit(1)
+                    Text(r.name).font(NativeFont.text(13)).lineLimit(1)
                     if r.recommended {
                         Glyph("sparkle", size: 14).foregroundStyle(UIInk.muted).help(cat.why)
                             .accessibilityHidden(false).accessibilityLabel("Recommended for this Mac: \(cat.why)")

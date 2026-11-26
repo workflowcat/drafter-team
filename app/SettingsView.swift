@@ -30,7 +30,7 @@ struct SettingsView: View {
             line {
                 HStack(spacing: 0) {
                     Color.clear.frame(width: G.toggle, height: 1)
-                    Text("Typo fixes").font(NativeFont.text(16))
+                    Text("Typo fixes").font(NativeFont.text(13))
                     Spacer()
                     SwiftUI.Picker("Typo fixes", selection: Binding(get: { m.settings.autocorrectMode }, set: { v in m.save { $0.autocorrectMode = v } })) {
                         Text("Offer").tag("offer"); Text("Put in when sure").tag("sure"); Text("Always put in").tag("replace")
@@ -47,7 +47,7 @@ struct SettingsView: View {
             line {
                 HStack(spacing: 0) {
                     Glyph("waves", size: 16).foregroundStyle(UIInk.muted).frame(width: G.toggle, alignment: .leading)
-                    Text("Strip").font(NativeFont.text(16))
+                    Text("Strip").font(NativeFont.text(13))
                     Spacer()
                     // the system's segmented control (native round: a hand-made one stood here)
                     SwiftUI.Picker("Strip style", selection: Binding(get: { m.settings.stripStyle }, set: { v in m.save { $0.stripStyle = v } })) {
@@ -96,7 +96,7 @@ struct SettingsView: View {
                 ForEach(SettingsCategory.allCases) { c in
                     let on = category == c && search.trimmingCharacters(in: .whitespaces).isEmpty
                     Button { category = c; search = "" } label: {
-                        Text(c.label).font(NativeFont.text(12.5, on ? .medium : .regular))
+                        Text(c.label).font(NativeFont.text(12, on ? .medium : .regular))
                             .foregroundStyle(on ? UIInk.ink : UIInk.muted)
                             .padding(.horizontal, 10).frame(height: 26)
                             .background(Capsule().fill(on ? UIInk.pick : .clear))
@@ -132,7 +132,7 @@ struct SettingsView: View {
                             Circle().fill(p.ok ? Color(nsColor: Native.ok) : p.needed ? Color(nsColor: Native.warn) : UIInk.faint).frame(width: 6, height: 6)
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(p.title).font(NativeFont.text(13, .medium)).foregroundStyle(UIInk.ink)
-                                Text(p.neededFor).font(NativeFont.text(11.5)).foregroundStyle(UIInk.muted)
+                                Text(p.neededFor).font(NativeFont.text(11)).foregroundStyle(UIInk.muted)
                             }
                             Spacer()
                             if p.ok {
@@ -438,7 +438,7 @@ struct SettingsView: View {
                 Button { advanced.toggle() } label: {
                     HStack(spacing: 14) {
                         Glyph(isOpen ? "chevron-down" : "chevron-right", size: 14).foregroundStyle(UIInk.muted)
-                        Text("Advanced").font(NativeFont.text(18, .semibold)).lineLimit(1).fixedSize()
+                        Text("Advanced").font(NativeFont.text(15, .semibold)).lineLimit(1).fixedSize()
                         Rectangle().fill(UIInk.line).frame(height: 1)
                     }.contentShape(Rectangle())
                 }

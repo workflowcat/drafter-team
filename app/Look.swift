@@ -76,6 +76,9 @@ enum Native {
     // MARK: type (the system font)
 
     /// Words.
+    /// The type scale (style round, 26 November 2026): 10 tiny, 11 caption, 12 small, 13 body, 14 reading,
+    /// 15 heading, 17 page title, 22 display. No other sizes and no half points; tests/look_scale.sh checks it.
+    static let scale: [CGFloat] = [10, 11, 12, 13, 14, 15, 17, 22]
     static func text(_ size: CGFloat, _ w: NSFont.Weight = .regular) -> NSFont { .systemFont(ofSize: size, weight: w) }
     static func body(_ size: CGFloat) -> NSFont { text(size) }
     /// A title or a state word.
@@ -159,7 +162,8 @@ enum Kind {
     }
     var color: NSColor {
         switch self {
-        case .snippet, .person, .fact, .voice, .link, .next: return Native.blue
+        case .snippet, .person, .fact, .link, .next: return Native.blue
+        case .voice: return Native.violet   // said, as in the journal (TapeKind.said)
         case .action, .lookup, .translate, .rework: return Native.violet
         case .fix: return Native.warn
         }

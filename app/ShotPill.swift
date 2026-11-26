@@ -69,13 +69,8 @@ enum ShotPill {
         }
         if hasKey {
             // the key as a small cap under the glyph (caret-cozy round: the same key cap everywhere, app/Panel.swift)
-            let h: CGFloat = 14, w = max(h, Panel.capWidth(f.key, h: h) - 2)
-            let kr = NSRect(x: (r.midX - w / 2).rounded(), y: r.maxY - 4 - h, width: w, height: h)
-            let p = NSBezierPath(roundedRect: kr, xRadius: 4, yRadius: 4)
-            (f.primary ? Native.onPrimary.withAlphaComponent(0.22) : Native.key).setFill(); p.fill()
-            let font = Native.text(9.5, .semibold), a = TapeDraw.at(font, f.primary ? Native.onPrimary : Native.muted)
-            let tw = TapeDraw.width(f.key, a)
-            (f.key as NSString).draw(at: NSPoint(x: (kr.midX - tw / 2).rounded(), y: TapeDraw.lineTop(font, mid: kr.midY)), withAttributes: a)
+            let h: CGFloat = 16, w = Panel.capWidth(f.key, h: h)
+            Panel.keycap(f.key, x: (r.midX - w / 2).rounded(), y: r.maxY - 4 - h, h: h, onFill: f.primary)
         }
     }
 

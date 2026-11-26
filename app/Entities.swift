@@ -527,7 +527,7 @@ final class EntityDots: NSView {
         let end = bounds.width - (ambiguous ? 10 : 0)
         while x < end { NSRect(x: x, y: y, width: 1.5, height: 1.5).fill(); x += 4 }
         if ambiguous {
-            ("2" as NSString).draw(at: NSPoint(x: end + 3, y: -1), withAttributes: [.font: Native.mono(8, .medium), .foregroundColor: Native.muted])
+            ("2" as NSString).draw(at: NSPoint(x: end + 3, y: -1), withAttributes: [.font: Native.mono(10, .medium), .foregroundColor: Native.muted])
         }
     }
 }

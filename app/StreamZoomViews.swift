@@ -82,7 +82,7 @@ struct ZoomLine: View {
                 Spacer(minLength: 8)
                 icons
             default:
-                Text(StreamZoomRules.span(c)).font(NativeFont.num(12.5)).foregroundStyle(UIInk.muted).frame(width: 96, alignment: .leading)
+                Text(StreamZoomRules.span(c)).font(NativeFont.num(12)).foregroundStyle(UIInk.muted).frame(width: 96, alignment: .leading)
                 Text(c.lines.first ?? "").font(NativeFont.text(14)).foregroundStyle(UIInk.ink).lineLimit(1).truncationMode(.tail)
                 Spacer(minLength: 8)
                 icons

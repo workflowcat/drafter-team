@@ -167,7 +167,7 @@ final class StripButton: NSButton {
         let ink = armed ? NSColor.black : self.ink
         let t = NSMutableAttributedString()
         if style == .stop && !armed { t.append(NSAttributedString(string: "■ ", attributes: [.font: NSFont.systemFont(ofSize: 8), .foregroundColor: ink, .baselineOffset: 1.5])) }
-        t.append(NSAttributedString(string: text, attributes: [.font: Native.text(12.5, style == .primary || armed ? .semibold : .medium), .foregroundColor: ink]))
+        t.append(NSAttributedString(string: text, attributes: [.font: Native.text(12, style == .primary || armed ? .semibold : .medium), .foregroundColor: ink]))
         if !key.isEmpty && !armed { t.append(NSAttributedString(string: "  " + key, attributes: [.font: Native.mono(11), .foregroundColor: ink.withAlphaComponent(0.62)])) }
         return t
     }

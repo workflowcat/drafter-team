@@ -79,7 +79,7 @@ struct TopicTidyView: View {
                                 Glyph(cluster.primaryTag?.glyph ?? "folder", size: 14)
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(cluster.title).font(NativeFont.text(13, .medium)).lineLimit(2)
-                                    Text(cluster.subtitle).font(NativeFont.text(11.5)).foregroundStyle(UIInk.muted)
+                                    Text(cluster.subtitle).font(NativeFont.text(11)).foregroundStyle(UIInk.muted)
                                 }
                                 Spacer(minLength: 0)
                             }
@@ -155,7 +155,7 @@ struct TopicTidyView: View {
                                                 .font(NativeFont.text(13)).lineLimit(3)
                                             if let target = candidate.duplicateOf, let kept = archiveRows[target] {
                                                 Text("Keeps: " + String(kept.current.prefix(180)))
-                                                    .font(NativeFont.text(11.5)).foregroundStyle(UIInk.muted).lineLimit(2)
+                                                    .font(NativeFont.text(11)).foregroundStyle(UIInk.muted).lineLimit(2)
                                             }
                                         }.frame(maxWidth: .infinity, alignment: .leading)
                                         stamp(candidate.at)
@@ -214,7 +214,7 @@ struct TopicTidyView: View {
     }
     private func stamp(_ at: Double) -> some View {
         Text(Date(timeIntervalSince1970: at), format: .dateTime.month(.abbreviated).day().hour().minute())
-            .font(NativeFont.mono(10.5)).foregroundStyle(UIInk.muted)
+            .font(NativeFont.mono(10)).foregroundStyle(UIInk.muted)
     }
     private func glyph(_ kind: String) -> String {
         kind == "spoken" ? "waves" : kind == "copied" ? "copy" : "keys"

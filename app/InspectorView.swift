@@ -93,10 +93,10 @@ struct InspectorView: View {
                 .accessibilityLabel(s.tone.rawValue)
             VStack(alignment: .leading, spacing: 3) {
                 Text(s.headline)
-                    .font(NativeFont.text(14.5, .semibold))
+                    .font(NativeFont.text(14, .semibold))
                     .foregroundStyle(UIInk.ink)
                 Text(s.detail)
-                    .font(NativeFont.text(12.5))
+                    .font(NativeFont.text(12))
                     .foregroundStyle(UIInk.muted)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -170,7 +170,7 @@ struct InspectorView: View {
                         HStack(spacing: 8) {
                             sourceBadge(snapshot.contextSource)
                             Text(contextSizeLine)
-                                .font(NativeFont.mono(11.5))
+                                .font(NativeFont.mono(11))
                                 .foregroundStyle(UIInk.muted)
                         }
                     }
@@ -185,7 +185,7 @@ struct InspectorView: View {
                                 .fill(engineDotColor)
                                 .frame(width: 7, height: 7)
                             Text(engineStatusLine)
-                                .font(NativeFont.mono(11.5))
+                                .font(NativeFont.mono(11))
                                 .foregroundStyle(UIInk.muted)
                                 .lineLimit(1)
                                 .truncationMode(.tail)
@@ -279,7 +279,7 @@ struct InspectorView: View {
                     if revealContext {
                         if snapshot.contextText.isEmpty {
                             Text("No screen context in memory for the current target.")
-                                .font(NativeFont.text(12.5))
+                                .font(NativeFont.text(12))
                                 .foregroundStyle(UIInk.faint)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .padding(12)
@@ -324,13 +324,13 @@ struct InspectorView: View {
                         .background(Capsule().fill(UIInk.well))
                     Spacer()
                     Text("In-memory cache for fast switching")
-                        .font(NativeFont.text(11.5))
+                        .font(NativeFont.text(11))
                         .foregroundStyle(UIInk.faint)
                 }
 
                 if snapshot.cachedScreens.isEmpty {
                     Text("No warm screens cached in memory yet.")
-                        .font(NativeFont.text(12.5))
+                        .font(NativeFont.text(12))
                         .foregroundStyle(UIInk.faint)
                         .padding(.vertical, 6)
                 } else {
@@ -346,11 +346,11 @@ struct InspectorView: View {
                                 Spacer(minLength: 8)
                                 sourceBadge(item.source)
                                 Text("\(item.chars) chars")
-                                    .font(NativeFont.mono(11.5))
+                                    .font(NativeFont.mono(11))
                                     .foregroundStyle(UIInk.muted)
                                     .frame(width: 72, alignment: .trailing)
                                 Text(InspectorRules.formatAge(item.ageSec))
-                                    .font(NativeFont.mono(11.5))
+                                    .font(NativeFont.mono(11))
                                     .foregroundStyle(UIInk.faint)
                                     .frame(width: 72, alignment: .trailing)
                             }
@@ -399,7 +399,7 @@ struct InspectorView: View {
     private func gridRow<Content: View>(_ label: String, @ViewBuilder content: () -> Content) -> some View {
         GridRow {
             Text(label)
-                .font(NativeFont.text(12.5))
+                .font(NativeFont.text(12))
                 .foregroundStyle(UIInk.muted)
                 .frame(width: 112, alignment: .leading)
             content()
@@ -425,7 +425,7 @@ struct InspectorView: View {
                 .fill(ok ? Color(nsColor: Native.ok) : Color(nsColor: Native.warn))
                 .frame(width: 6, height: 6)
             Text("\(name): \(ok ? "On" : "Off")")
-                .font(NativeFont.text(11.5))
+                .font(NativeFont.text(11))
                 .foregroundStyle(ok ? UIInk.muted : UIInk.ink)
         }
         .padding(.horizontal, 8).frame(height: 22)

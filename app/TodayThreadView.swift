@@ -88,7 +88,7 @@ struct TodayThreadView: View {
                         }
                         let activity = [(digest.voiceTakes, "voice notes"), (digest.drafts, "drafts"), (digest.clips, "clips")]
                             .filter { $0.0 > 0 }.map { "\($0.0) \($0.1)" }.joined(separator: " · ")
-                        if !activity.isEmpty { Text(activity).font(NativeFont.text(11.5)).foregroundStyle(UIInk.muted) }
+                        if !activity.isEmpty { Text(activity).font(NativeFont.text(11)).foregroundStyle(UIInk.muted) }
                         if !digest.promises.isEmpty {
                             ScrollView {
                                 LazyVStack(alignment: .leading, spacing: 6) {
@@ -98,7 +98,7 @@ struct TodayThreadView: View {
                         }
                         if !promises.notice.isEmpty {
                             HStack {
-                                Text(promises.notice).font(NativeFont.text(11.5)).foregroundStyle(UIInk.muted)
+                                Text(promises.notice).font(NativeFont.text(11)).foregroundStyle(UIInk.muted)
                                 Button("Retry") { promises.refresh() }.controlSize(.small)
                             }
                         }

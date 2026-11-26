@@ -446,7 +446,7 @@ struct RecordView: View {
                     let todo = p.hasPrefix("→ ")
                     HStack(alignment: .top, spacing: 9) {
                         if todo {
-                            RoundedRectangle(cornerRadius: 2.5)
+                            RoundedRectangle(cornerRadius: 3)
                                 .strokeBorder(UIInk.blue, lineWidth: 1.25)
                                 .frame(width: 10, height: 10)
                                 .padding(.top, 4)
@@ -459,7 +459,7 @@ struct RecordView: View {
                                 .accessibilityHidden(true)
                         }
                         Text(todo ? String(p.dropFirst(2)) : p)
-                            .font(NativeFont.text(13.5))
+                            .font(NativeFont.text(13))
                             .foregroundStyle(UIInk.ink)
                             .lineSpacing(2)
                             .textSelection(.enabled)
@@ -513,7 +513,7 @@ struct RecordBriefCard: View {
                         Glyph("chevron-right", size: 10)
                             .foregroundStyle(toggleHover ? UIInk.ink : UIInk.muted)
                         Text("Show brief")
-                            .font(NativeFont.text(11.5, .medium))
+                            .font(NativeFont.text(11, .medium))
                             .foregroundStyle(toggleHover ? UIInk.ink : UIInk.muted)
                     }
                     .padding(.horizontal, 9)
@@ -549,7 +549,7 @@ struct RecordBriefCard: View {
                     Glyph("calendar", size: 11)
                         .foregroundStyle(UIInk.blue)
                     Text(PreMeetingBriefRules.headerTitle(for: b.brief))
-                        .font(NativeFont.text(11.5, .semibold))
+                        .font(NativeFont.text(11, .semibold))
                         .foregroundStyle(UIInk.muted)
                         .lineLimit(1)
                         .truncationMode(.tail)
@@ -567,7 +567,7 @@ struct RecordBriefCard: View {
                     .accessibilityLabel("Collapse pre-meeting brief")
 
                     Button { b.dismiss() } label: {
-                        Glyph("close", size: 10.5)
+                        Glyph("close", size: 10)
                             .foregroundStyle(dismissHover ? UIInk.ink : UIInk.muted)
                             .frame(width: 20, height: 20)
                             .background(RoundedRectangle(cornerRadius: Native.corner(1)).fill(dismissHover ? UIInk.hover : Color.clear))
@@ -655,7 +655,7 @@ struct RecordTime: View {
     let paused: Bool
     var body: some View {
         Text(RecordLive.clock(c.seconds))
-            .font(NativeFont.mono(18, .medium))
+            .font(NativeFont.mono(17, .medium))
             .foregroundStyle(paused ? UIInk.muted : UIInk.ink)
             .accessibilityLabel("Time recorded \(RecordLive.clock(c.seconds))")
     }
@@ -740,7 +740,7 @@ struct RecordTranscript: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
                     Text(w.text.isEmpty ? "Words show here as they are heard." : w.text)
-                        .font(NativeFont.text(13.5))
+                        .font(NativeFont.text(13))
                         .foregroundStyle(w.text.isEmpty ? UIInk.faint : UIInk.ink)
                         .lineSpacing(3)
                         .textSelection(.enabled)

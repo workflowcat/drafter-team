@@ -27,7 +27,7 @@ struct PageHeader<Trailing: View>: View {
             VStack(alignment: .leading, spacing: 3) {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Text(title)
-                        .font(NativeFont.display(24))
+                        .font(NativeFont.display(22))
                         .foregroundStyle(UIInk.ink)
                         .lineLimit(1)
                     if let count {
@@ -42,7 +42,7 @@ struct PageHeader<Trailing: View>: View {
                 }
                 if let subtitle, !subtitle.isEmpty {
                     Text(subtitle)
-                        .font(NativeFont.text(12.5))
+                        .font(NativeFont.text(12))
                         .foregroundStyle(UIInk.muted)
                         .lineLimit(2)
                 }
@@ -84,7 +84,7 @@ struct PageSearchField: View {
                 .foregroundStyle(isFocused ? UIInk.ink : UIInk.muted)
             TextField(placeholder, text: $text)
                 .textFieldStyle(.plain)
-                .font(NativeFont.text(13.5))
+                .font(NativeFont.text(13))
                 .focused(focusBinding)
                 .onSubmit { onSubmit?() }
                 .accessibilityLabel(accessibility ?? placeholder)
@@ -153,7 +153,7 @@ struct PageSectionHead: View {
                 Glyph(glyph, size: 14).foregroundStyle(UIInk.muted)
             }
             Text(title)
-                .font(NativeFont.text(13.5, .semibold))
+                .font(NativeFont.text(13, .semibold))
                 .foregroundStyle(UIInk.ink)
         }
     }
@@ -174,7 +174,7 @@ struct PageField: View {
     var body: some View {
         TextField(placeholder, text: $text)
             .textFieldStyle(.plain)
-            .font(mono ? NativeFont.mono(12.5) : NativeFont.text(13.5))
+            .font(mono ? NativeFont.mono(12) : NativeFont.text(13))
             .focused(focusBinding)
             .onSubmit { onSubmit?() }
             .padding(.horizontal, 10)

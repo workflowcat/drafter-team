@@ -47,7 +47,7 @@ final class ClassicStrip: StripFace {
         status.font = Native.mono(10)
         status.textColor = Native.muted; status.alignment = .right
         box.addSubview(status)
-        state.font = Native.display(11.5); state.textColor = Native.muted
+        state.font = Native.display(11); state.textColor = Native.muted
         box.addSubview(state)
         box.appearanceChanged = { [weak self] in self?.refreshAppearance() }
         return p
@@ -534,7 +534,7 @@ final class ClassicStripView: NSView {
     /// A short take has no names: its meter stands right after the microphone.
     private func drawLevels(_ l: (me: Int, them: Int?), mid: CGFloat, named: Bool) {
         var x: CGFloat = named ? 36 : 36
-        let font = Native.mono(9.5)
+        let font = Native.mono(10)
         for (label, n, color) in [("me", l.me, Native.blue)] + (l.them.map { [("them", $0, Native.coral)] } ?? []) {
             if named {
                 let a: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: Native.muted]

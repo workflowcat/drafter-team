@@ -53,7 +53,7 @@ extension SettingsView {
                     Toggle(title, isOn: Binding(get: { on && (!needs || m.settings.connect.connected) }, set: { v in m.save { set(&$0, v) } })).toggleStyle(.switch).controlSize(.small).labelsHidden()
                         .disabled(needs && !m.settings.connect.connected && !m.preview)   // nothing connected: shown, off, disabled (app/Connect.swift)
                         .frame(width: G.toggle, alignment: .leading)
-                    Text(title).font(NativeFont.text(16)).lineLimit(1).frame(maxWidth: .infinity, alignment: .leading)
+                    Text(title).font(NativeFont.text(13)).lineLimit(1).frame(maxWidth: .infinity, alignment: .leading)
                     Group {
                         if let c, c.shown > 0 { Meter(share: rate ?? 0, lit: c.taken > 0) } else { Color.clear }
                     }.frame(width: G.meter, alignment: .leading)
@@ -77,7 +77,7 @@ extension SettingsView {
         VStack(alignment: .leading, spacing: 0) {
             line(gutter: column.isEmpty ? "" : "7 days", tall: true) {
                 HStack(spacing: 14) {
-                    Text(title).font(NativeFont.text(18, .semibold)).lineLimit(1).fixedSize()
+                    Text(title).font(NativeFont.text(15, .semibold)).lineLimit(1).fixedSize()
                     Rectangle().fill(UIInk.line).frame(height: 1)
                     if !column.isEmpty {
                         Text("taken / shown").font(NativeFont.text(13)).foregroundStyle(UIInk.faint)
@@ -104,7 +104,7 @@ extension SettingsView {
             line {
                 HStack(spacing: 0) {
                     Color.clear.frame(width: G.toggle, height: 1)
-                    Text(title).font(NativeFont.text(16)).frame(maxWidth: .infinity, alignment: .leading)
+                    Text(title).font(NativeFont.text(13)).frame(maxWidth: .infinity, alignment: .leading)
                     WordPicker(choices: choices, value: value, pick: set).help(tip)
                     Color.clear.frame(width: G.cloud + 12, height: 1)
                 }

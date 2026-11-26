@@ -263,7 +263,7 @@ final class Ghost {
         let gist = o["label"] ?? ""
         let h1 = NSMutableAttributedString(string: gist, attributes: [.font: Native.text(12, .medium), .foregroundColor: Native.muted])
         if options.count > 1 {
-            h1.append(NSAttributedString(string: "   \(index + 1)/\(options.count) ←→", attributes: [.font: Native.mono(10.5), .foregroundColor: Native.faint]))
+            h1.append(NSAttributedString(string: "   \(index + 1)/\(options.count) ←→", attributes: [.font: Native.mono(10), .foregroundColor: Native.faint]))
         }
         head.attributedStringValue = h1
         head.lineBreakMode = .byTruncatingTail

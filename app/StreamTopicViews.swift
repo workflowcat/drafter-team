@@ -24,7 +24,7 @@ struct DayFoldLine: View {
     }
     var body: some View {
         HStack(spacing: 12) {
-            Text(day.title).font(NativeFont.text(13.5, .medium)).foregroundStyle(UIInk.ink).lineLimit(1).frame(width: 180, alignment: .leading)
+            Text(day.title).font(NativeFont.text(13, .medium)).foregroundStyle(UIInk.ink).lineLimit(1).frame(width: 180, alignment: .leading)
             Text(StreamGroupRules.dayLine(topics: topics, first: first, count: day.lines.count))
                 .font(NativeFont.text(13)).foregroundStyle(UIInk.muted).lineLimit(1).truncationMode(.tail)
             Spacer(minLength: 8)
@@ -125,7 +125,7 @@ struct TopicLine: View {
                         }
                     }
                     if ids.count > limit {
-                        Button("Show \(min(100, ids.count - limit)) more") { limit += 100 }.buttonStyle(.link).font(NativeFont.text(12.5)).padding(.vertical, 8).padding(.leading, 12)
+                        Button("Show \(min(100, ids.count - limit)) more") { limit += 100 }.buttonStyle(.link).font(NativeFont.text(12)).padding(.vertical, 8).padding(.leading, 12)
                     }
                 }
                 .padding(.leading, 18).padding(.bottom, 10)

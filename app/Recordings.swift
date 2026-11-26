@@ -718,7 +718,7 @@ struct DocView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Chapter \(i + 1) of \(chapters.count) · \(CallTimelineRules.formatOffset(c.start))–\(CallTimelineRules.formatOffset(c.end))")
                     .font(NativeFont.mono(11)).foregroundStyle(UIInk.muted)
-                Text(c.title).font(NativeFont.display(20)).textSelection(.enabled)
+                Text(c.title).font(NativeFont.display(22)).textSelection(.enabled)
             }
         }
     }
@@ -934,7 +934,7 @@ struct DocView: View {
             .compactMap { $0 }.joined(separator: " and ")
         return HStack(spacing: 10) {
             Image(systemName: "rectangle.stack.badge.plus").foregroundStyle(UIInk.blue).accessibilityHidden(true)
-            Text("\(what) from the same time").font(NativeFont.text(13.5))
+            Text("\(what) from the same time").font(NativeFont.text(13))
             Spacer(minLength: 8)
             Button("Combine into one") { m.combine(d, group); group = [] }.buttonStyle(.borderedProminent)
                 .help("One recording: one timeline, the words in time order, one summary. The originals are kept.")
@@ -970,7 +970,7 @@ struct DocView: View {
     func fact(_ glyph: String, _ text: String, _ what: String) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 9) {
             Image(systemName: glyph).font(.system(size: 12)).foregroundStyle(UIInk.muted).frame(width: 16).accessibilityHidden(true)
-            Text(text).font(NativeFont.text(13.5)).textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
+            Text(text).font(NativeFont.text(13)).textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
         }.accessibilityElement(children: .combine).accessibilityLabel(what + ": " + text)
     }
 
@@ -991,7 +991,7 @@ struct DocView: View {
                             Button("Take the name off") { m.setSpeaker(d, label, "") }
                         }
                     } label: {
-                        Text(d.speakers[label] ?? (label == "Я" ? "You" : "Name this speaker")).font(NativeFont.text(13.5))
+                        Text(d.speakers[label] ?? (label == "Я" ? "You" : "Name this speaker")).font(NativeFont.text(13))
                     }.menuStyle(.borderlessButton).fixedSize()
                     .accessibilityLabel("Speaker \(CallDoc.who(label)): \(d.speakers[label] ?? "not named")")
                 }

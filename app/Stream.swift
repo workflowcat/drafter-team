@@ -88,9 +88,9 @@ struct RecordControl: View {
         if let r = m.recordingNow {
             HStack(spacing: 8) {
                 Circle().fill(r.paused ? UIInk.faint : UIInk.coral).frame(width: 8, height: 8)
-                Text(r.title).font(NativeFont.text(12.5, .medium)).lineLimit(1).frame(maxWidth: 140, alignment: .leading)
+                Text(r.title).font(NativeFont.text(12, .medium)).lineLimit(1).frame(maxWidth: 140, alignment: .leading)
                 Text(PlayerRules.clock(Double(m.preview ? r.seconds : max(r.seconds, clock.seconds))))
-                    .font(NativeFont.num(12.5)).foregroundStyle(UIInk.muted).frame(minWidth: 36, alignment: .leading)
+                    .font(NativeFont.num(12)).foregroundStyle(UIInk.muted).frame(minWidth: 36, alignment: .leading)
                 LevelMeter(call: r.call, paused: r.paused)
                 Button(r.paused ? "Resume" : "Pause") { m.togglePauseRecording() }
                     .help(r.paused ? "Go on recording" : "Pause: nothing is recorded until Resume")
@@ -258,18 +258,18 @@ struct StreamFoot: View {
     var body: some View {
         HStack(spacing: 10) {
             if m.picked.count > 1, m.editing != "new" {
-                Text("\(m.picked.count) picked").font(NativeFont.text(12.5, .medium))
+                Text("\(m.picked.count) picked").font(NativeFont.text(12, .medium))
                 Spacer()
                 Button { m.combine() } label: { KeyedLabel(word: "Combine", key: "⌘⇧E") }.buttonStyle(.borderedProminent)
                 Button { m.picked = []; m.status = "" } label: { KeyedLabel(word: "Clear", key: "esc") }.buttonStyle(.bordered)
             } else if let n = st.notice {
                 Image(systemName: "checkmark.circle").foregroundStyle(UIInk.muted)
-                Text(n.text).font(NativeFont.text(12.5)).lineLimit(1)
+                Text(n.text).font(NativeFont.text(12)).lineLimit(1)
                 Spacer()
                 if n.undo { Button { m.undoFromNotice() } label: { KeyedLabel(word: "Undo", key: "⌘Z") }.buttonStyle(.bordered) }
             } else {
                 Text(st.zoom.summary ? "↑↓ move · ↵ or click zoom in · ⌘− ⌘+ zoom · ⌘0 rows" : StreamKeys.hints(m.navState()))
-                    .font(NativeFont.text(11.5)).foregroundStyle(UIInk.faint).lineLimit(1)
+                    .font(NativeFont.text(11)).foregroundStyle(UIInk.faint).lineLimit(1)
                 Spacer()
                 SwiftUI.Picker("", selection: Binding(get: { st.byTopic }, set: { st.byTopic = $0 })) {
                     Text("Time").tag(false); Text("Topics").tag(true)
@@ -291,7 +291,7 @@ struct KeyedLabel: View {
     var body: some View {
         HStack(spacing: 6) {
             Text(word)
-            if !key.isEmpty { Text(key).font(NativeFont.num(11.5)).foregroundStyle(.secondary) }
+            if !key.isEmpty { Text(key).font(NativeFont.num(11)).foregroundStyle(.secondary) }
         }
     }
 }
@@ -424,7 +424,7 @@ struct StreamDayHead: View {
     var fold: (() -> Void)? = nil      // a past day the user opened: fold it back into its summary line
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 6) {
-            Text(title).font(NativeFont.text(12.5, .semibold)).foregroundStyle(UIInk.muted)
+            Text(title).font(NativeFont.text(12, .semibold)).foregroundStyle(UIInk.muted)
             Text("\(count)").font(NativeFont.num(11)).foregroundStyle(UIInk.faint)
             Spacer()
             if let fold {
@@ -472,7 +472,7 @@ struct StreamRow: View {
             }
             .frame(height: rowHeight)
             if density == 2, !open, let more = detail {
-                Text(more).font(NativeFont.text(12.5)).foregroundStyle(UIInk.muted).lineLimit(2).lineSpacing(2)
+                Text(more).font(NativeFont.text(12)).foregroundStyle(UIInk.muted).lineLimit(2).lineSpacing(2)
                     .padding(.leading, 40).padding(.trailing, 8).padding(.bottom, 8).padding(.top, -4)
             }
             if open { StreamOpen(it: it, st: st).padding(.leading, 40).padding(.bottom, 12).padding(.top, 2) }
@@ -604,7 +604,7 @@ struct StreamOpen: View {
                 if m.foundFocusId == it.id, let f = m.focusedThing(it) { FoundThing(it: it, f: f) }
                 if it.change != nil, m.editing != it.id {
                     Text(m.showOriginal ? "The original, as it was kept" : "Changed by you · the original is kept (⌥⌘O shows it)")
-                        .font(NativeFont.text(11.5)).foregroundStyle(UIInk.faint)
+                        .font(NativeFont.text(11)).foregroundStyle(UIInk.faint)
                 }
             }
             if m.editing != it.id { TagChips(it: it) ; ActionRow(it: it) }
@@ -635,9 +635,9 @@ struct FoundThing: View {
         VStack(alignment: .leading, spacing: 2) {
             HStack(spacing: 6) {
                 Glyph(JournalMeta.foundGlyph(f.kind.rawValue), size: 12).foregroundStyle(UIInk.muted)
-                Text(FoundRules.one(f.display.isEmpty ? f.words : f.display, 48)).font(NativeFont.text(12.5, .medium))
+                Text(FoundRules.one(f.display.isEmpty ? f.words : f.display, 48)).font(NativeFont.text(12, .medium))
                 Spacer()
-                if !m.foundFocus.menu { Text("↵ what to do · esc").font(NativeFont.text(11.5)).foregroundStyle(UIInk.faint) }
+                if !m.foundFocus.menu { Text("↵ what to do · esc").font(NativeFont.text(11)).foregroundStyle(UIInk.faint) }
             }
             if m.foundFocus.menu {
                 let acts = m.thingActions(it, f)
@@ -693,7 +693,7 @@ struct EditorButtons: View {
             Button { m.cancelEdit() } label: { KeyedLabel(word: "Cancel", key: "esc") }.buttonStyle(.bordered)
             Spacer()
             Text(m.editing == "new" ? "A new draft; the picked items stay as they are" : "The original is kept; ⌘Z undoes the save")
-                .font(NativeFont.text(11.5)).foregroundStyle(UIInk.faint)
+                .font(NativeFont.text(11)).foregroundStyle(UIInk.faint)
         }
         .controlSize(.regular)
     }
@@ -835,10 +835,10 @@ struct RecordingBody: View {
     @ObservedObject var st: StreamState
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            if !d.people.isEmpty { Text(d.people.joined(separator: " · ")).font(NativeFont.text(12.5)).foregroundStyle(UIInk.muted) }
+            if !d.people.isEmpty { Text(d.people.joined(separator: " · ")).font(NativeFont.text(12)).foregroundStyle(UIInk.muted) }
             if m.editing == it.id {
                 TextField("Title", text: $st.docTitle).textFieldStyle(.roundedBorder).font(NativeFont.text(14, .medium))
-                Text("Points, one per line").font(NativeFont.text(11.5)).foregroundStyle(UIInk.faint)
+                Text("Points, one per line").font(NativeFont.text(11)).foregroundStyle(UIInk.faint)
                 TextEditorBox(text: $st.docPoints, minHeight: 110)
                 EditorButtons()
             } else if !d.points.isEmpty {
@@ -869,7 +869,7 @@ struct TranscriptLines: View {
         VStack(alignment: .leading, spacing: 2) {
             ForEach(0..<shown, id: \.self) { i in TurnLine(it: it, d: d, i: i, now: now == i, st: st) }
             if shown < d.turns.count {
-                Button("All \(d.turns.count) lines") { all = true }.buttonStyle(.link).font(NativeFont.text(12.5)).padding(.top, 4)
+                Button("All \(d.turns.count) lines") { all = true }.buttonStyle(.link).font(NativeFont.text(12)).padding(.top, 4)
             }
         }
     }
@@ -967,7 +967,7 @@ struct GoToPalette: View {
                                 Image(systemName: Native.symbolName(c.glyph)).foregroundStyle(UIInk.muted).frame(width: 18)
                                 Text(c.title).lineLimit(1)
                                 Spacer()
-                                Text(c.kind).font(NativeFont.text(11.5)).foregroundStyle(UIInk.faint)
+                                Text(c.kind).font(NativeFont.text(11)).foregroundStyle(UIInk.faint)
                             }
                             .padding(.horizontal, 14).frame(height: 30).contentShape(Rectangle())
                             .background(i == m.paletteIndex ? UIInk.pick : .clear)

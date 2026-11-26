@@ -90,7 +90,7 @@ extension SettingsView {
                 Toggle(r.label, isOn: Binding(get: { r.enabled }, set: { v in list.set(r, on: v, preview: m.preview) }))
                     .toggleStyle(.switch).controlSize(.small).labelsHidden()
                     .frame(width: G.toggle, alignment: .leading)
-                Text(r.label).font(NativeFont.text(16)).lineLimit(1).frame(maxWidth: .infinity, alignment: .leading)
+                Text(r.label).font(NativeFont.text(13)).lineLimit(1).frame(maxWidth: .infinity, alignment: .leading)
                     .help(r.note)
                 Text(SourceRules.detail(r, now: list.now)).font(NativeFont.mono(13))
                     .foregroundStyle(!r.running && !r.error.isEmpty ? Color(nsColor: Native.crit) : UIInk.muted)

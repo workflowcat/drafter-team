@@ -39,7 +39,7 @@ struct StrengthSlider: View {
     var reason: String? { ModelPick.styleReason(layer: ModelPick.hasLayer(cat.rows, id: m.settings.typingModel)) }
     var body: some View {
         HStack(spacing: 12) {
-            Text("Personal style").font(NativeFont.text(16)).lineLimit(1).frame(width: 150, alignment: .leading)
+            Text("Personal style").font(NativeFont.text(13)).lineLimit(1).frame(width: 150, alignment: .leading)
             Slider(value: $value, in: 0...100, step: 10) { editing in
                 guard !editing else { return }
                 let v = Strength.clamp(value)
@@ -71,7 +71,7 @@ struct BoldSlider: View {
     @State private var value = 0.25
     var body: some View {
         HStack(spacing: 12) {
-            Text("Bolder").font(NativeFont.text(16)).lineLimit(1).frame(width: 150, alignment: .leading)
+            Text("Bolder").font(NativeFont.text(13)).lineLimit(1).frame(width: 150, alignment: .leading)
             Slider(value: $value, in: 0.05...0.35, step: 0.05) { editing in
                 guard !editing else { return }
                 let bar = GhostRules.boldBar(0.4 - value)
@@ -80,7 +80,7 @@ struct BoldSlider: View {
                 log("guessBar \(bar)")
             }
             .accessibilityLabel("Bolder or careful suggestions").accessibilityValue(String(format: "bar %.2f", GhostRules.boldBar(0.4 - value)))
-            Text("Careful").font(NativeFont.text(16)).foregroundStyle(UIInk.muted).frame(width: 80, alignment: .trailing)
+            Text("Careful").font(NativeFont.text(13)).foregroundStyle(UIInk.muted).frame(width: 80, alignment: .trailing)
         }
         .padding(.trailing, SettingsGrid.cloud + 12)
         .onAppear { value = 0.4 - GhostRules.boldBar(initial) }

@@ -190,13 +190,13 @@ struct DictionaryView: View {
                 PageCard {
                     HStack(spacing: 8) {
                         TextField("Word (e.g. PixelKit, Поділ)", text: $newWord)
-                            .textFieldStyle(.plain).font(NativeFont.text(13.5)).focused($addFocus)
+                            .textFieldStyle(.plain).font(NativeFont.text(13)).focused($addFocus)
                             .padding(.horizontal, 10).frame(height: 30)
                             .background(RoundedRectangle(cornerRadius: Native.corner(2)).fill(UIInk.well))
                             .overlay { RoundedRectangle(cornerRadius: Native.corner(2)).strokeBorder(addFocus ? UIInk.blue : UIInk.line, lineWidth: addFocus ? 1 : 0.5) }
                             .onSubmit { submitAdd() }
                         TextField("Heard as (optional, comma-separated)", text: $newHeard)
-                            .textFieldStyle(.plain).font(NativeFont.text(13.5))
+                            .textFieldStyle(.plain).font(NativeFont.text(13))
                             .padding(.horizontal, 10).frame(height: 30)
                             .background(RoundedRectangle(cornerRadius: Native.corner(2)).fill(UIInk.well))
                             .overlay { RoundedRectangle(cornerRadius: Native.corner(2)).strokeBorder(UIInk.line, lineWidth: 0.5) }
@@ -209,7 +209,7 @@ struct DictionaryView: View {
             }
             let c = DictRules.counts(s.rows, s.shown)
             Text(DictRules.Group.allCases.map { "\(c[$0] ?? 0) \(DictRules.title($0).lowercased())" }.joined(separator: " · "))
-                .font(NativeFont.text(12.5)).foregroundStyle(UIInk.faint).lineLimit(1)
+                .font(NativeFont.text(12)).foregroundStyle(UIInk.faint).lineLimit(1)
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 0) {
@@ -230,8 +230,8 @@ struct DictionaryView: View {
             }
             if !s.notice.isEmpty {
                 HStack(spacing: 8) {
-                    Text(s.redact ? "" : s.notice).font(NativeFont.text(12.5)).foregroundStyle(UIInk.muted).lineLimit(1)
-                    if s.canUndo { Button("Undo") { s.undo() }.buttonStyle(.plain).font(NativeFont.text(12.5, .medium)).foregroundStyle(UIInk.blue).help("Undo (⌘Z)") }
+                    Text(s.redact ? "" : s.notice).font(NativeFont.text(12)).foregroundStyle(UIInk.muted).lineLimit(1)
+                    if s.canUndo { Button("Undo") { s.undo() }.buttonStyle(.plain).font(NativeFont.text(12, .medium)).foregroundStyle(UIInk.blue).help("Undo (⌘Z)") }
                     Spacer()
                 }.frame(height: 22)
             }
@@ -265,12 +265,12 @@ struct DictRow: View {
             if editing {
                 HStack(spacing: 6) {
                     TextField("Word", text: $text)
-                        .textFieldStyle(.plain).font(NativeFont.text(13.5)).focused($field, equals: 0)
+                        .textFieldStyle(.plain).font(NativeFont.text(13)).focused($field, equals: 0)
                         .padding(.horizontal, 8).frame(width: 220, height: 28)
                         .background(RoundedRectangle(cornerRadius: Native.corner(2)).fill(UIInk.well))
                         .overlay { RoundedRectangle(cornerRadius: Native.corner(2)).strokeBorder(field == 0 ? UIInk.blue : UIInk.line, lineWidth: field == 0 ? 1 : 0.5) }
                     TextField(r.loose ? "Heard as" : "Heard as (comma between forms)", text: $heard)
-                        .textFieldStyle(.plain).font(NativeFont.text(13.5)).focused($field, equals: 1)
+                        .textFieldStyle(.plain).font(NativeFont.text(13)).focused($field, equals: 1)
                         .padding(.horizontal, 8).frame(width: 320, height: 28)
                         .background(RoundedRectangle(cornerRadius: Native.corner(2)).fill(UIInk.well))
                         .overlay { RoundedRectangle(cornerRadius: Native.corner(2)).strokeBorder(field == 1 ? UIInk.blue : UIInk.line, lineWidth: field == 1 ? 1 : 0.5) }
@@ -282,7 +282,7 @@ struct DictRow: View {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     if !r.heard.isEmpty {
                         Text(r.heard.prefix(4).joined(separator: " · ") + (r.heard.count > 4 ? " +\(r.heard.count - 4)" : ""))
-                            .font(NativeFont.text(13.5)).foregroundStyle(UIInk.muted).lineLimit(1)
+                            .font(NativeFont.text(13)).foregroundStyle(UIInk.muted).lineLimit(1)
                         Text("→").font(NativeFont.text(13)).foregroundStyle(UIInk.faint)
                     }
                     Text(r.text).font(NativeFont.text(14, .medium)).foregroundStyle(UIInk.ink).lineLimit(1)
@@ -294,7 +294,7 @@ struct DictRow: View {
                 HStack(spacing: 6) {
                     Button { s.enter() } label: { HStack(spacing: 4) { Text("Learn"); KeyChip("↵") } }
                     Button { s.remove(r.id) } label: { HStack(spacing: 4) { Text("Ignore"); KeyChip("⌘⌫") } }
-                }.buttonStyle(.plain).font(NativeFont.text(12.5)).foregroundStyle(UIInk.muted)
+                }.buttonStyle(.plain).font(NativeFont.text(12)).foregroundStyle(UIInk.muted)
             } else if !r.source.isEmpty || r.loose {
                 Text(r.loose ? "voice" : r.source).font(NativeFont.mono(11)).foregroundStyle(UIInk.faint)
             }

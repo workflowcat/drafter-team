@@ -143,7 +143,7 @@ struct NamesTidyView: View {
             VStack(alignment: .leading, spacing: 10) {
                 HStack(spacing: 8) {
                     Text(sug.reason)
-                        .font(NativeFont.mono(10.5, .medium))
+                        .font(NativeFont.mono(10, .medium))
                         .foregroundStyle(sug.score >= 95 ? UIInk.blue : UIInk.muted)
                         .padding(.horizontal, 8).frame(height: 20)
                         .background(Capsule().fill(sug.score >= 95 ? UIInk.soft : UIInk.well))
@@ -178,7 +178,7 @@ struct NamesTidyView: View {
         let lines = NameRules.entryLines(e), chats = NameRules.entryChats(e)
         return VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 6) {
-                Text(role.uppercased()).font(NativeFont.mono(9.5, .medium)).foregroundStyle(muted ? UIInk.faint : UIInk.blue)
+                Text(role.uppercased()).font(NativeFont.mono(10, .medium)).foregroundStyle(muted ? UIInk.faint : UIInk.blue)
                 Spacer()
                 HStack(spacing: 4) {
                     Glyph(NameRules.glyph(kind), size: 11)
@@ -187,7 +187,7 @@ struct NamesTidyView: View {
             }
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text(NameRules.display(e))
-                    .font(NativeFont.text(13.5, .medium))
+                    .font(NativeFont.text(13, .medium))
                     .foregroundStyle(muted ? UIInk.muted : UIInk.ink)
                     .lineLimit(1)
                 if !uk.isEmpty, !latin.isEmpty {
@@ -195,13 +195,13 @@ struct NamesTidyView: View {
                 }
             }
             HStack(spacing: 10) {
-                Text("\(lines) lines · \(chats) chats").font(NativeFont.mono(10.5)).foregroundStyle(UIInk.muted)
+                Text("\(lines) lines · \(chats) chats").font(NativeFont.mono(10)).foregroundStyle(UIInk.muted)
                 if let phone {
-                    HStack(spacing: 3) { Glyph("phone", size: 10); Text(phone).font(NativeFont.mono(10.5)).lineLimit(1) }
+                    HStack(spacing: 3) { Glyph("phone", size: 10); Text(phone).font(NativeFont.mono(10)).lineLimit(1) }
                         .foregroundStyle(UIInk.muted)
                 }
                 if let mail {
-                    HStack(spacing: 3) { Glyph("mail", size: 10); Text(mail).font(NativeFont.mono(10.5)).truncationMode(.middle).lineLimit(1) }
+                    HStack(spacing: 3) { Glyph("mail", size: 10); Text(mail).font(NativeFont.mono(10)).truncationMode(.middle).lineLimit(1) }
                         .foregroundStyle(UIInk.muted)
                 }
             }
@@ -276,12 +276,12 @@ struct NamesTidyView: View {
                         }
                     }
                     if !sources.isEmpty {
-                        Text(sources).font(NativeFont.mono(10.5)).foregroundStyle(UIInk.faint).lineLimit(1)
+                        Text(sources).font(NativeFont.mono(10)).foregroundStyle(UIInk.faint).lineLimit(1)
                     }
                 }
                 Spacer(minLength: 8)
-                Text(NameRules.kindTitle(kind)).font(NativeFont.mono(10.5)).foregroundStyle(UIInk.muted)
-                Text("\(NameRules.entryLines(e)) lines").font(NativeFont.mono(10.5)).foregroundStyle(UIInk.faint)
+                Text(NameRules.kindTitle(kind)).font(NativeFont.mono(10)).foregroundStyle(UIInk.muted)
+                Text("\(NameRules.entryLines(e)) lines").font(NativeFont.mono(10)).foregroundStyle(UIInk.faint)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }

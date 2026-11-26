@@ -14,7 +14,7 @@ struct HelpView: View {
                 GridRow {
                     KeyChip(k)
                     Text(v)
-                        .font(NativeFont.text(12.5))
+                        .font(NativeFont.text(12))
                         .foregroundStyle(UIInk.muted)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -179,7 +179,7 @@ struct ShortcutEditor: View {
                 Text(label).font(NativeFont.text(13, .semibold)).foregroundStyle(UIInk.ink)
                 Spacer()
                 if !status.isEmpty { Text(status).font(NativeFont.mono(11)).foregroundStyle(UIInk.muted) }
-                if before != nil { Button("Undo", action: undo).buttonStyle(.plain).font(NativeFont.text(11.5, .medium)).foregroundStyle(UIInk.blue) }
+                if before != nil { Button("Undo", action: undo).buttonStyle(.plain).font(NativeFont.text(11, .medium)).foregroundStyle(UIInk.blue) }
             }
             PageField(placeholder: label, text: $value, focus: $focused, onSubmit: save)
                 .onChange(of: focused) { _, now in if !now { save() } }
@@ -226,7 +226,7 @@ struct ShortcutsView: View {
                         ShortcutEditor(label: "Calendar link", hint: ";cal + Space. “My calendar link” or “лінк на календар” offers the link with Tab.", key: ";cal", file: "snippets.json", initial: snippets[";cal"] ?? "", preview: m.preview)
                             .id("calendar-" + (snippets[";cal"] ?? ""))
                         Text("In a shortcut's text: {name} a place to fill (Tab goes to the next) · {day:Mon|Tue} a choice (↑↓) · {name=Ira} with a default · {cursor} · {date+2d} · {time} · {clipboard} · {;other} another shortcut. ;Mail starts with a capital.")
-                            .font(NativeFont.text(11.5)).foregroundStyle(UIInk.muted)
+                            .font(NativeFont.text(11)).foregroundStyle(UIInk.muted)
                             .fixedSize(horizontal: false, vertical: true)
                             .padding(.horizontal, 10).padding(.vertical, 8)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -243,7 +243,7 @@ struct ShortcutsView: View {
                         VStack(alignment: .leading, spacing: 10) {
                             PageSectionHead(title: "Google Search & Insert", glyph: "search")
                             Text("Type a shortcut in your text, then Tab to search. Choose a result with ↑↓ and Return to replace the shortcut. If the field changed, the result is copied instead.")
-                                .font(NativeFont.text(12.5)).foregroundStyle(UIInk.muted).fixedSize(horizontal: false, vertical: true)
+                                .font(NativeFont.text(12)).foregroundStyle(UIInk.muted).fixedSize(horizontal: false, vertical: true)
                             Text(";docs project notes · ;links cal · ;meetings tomorrow · ;free 30 tomorrow")
                                 .font(NativeFont.mono(12)).foregroundStyle(UIInk.ink).textSelection(.enabled)
                                 .padding(.horizontal, 10).padding(.vertical, 7)
@@ -270,7 +270,7 @@ struct ShortcutsView: View {
                     VStack(alignment: .leading, spacing: 10) {
                         PageSectionHead(title: "Custom Replacements", glyph: "bookmark")
                         Text("Exact, case-sensitive words in Ukrainian or English. Use a rare trigger such as ;дякую. Ordinary word endings remain suggestions; they are never changed automatically. An empty value disables a replacement.")
-                            .font(NativeFont.text(12.5)).foregroundStyle(UIInk.muted).fixedSize(horizontal: false, vertical: true)
+                            .font(NativeFont.text(12)).foregroundStyle(UIInk.muted).fixedSize(horizontal: false, vertical: true)
                         let sortedRows = rows.keys.sorted()
                         ForEach(Array(sortedRows.enumerated()), id: \.element) { idx, key in
                             if idx > 0 { Rectangle().fill(UIInk.line).frame(height: 0.5) }
@@ -317,7 +317,7 @@ struct ShortcutsView: View {
                                 Spacer()
                             }
                             Text("Sent three or more times. Make one a shortcut, or hide it.")
-                                .font(NativeFont.text(12.5)).foregroundStyle(UIInk.muted)
+                                .font(NativeFont.text(12)).foregroundStyle(UIInk.muted)
                             VStack(alignment: .leading, spacing: 0) {
                                 ForEach(Array(ideas.enumerated()), id: \.element.id) { idx, idea in
                                     if idx > 0 { Rectangle().fill(UIInk.line).frame(height: 0.5) }

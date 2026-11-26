@@ -486,7 +486,7 @@ final class ComposerView: NSView {
 
     // MARK: type
 
-    static let wordsFont = Native.text(14.5)
+    static let wordsFont = Native.text(14)
     private var stateFont: NSFont { Native.text(12, .medium) }
     private var keyFont: NSFont { Native.text(11) }
     private func a(_ f: NSFont, _ col: NSColor, align: NSTextAlignment = .left, wrap: Bool = false, lh: CGFloat = 20) -> [NSAttributedString.Key: Any] {
@@ -511,12 +511,12 @@ final class ComposerView: NSView {
     /// The text fits the layout's text rect on one line.
     func fitsOneLine(_ t: String) -> Bool {
         guard let r = layout.text else { return false }
-        return (t as NSString).size(withAttributes: [.font: Native.text(13.5)]).width <= r.width
+        return (t as NSString).size(withAttributes: [.font: Native.text(13)]).width <= r.width
     }
 
     func linesNeeded(_ t: String) -> Int {
         guard let r = layout.text else { return 1 }
-        let at = a(Native.text(13.5), Native.ink, wrap: true)
+        let at = a(Native.text(13), Native.ink, wrap: true)
         let h = (t as NSString).boundingRect(with: NSSize(width: r.width, height: 1000), options: [.usesLineFragmentOrigin], attributes: at).height
         return max(1, Int(ceil(h / 20)))
     }
@@ -668,7 +668,7 @@ final class ComposerView: NSView {
 
     private func drawLong(_ l: StripLayout) {
         if let s = l.state { line((c.call ? "Call · " : "Recording · ") + c.time, s, a(stateFont, Native.muted)) }
-        if let t = l.text { line(c.title, t, a(Native.text(16), Native.ink)) }
+        if let t = l.text { line(c.title, t, a(Native.text(15), Native.ink)) }
         let sides: [(String, CGFloat, NSColor)] = [("me", c.me, Native.ink)] + (c.them.map { [("them", $0, Native.muted)] } ?? [])
         for (i, (name, v, col)) in sides.enumerated() where i < l.levels.count {
             let r = R(l.levels[i])
@@ -689,7 +689,7 @@ final class ComposerView: NSView {
 
     private func drawOffer(_ l: StripLayout) {
         if let s = l.state { line(c.side.isEmpty ? c.kind : c.kind + " · " + c.side, s, a(stateFont, Native.muted)) }
-        if let t = l.text, let q = c.rows.first { line(q, t, a(Native.text(16), Native.ink)) }
+        if let t = l.text, let q = c.rows.first { line(q, t, a(Native.text(15), Native.ink)) }
         if let t2 = l.text2, c.rows.count > 1 { line(c.rows.dropFirst().joined(separator: " · "), t2, a(Native.text(13), Native.muted)) }
         if let cd = l.countdown, let (from, secs) = c.countdown {
             let left = max(0, 1 - Date().timeIntervalSince(from) / secs), r = R(cd)
@@ -700,8 +700,8 @@ final class ComposerView: NSView {
 
     private func drawMessage(_ l: StripLayout) {
         guard let r = l.text, let t = c.rows.first else { return }
-        if c.lines > 1 { (t as NSString).draw(with: R(r), options: [.usesLineFragmentOrigin, .truncatesLastVisibleLine], attributes: a(Native.text(13.5), Native.ink, wrap: true)) }
-        else { line(t, r, a(Native.text(13.5), Native.ink)) }
+        if c.lines > 1 { (t as NSString).draw(with: R(r), options: [.usesLineFragmentOrigin, .truncatesLastVisibleLine], attributes: a(Native.text(13), Native.ink, wrap: true)) }
+        else { line(t, r, a(Native.text(13), Native.ink)) }
     }
 }
 

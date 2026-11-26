@@ -261,7 +261,7 @@ struct LinksView: View {
         return Button { s.source = source } label: {
             HStack(spacing: 6) {
                 Glyph(source?.glyph ?? "list", size: 13)
-                Text(label).font(NativeFont.text(12.5))
+                Text(label).font(NativeFont.text(12))
                 Text("\(count)").font(NativeFont.mono(11))
             }
             .foregroundStyle(on ? UIInk.ink : UIInk.muted)
@@ -303,10 +303,10 @@ struct LinksView: View {
     private var statusBar: some View {
         HStack(spacing: 8) {
             if !s.error.isEmpty {
-                Text(s.error).font(NativeFont.text(12.5)).foregroundStyle(UIInk.muted)
-                Button("Retry") { s.retry() }.buttonStyle(.plain).font(NativeFont.text(12.5, .medium)).disabled(!s.engineReady)
+                Text(s.error).font(NativeFont.text(12)).foregroundStyle(UIInk.muted)
+                Button("Retry") { s.retry() }.buttonStyle(.plain).font(NativeFont.text(12, .medium)).disabled(!s.engineReady)
             } else if !m.preview, !s.engineReady {
-                Text("Sources offline").font(NativeFont.text(12.5)).foregroundStyle(UIInk.muted)
+                Text("Sources offline").font(NativeFont.text(12)).foregroundStyle(UIInk.muted)
             }
             Spacer()
             Text("\(s.shown.count)").font(NativeFont.mono(11)).foregroundStyle(UIInk.muted)
@@ -331,19 +331,19 @@ private struct LinksHubRow: View {
             }.frame(width: 20, height: 20)
             VStack(alignment: .leading, spacing: 4) {
                 Text(displayTitle).font(NativeFont.text(14, .medium)).foregroundStyle(UIInk.ink).lineLimit(1).truncationMode(.tail)
-                Text(location).font(NativeFont.text(12.5)).foregroundStyle(UIInk.muted).lineLimit(1).truncationMode(.middle)
+                Text(location).font(NativeFont.text(12)).foregroundStyle(UIInk.muted).lineLimit(1).truncationMode(.middle)
                 HStack(spacing: 6) {
                     Glyph(item.source.glyph, size: 11)
                     Text(origin).lineLimit(1)
                     Text("·")
                     Text(LinksRules.relativeTime(item.when, now: now)).fixedSize()
                     if item.mentions > 1 {
-                        Text("×\(item.mentions)").font(NativeFont.mono(10.5))
+                        Text("×\(item.mentions)").font(NativeFont.mono(10))
                             .padding(.horizontal, 5).padding(.vertical, 1)
                             .background(Capsule().fill(UIInk.well))
                             .accessibilityLabel("\(item.mentions) mentions")
                     }
-                }.font(NativeFont.text(11.5)).foregroundStyle(UIInk.muted)
+                }.font(NativeFont.text(11)).foregroundStyle(UIInk.muted)
             }.frame(maxWidth: .infinity, alignment: .leading)
             VStack(alignment: .trailing, spacing: 4) {
                 HStack(spacing: 2) {
@@ -367,7 +367,7 @@ private struct LinksHubRow: View {
                     }
                     if item.journalId != nil { action("In Journal", glyph: "list", act: inJournal) }
                 }
-                if !notice.isEmpty { Text(notice).font(NativeFont.text(11.5)).foregroundStyle(UIInk.muted) }
+                if !notice.isEmpty { Text(notice).font(NativeFont.text(11)).foregroundStyle(UIInk.muted) }
             }
         }
         .padding(.horizontal, 10).padding(.vertical, 10)
@@ -407,7 +407,7 @@ private struct LinksHubRow: View {
         Button(action: act) {
             HStack(spacing: 4) {
                 Glyph(glyph, size: 13)
-                if wide { Text(name).font(NativeFont.text(11.5)) }
+                if wide { Text(name).font(NativeFont.text(11)) }
             }.padding(.horizontal, 6).frame(minWidth: 28, minHeight: 28).contentShape(Rectangle())
         }.buttonStyle(.plain).foregroundStyle(enabled ? UIInk.muted : UIInk.faint)
             .disabled(!enabled).help(name).accessibilityLabel(name)

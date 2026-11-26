@@ -97,9 +97,9 @@ struct PromisesSection: View {
         let due = Date(timeIntervalSince1970: r["due"] as? Double ?? 0)
         let overdue = r["overdue"] as? Bool ?? false
         return HStack(spacing: 8) {
-            Text(what).font(NativeFont.text(13.5, .medium)).foregroundStyle(UIInk.ink).lineLimit(1)
-            if !who.isEmpty { Text("· " + who).font(NativeFont.text(12.5)).foregroundStyle(UIInk.muted).lineLimit(1) }
-            Text("· " + PromisesSection.relative(due)).font(NativeFont.mono(11.5)).foregroundStyle(overdue ? UIInk.coral : UIInk.muted)
+            Text(what).font(NativeFont.text(13, .medium)).foregroundStyle(UIInk.ink).lineLimit(1)
+            if !who.isEmpty { Text("· " + who).font(NativeFont.text(12)).foregroundStyle(UIInk.muted).lineLimit(1) }
+            Text("· " + PromisesSection.relative(due)).font(NativeFont.mono(11)).foregroundStyle(overdue ? UIInk.coral : UIInk.muted)
             Spacer()
             PagePillButton(title: "Done", glyph: "check", enabled: !preview) { act("/promises/done", id) }
             Button("Drop") { act("/promises/drop", id) }

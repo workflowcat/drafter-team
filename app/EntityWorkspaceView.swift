@@ -258,7 +258,7 @@ struct EntityWorkspaceView: View {
             HStack(alignment: .top, spacing: 12) {
                 Glyph(NameRules.glyph(entity.kind), size: 24).foregroundStyle(UIInk.muted).padding(.top, 3)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(entity.display).font(NativeFont.display(24)).lineLimit(2).textSelection(.enabled)
+                    Text(entity.display).font(NativeFont.display(22)).lineLimit(2).textSelection(.enabled)
                     if !entity.latin.isEmpty, entity.latin != entity.display {
                         Text(entity.latin).font(NativeFont.text(14)).foregroundStyle(UIInk.muted).textSelection(.enabled)
                     }
@@ -342,7 +342,7 @@ struct EntityWorkspaceView: View {
                 Button { tab = section } label: {
                     HStack(spacing: 6) {
                         Glyph(section.glyph, size: 13)
-                        Text(section.label).font(NativeFont.text(12.5))
+                        Text(section.label).font(NativeFont.text(12))
                         Text("\(s.model.counts.count(section))").font(NativeFont.mono(11))
                     }.padding(.horizontal, 10).frame(height: 30)
                         .background(Capsule().fill(tab == section ? UIInk.pick : .clear)).contentShape(Capsule())
@@ -374,7 +374,7 @@ struct EntityWorkspaceView: View {
                         VStack(alignment: .leading, spacing: 6) {
                             EntityWorkspaceThumbnail(picture: picture, preview: m.preview)
                             Text(picture.title).font(NativeFont.text(12)).lineLimit(1)
-                            Text(date(picture.when)).font(NativeFont.mono(10.5)).foregroundStyle(UIInk.muted)
+                            Text(date(picture.when)).font(NativeFont.mono(10)).foregroundStyle(UIInk.muted)
                         }.contentShape(Rectangle())
                     }.buttonStyle(.plain).help("Open picture in Journal").accessibilityLabel("Open \(picture.title) in Journal")
                 }
@@ -415,7 +415,7 @@ struct EntityWorkspaceView: View {
                         }.foregroundStyle(UIInk.muted)
                         if details {
                             ForEach(Array(row.points.prefix(4).enumerated()), id: \.offset) { _, point in
-                                Text("· " + point).font(NativeFont.text(12.5)).foregroundStyle(UIInk.muted).lineLimit(2)
+                                Text("· " + point).font(NativeFont.text(12)).foregroundStyle(UIInk.muted).lineLimit(2)
                             }
                         }
                     }.frame(maxWidth: .infinity, alignment: .leading)
@@ -423,7 +423,7 @@ struct EntityWorkspaceView: View {
             }.buttonStyle(.plain).help(row.documentID == nil ? "Open in Journal" : "Open recording")
             if row.documentID != nil {
                 Button { jump(row.id) } label: {
-                    HStack(spacing: 4) { Glyph("list", size: 12); Text("Journal").font(NativeFont.text(11.5)) }
+                    HStack(spacing: 4) { Glyph("list", size: 12); Text("Journal").font(NativeFont.text(11)) }
                         .padding(.horizontal, 8).frame(height: 24)
                         .background(Capsule().fill(UIInk.well)).contentShape(Capsule())
                 }.buttonStyle(.plain).foregroundStyle(UIInk.muted).help("Open in Journal").accessibilityLabel("Open in Journal")
@@ -441,7 +441,7 @@ struct EntityWorkspaceView: View {
                 HStack(spacing: 5) {
                     Glyph(link.source.glyph, size: 11)
                     Text([link.source.label, link.origin].filter { !$0.isEmpty }.joined(separator: " · "))
-                    Text(date(link.when)).font(NativeFont.mono(10.5))
+                    Text(date(link.when)).font(NativeFont.mono(10))
                 }.font(NativeFont.text(11)).foregroundStyle(UIInk.muted)
             }.frame(maxWidth: .infinity, alignment: .leading)
             Button("Open") {

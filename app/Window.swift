@@ -511,21 +511,11 @@ struct CommandOptions: View {
     }
 }
 
+/// A key cap in a SwiftUI view: the one cap (PanelKeyCap, drawn like Panel.keycap in AppKit).
 struct KeyChip: View {
     let k: String
     init(_ k: String) { self.k = k }
-    var body: some View {
-        // the keycap: the key's face over a darker bottom edge, the tape's 6 pt corners
-        let r = TapeDraw.keyRadius
-        Text(k).font(NativeFont.mono(11, .medium)).foregroundStyle(UIInk.muted)
-            .padding(.horizontal, 6).padding(.top, 2).padding(.bottom, 4)
-            .background {
-                ZStack(alignment: .top) {
-                    RoundedRectangle(cornerRadius: r).fill(UIInk.keyEdge)
-                    RoundedRectangle(cornerRadius: r).fill(UIInk.key).padding(.bottom, 2)
-                }
-            }
-    }
+    var body: some View { PanelKeyCap(k) }
 }
 
 /// The window's fast-changing words (native round): its own object, so only the views that show them redraw.

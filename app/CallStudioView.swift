@@ -324,7 +324,7 @@ struct CallMasterTimeline: View {
     @ViewBuilder private var transport: some View {
         HStack(spacing: 6) {
             Button { seek(max(0, displayedSecond - 15)) } label: {
-                Text("−15s").font(NativeFont.mono(11.5)).foregroundStyle(UIInk.muted)
+                Text("−15s").font(NativeFont.mono(11)).foregroundStyle(UIInk.muted)
                     .padding(.horizontal, 8).padding(.vertical, 5)
                     .background(Capsule().fill(UIInk.well)).contentShape(Capsule())
             }.buttonStyle(.plain).help("Back 15 seconds")
@@ -334,7 +334,7 @@ struct CallMasterTimeline: View {
                     .foregroundStyle(UIInk.onPrimary).background(Capsule().fill(UIInk.primary))
             }.buttonStyle(.plain).accessibilityLabel(m.playing == d.id ? "Pause recording" : "Play recording")
             Button { seek(min(totalSecs, displayedSecond + 15)) } label: {
-                Text("+15s").font(NativeFont.mono(11.5)).foregroundStyle(UIInk.muted)
+                Text("+15s").font(NativeFont.mono(11)).foregroundStyle(UIInk.muted)
                     .padding(.horizontal, 8).padding(.vertical, 5)
                     .background(Capsule().fill(UIInk.well)).contentShape(Capsule())
             }.buttonStyle(.plain).help("Forward 15 seconds")
