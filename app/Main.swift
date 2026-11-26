@@ -10,9 +10,24 @@ import ScreenCaptureKit
 enum Home {
     static let root: URL = {
         let p = Bundle.main.object(forInfoDictionaryKey: "DrafterHome") as? String ?? NSHomeDirectory() + "/drafter-team"
-        return URL(fileURLWithPath: p)
+        return URL(fileURLWithPath: (p as NSString).expandingTildeInPath)   // "~/…" in a packaged app (scripts/package_app.sh)
     }()
-    static let data = root.appendingPathComponent("data")
+    /// The user's data: DRAFTER_DATA, else DrafterData in Info.plist (app/build.sh), else data/ in the clone when it is
+    /// there or the clone is writable, else ~/Library/Application Support/Drafter. engine/data_dir.py is the engine's half.
+    static let data: URL = {
+        let fm = FileManager.default
+        func expand(_ s: String?) -> URL? {
+            guard let s = s?.trimmingCharacters(in: .whitespaces), !s.isEmpty else { return nil }
+            return URL(fileURLWithPath: (s as NSString).expandingTildeInPath)
+        }
+        let own = root.appendingPathComponent("data")
+        let url = expand(ProcessInfo.processInfo.environment["DRAFTER_DATA"])
+            ?? expand(Bundle.main.object(forInfoDictionaryKey: "DrafterData") as? String)
+            ?? (fm.fileExists(atPath: own.path) || fm.isWritableFile(atPath: root.path) ? own
+                : URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Library/Application Support/Drafter"))
+        try? fm.createDirectory(at: url, withIntermediateDirectories: true)
+        return url
+    }()
     static let settings = data.appendingPathComponent("settings.json")
     /// The live dictionary (the user's contacts and projects): untracked in data/ since 2026-11-14. Moved once from the old
     /// tracked dictionary/words.json, a link left there for Voice Notes; the engine does the same (engine/dictionary.py).
@@ -22,7 +37,10 @@ enum Home {
         let oldIsLink = (try? fm.destinationOfSymbolicLink(atPath: old.path)) != nil
         if !fm.fileExists(atPath: new.path), fm.fileExists(atPath: old.path), !oldIsLink {
             try? fm.createDirectory(at: data, withIntermediateDirectories: true)
-            if (try? fm.moveItem(at: old, to: new)) != nil { try? fm.createSymbolicLink(atPath: old.path, withDestinationPath: "../data/words.json") }
+            let inClone = data.standardizedFileURL == root.appendingPathComponent("data").standardizedFileURL
+            if (try? fm.moveItem(at: old, to: new)) != nil {
+                try? fm.createSymbolicLink(atPath: old.path, withDestinationPath: inClone ? "../data/words.json" : new.path)
+            }
         }
         return new
     }()

@@ -35,13 +35,16 @@ flowchart LR
 ## What never leaves the Mac
 
 - **Grey text.** The text model runs on your Mac. Keys, field text and screen text go only to the local engine on
-  `127.0.0.1:8798`. That engine refuses requests from web pages.
+  `127.0.0.1:8798`. That engine refuses requests from web pages. Every route but `/health` also needs a token made
+  fresh at each launch: the app writes it to `data/engine.token` (mode 0600, readable by your user only) and sends it
+  in the `X-Drafter-Token` header.
 - **Voice.** Takes, long notes and calls are read by local models. Audio never leaves the Mac.
 - **Training.** The corpus, the personal layer and every bench run on your Mac.
-- **History.** Typed lines, drafts, takes, clipboard history, recordings, notes and logs stay in `data/`.
-- **Screenshots.** While a recording runs, Drafter keeps screenshots of your screen in `data/calls/<time>/shots/`
-  (on by default, with the Screen Recording permission; at most one every 5 s and 300 per recording). They stay on
-  the Mac. Turn them off in Settings: "Screenshots while recording" (`shots`).
+- **History.** Typed lines, drafts, takes, clipboard history, recordings, notes and logs stay in `data/` (or the
+  folder `DRAFTER_DATA` names, on this Mac too).
+- **Screenshots.** Off by default. Turn on "Screenshots while recording" in Settings (`shots`) and, while a
+  recording runs, Drafter keeps screenshots of your screen in `data/calls/<time>/shots/` (with the Screen Recording
+  permission; at most one every 5 s and 300 per recording). They stay on the Mac.
 - **Screen video.** `callScreenVideo` is off by default. When enabled, local `screen.mp4` stays beside the call audio.
   Capture checks excluded apps, secure input, screen lock and display sleep before capture and before writing each frame.
   Paused calls add no video frames. Logs contain frame, skip and failure counts, never window titles or screen text.

@@ -16,12 +16,15 @@ Model: Haiku. From the research numbers (bench/claude_writer, made-up lines): vo
 (17 vs 16) and broke fewer words (3 vs 4; Opus 8). About 0.0002 USD a call: the default 0.50 USD cap allows ~2,000.
 """
 import difflib, re, time
+import sys
 from pathlib import Path
 
 import voice_claude as ledger   # the shared spend ledger and cap check (spend.json)
 
 ROOT = Path(__file__).resolve().parent.parent
-DATA = ROOT / "data"
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from data_dir import data_dir  # noqa: E402
+DATA = data_dir()
 MODEL = "haiku"
 MIN_WORDS = 6            # shorter than this there is little to rewrite and the chip would only cover the field
 MAX_CHARS = 800          # the app's span (app/Proof.swift span): the paragraph before the caret, at most 800 characters

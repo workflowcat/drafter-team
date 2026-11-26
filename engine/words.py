@@ -9,10 +9,13 @@ the shared dictionary (names keep their spelling), and every line the user sends
 import bisect, json, os, re, threading
 from sys import intern
 from collections import Counter, defaultdict
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-DATA = ROOT / "data"
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from data_dir import data_dir  # noqa: E402
+DATA = data_dir()
 WORD = re.compile(r"[\w'’-]+")
 RUSSIAN = re.compile(r"[ыэъёЫЭЪЁ]")
 EN_KEYS = "`qwertyuiop[]asdfghjkl;'zxcvbnm,./"
@@ -149,7 +152,7 @@ class Words:
         lines = [l for l in lines if not RUSSIAN.search(l)]
         for l in lines: self.add(l, rebuild=False)
         try:
-            for w in json.loads((ROOT / "data/words.json").read_text()).get("words", []):
+            for w in json.loads((DATA / "words.json").read_text()).get("words", []):
                 t = w["text"] if isinstance(w, dict) else w
                 if t and " " not in t and len(t) >= 2:
                     self.uni[t.lower()] += 2; _counter(self.case, t.lower())[t] += 5

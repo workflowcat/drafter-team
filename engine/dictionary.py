@@ -15,10 +15,11 @@ from collections import Counter
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-FILE = ROOT / "data" / "words.json"
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from data_dir import data_dir  # noqa: E402
+FILE = data_dir() / "words.json"
 OLD = ROOT / "dictionary" / "words.json"              # tracked until 2026-11-14 (open-source round)
 SEED = ROOT / "dictionary" / "words.example.json"
-sys.path.insert(0, str(Path(__file__).resolve().parent))
 ABOUT = ("The user's own words: completions lean towards them, and voice uses them (Whisper hint, spelling fixes). "
          "Edit `words`; `terms`, `heard` and `keep` are rebuilt from it by Drafter on every save.")
 
@@ -66,7 +67,9 @@ def ensure(file=None, old=None, seed=None, git=True):
     file.parent.mkdir(parents=True, exist_ok=True)
     if old.exists() and not old.is_symlink():
         old.replace(file)
-        try: old.symlink_to(Path("..") / file.parent.name / file.name)
+        # relative when data/ sits in the checkout, else the full path (DRAFTER_DATA elsewhere)
+        rel = file.parent.resolve() == (old.parent.parent / file.parent.name).resolve()
+        try: old.symlink_to(Path("..") / file.parent.name / file.name if rel else file.resolve())
         except OSError: pass
         return file
     text = _from_git() if git else None
@@ -183,7 +186,7 @@ SKIP = re.compile(r"^[+\d\s()-]+$" + _own() + r"|📚|^_|^\.")
 def seed():
     d = load()
     # accepted typing: words the user took from Drafter at least twice that look like names or terms
-    acc = ROOT / "data" / "accepted.jsonl"
+    acc = data_dir() / "accepted.jsonl"
     if acc.exists():
         c = Counter()
         for line in acc.read_text().splitlines():

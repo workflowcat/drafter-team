@@ -89,7 +89,7 @@ side and no warning.
 - The live outline in the strip is rebuilt every 75 s from everything said so far.
 - The outline and the final summary use the connected model (its fast model) only when the `callNotes` switch is on
   and the Mac is online. Off, the local text model writes them. Only the transcript text is sent, never audio.
-- With the `shots` setting on (the default; Settings: "Screenshots while recording"), `app/Shots.swift` keeps
+- With the `shots` setting on (off by default; Settings: "Screenshots while recording"), `app/Shots.swift` keeps
   screenshots in the recording's shots folder, on this Mac only. It takes one when the screen changes and then stands
   still. `app/Transcript.swift` writes `brief.md`: what was said in time order, with each screenshot where it was
   taken. You can hand that file to a coding agent.

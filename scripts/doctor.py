@@ -9,7 +9,9 @@ import json, os, platform, shutil, subprocess, sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-DATA = ROOT / "data"
+sys.path.insert(0, str(ROOT / "engine"))
+from data_dir import data_dir  # noqa: E402  (DRAFTER_DATA, else data/ here)
+DATA = data_dir()
 APP = Path.home() / "Applications" / "Drafter.app"
 VOICE = ["mlx-community/parakeet-tdt-0.6b-v3", "mlx-community/whisper-large-v3-turbo"]
 TYPING_GB, VOICE_GB = 3, 8      # free disk scripts/setup.sh asks for: typing only, typing and voice
@@ -142,7 +144,7 @@ def main():
     as_json = "--json" in sys.argv
     ram = mac(); tools(); have = env(); config(); models(ram, have); app(); writing()
     if as_json:
-        print(json.dumps({"root": str(ROOT), "checks": checks}, indent=1)); return 0
+        print(json.dumps({"root": str(ROOT), "data": str(DATA), "checks": checks}, indent=1)); return 0
     group = ""
     for c in checks:
         if c["group"] != group: group = c["group"]; print(f"\n{group}")

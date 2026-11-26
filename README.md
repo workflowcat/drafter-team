@@ -58,9 +58,13 @@ python3 scripts/doctor.py                # what this Mac has and what is missing
 scripts/setup.sh --models --app          # add --voice for dictation and calls
 ```
 
-`scripts/setup.sh` checks the Mac, makes the Python environment from the pinned lock file, writes
+`scripts/setup.sh` checks the Mac, installs the Python environment exactly from `requirements-lock.txt`, writes
 `data/drafter.local.json` from `drafter.local.example.json`, downloads the models you asked for and builds
 `~/Applications/Drafter.app`. It starts nothing. `scripts/setup.sh --help` lists the options.
+
+For a team: `scripts/package_app.sh` builds a zipped `Drafter.app` in build/dist (signed with your Developer ID
+and notarized when you set them up) that teammates install without Command Line Tools. `DRAFTER_DATA` keeps your
+data in a folder outside the clone; [Architecture](docs/architecture.md) has the details.
 
 Then follow [Onboarding](docs/onboarding.md). In short:
 

@@ -52,7 +52,13 @@ which permissions to grant. It asks before each download and never sends your te
    scripts/setup.sh --models --app
    ```
 
-   Add `--voice` for dictation and calls: `scripts/setup.sh --models --app --voice`. Nothing starts yet.
+   Add `--voice` for dictation and calls: `scripts/setup.sh --models --app --voice`. Nothing starts yet. Setup
+   installs the exact packages in `requirements-lock.txt` and does not resolve them again, so a change on PyPI
+   cannot break it.
+
+   A teammate may hand you a prebuilt `Drafter.app` (from `scripts/package_app.sh`). Then clone into the folder it
+   names (`~/drafter-team` by default), run `scripts/setup.sh --models` without `--app`, and unzip the app into
+   `~/Applications`. No Command Line Tools needed.
 
 4. **Open Drafter.**
 
@@ -76,8 +82,8 @@ which permissions to grant. It asks before each download and never sends your te
    Right Option", then allow the Microphone when macOS asks.
 
 8. **Optional: calls and meeting notes.** Screen & System Audio Recording lets Drafter hear the other side of a call
-   and read text above the caret when an app gives none. While a recording runs, Drafter keeps screenshots of your
-   screen in `data/calls/<time>/shots/`, on this Mac only; turn that off in Settings ("Screenshots while recording").
+   and read text above the caret when an app gives none. Screenshots while recording are off; turn on "Screenshots
+   while recording" in Settings to keep them in `data/calls/<time>/shots/`, on this Mac only.
    Calendars lets Drafter offer meeting notes 1 minute before an event with a video link.
 
 9. **Optional: connect a model.** Settings > Cloud > Connect a model: Claude Code on this Mac, an Anthropic API key,

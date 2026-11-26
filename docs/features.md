@@ -62,7 +62,7 @@ A recording is a call or a long spoken note. Meeting notes are a recording start
 | Start a recording: a long spoken note, or the call a call app is on | ⇧ Right Option | |
 | Meeting notes 1 minute before a calendar event with a video link | ↵ on the offer | on (Calendars permission) |
 | Recording window with the live transcript | | on |
-| Screenshots while recording, kept in `data/calls/<time>/shots/` on this Mac | | on (Screen Recording permission); Settings: "Screenshots while recording" |
+| Screenshots while recording, kept in `data/calls/<time>/shots/` on this Mac | | off; Settings: "Screenshots while recording" (Screen Recording permission) |
 | Screen video of the call | | off |
 | Live outline and call summary through a bigger model | | off, cloud (else the local model) |
 | To do: follow-ups found in the notes, kept with them | | on |

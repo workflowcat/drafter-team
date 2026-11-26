@@ -60,21 +60,17 @@ if [[ ! -d "$venv" ]]; then
   uv venv --python 3.12.12 "$venv"
 fi
 "$venv/bin/python" -c 'import sys; assert sys.version_info[:3] == (3,12,12), "Existing .venv must use Python 3.12.12; move it aside first"'
-# Resolve with explicit exclusions, then demand the checked-in closure unchanged.
-# This catches upstream metadata drift instead of installing unreviewed packages.
-tmpdir=$(mktemp -d)
-resolved="$tmpdir/lock.txt"
-trap 'rm -rf "$tmpdir"' EXIT
-uv pip compile requirements.txt --overrides requirements-overrides.txt \
-  --python "$venv/bin/python" --no-header --no-annotate -o "$resolved" >/dev/null
-cmp requirements-lock.txt "$resolved" || { echo 'Dependency closure changed; review and regenerate the lock.' >&2; exit 1; }
-uv pip sync --python "$venv/bin/python" "$resolved"
+# Install exactly the checked-in, reviewed lock. No resolve against live PyPI here: upstream metadata drift must not
+# break an install. Maintainers check the lock against requirements.txt with scripts/check_lock.sh.
+uv pip sync --python "$venv/bin/python" requirements-lock.txt
 "$venv/bin/python" scripts/check_install.py
 # First-run config: your name, languages and optional integrations, all in one untracked file (never in git).
-mkdir -p data
-if [[ ! -f data/drafter.local.json ]]; then
-  cp drafter.local.example.json data/drafter.local.json
-  echo 'Wrote data/drafter.local.json from the example: put your name and languages in "user". Integrations stay off.'
+# DRAFTER_DATA puts the data folder outside this clone (engine/data_dir.py); else data/ here.
+data="${DRAFTER_DATA:-data}"
+mkdir -p "$data"
+if [[ ! -f "$data/drafter.local.json" ]]; then
+  cp drafter.local.example.json "$data/drafter.local.json"
+  echo "Wrote $data/drafter.local.json from the example: put your name and languages in \"user\". Integrations stay off."
 fi
 if (( models )); then
   if (( voice )); then "$venv/bin/python" scripts/download_models.py --voice
@@ -82,7 +78,7 @@ if (( models )); then
   # offline synonyms for ⌥Tab (about 20 MB, LibreOffice thesaurus files; their licences in the script)
   "$venv/bin/python" scripts/download_thesaurus.py || echo 'Thesaurus download failed: ⌥Tab shows no synonyms until it is rerun.'
   # who said what in a call (engine/speakers.py, about 40 MB)
-  "$venv/bin/python" scripts/download_speakers.py || echo 'Speaker model download failed: call lines keep Я / Вони until it is rerun.'
+  "$venv/bin/python" scripts/download_speakers.py || echo 'Speaker model download failed: call lines keep Me / Them until it is rerun.'
 fi
 if (( app )); then
   ./app/build.sh
@@ -103,9 +99,8 @@ Next steps (docs/onboarding.md has them in full):
   3. Put your name and languages in data/drafter.local.json ("user").
   4. Voice starts off: turn on "Voice on Right Option" in the menu bar pen, then allow the Microphone (needs --voice).
   5. Optional: Screen & System Audio Recording, for the other side of a call and for text above the caret when an
-     app gives none. While a call or long note records, Drafter keeps screenshots of your screen in
-     data/calls/<time>/shots/ (on this Mac only). Turn that off in Settings: "Screenshots while recording".
-     Screen video of a call is off unless you turn it on.
+     app gives none. Screenshots while a call or long note records are off; turn on "Screenshots while recording"
+     in Settings to keep them in data/calls/<time>/shots/ (on this Mac only). Screen video of a call is off too.
   6. Optional: Calendars, for meeting notes before a calendar event and for the event and reminder chips.
   7. Optional: Settings > Cloud > Connect a model. Nothing leaves this Mac until you connect one and turn on a switch.
   8. Optional: start at login with scripts/install-login.sh, then the one command it prints.

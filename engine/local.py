@@ -1,6 +1,6 @@
 """The user's local config: who the user is and which private tools this Mac has (open-source round, 2026-11-14).
 
-One untracked file, `data/drafter.local.json` (DRAFTER_LOCAL points elsewhere, for tests). The tracked
+One untracked file, `data/drafter.local.json` in the data folder (engine/data_dir.py; DRAFTER_LOCAL points elsewhere, for tests). The tracked
 `drafter.local.example.json` at the repo root shows every key. With no file every Claude prompt is neutral ("the user")
 and every private integration is off. The app reads the same file (app/LocalConfig.swift).
 
@@ -10,6 +10,8 @@ import copy, json, os, shutil, sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from data_dir import data_dir  # noqa: E402
 EXAMPLE = ROOT / "drafter.local.example.json"
 
 DEFAULTS = {
@@ -38,8 +40,9 @@ DEFAULTS = {
     # folders whose subfolders are the user's code projects: a project or tool name gets a "Repo" or "Code" pointer
     # (engine/entities.py); none by default
     "projects": {"roots": []},
-    # build-time ids (app/build.sh): changing them on an installed Mac resets its macOS permissions, so an owner keeps the user's
-    "build": {"bundle_id": "", "launchd_label": "", "nightly_label": ""},
+    # build-time ids (app/build.sh): changing them on an installed Mac resets its macOS permissions, so an owner keeps the user's.
+    # codesign_identity: a Developer ID to sign with (empty = ad-hoc); data_dir: a data folder baked into the app (empty = none)
+    "build": {"bundle_id": "", "launchd_label": "", "nightly_label": "", "codesign_identity": "", "data_dir": ""},
 }
 PUBLIC_BUNDLE_ID = "io.github.workflowcat.drafter"   # the one place the default id lives
 
@@ -51,7 +54,7 @@ _cache = {"key": None, "cfg": None}
 
 
 def path():
-    return Path(os.environ.get("DRAFTER_LOCAL") or ROOT / "data" / "drafter.local.json")
+    return Path(os.environ.get("DRAFTER_LOCAL") or data_dir() / "drafter.local.json")
 
 
 def _merge(base, over):
@@ -148,8 +151,26 @@ def nightly_label():
     return (config()["build"].get("nightly_label") or "").strip() or launchd_label() + "-nightly"
 
 
+def codesign_identity():
+    """The signing identity for app/build.sh: empty = ad-hoc ("-")."""
+    v = config()["build"].get("codesign_identity")
+    return v.strip() if isinstance(v, str) else ""
+
+
+def build_data_dir():
+    """A data folder baked into the app's Info.plist (DrafterData) by app/build.sh: empty = none."""
+    v = config()["build"].get("data_dir")
+    return expand(v.strip()) if isinstance(v, str) and v.strip() else ""
+
+
+GETS = {"bundle_id": bundle_id, "launchd_label": launchd_label, "nightly_label": nightly_label,
+        "codesign_identity": codesign_identity, "data_dir": build_data_dir}
+
+
 if __name__ == "__main__":
     if sys.argv[1:2] == ["--get"]:     # app/build.sh, scripts: `python3 engine/local.py --get bundle_id`
-        print({"bundle_id": bundle_id, "launchd_label": launchd_label, "nightly_label": nightly_label}[sys.argv[2]]()); sys.exit(0)
+        if len(sys.argv) < 3 or sys.argv[2] not in GETS:
+            print("usage: local.py --get " + "|".join(GETS), file=sys.stderr); sys.exit(2)
+        print(GETS[sys.argv[2]]()); sys.exit(0)
     print(path(), "(present)" if path().exists() else "(missing: neutral prompts, integrations off)")
     print(json.dumps(config(), ensure_ascii=False, indent=1))

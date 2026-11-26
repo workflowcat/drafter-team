@@ -8,11 +8,14 @@ import json
 import os
 import re
 import sqlite3
+import sys
 import threading
 import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from data_dir import data_dir as _data_dir  # noqa: E402
 SCHEMA_VERSION = "2"
 SOURCE_NAMES = ("mail", "beeper", "drive", "obsidian")
 _WRITE_LOCKS, _WRITE_LOCKS_LOCK = {}, threading.Lock()
@@ -82,7 +85,7 @@ class LocalSearchIndex:
         if data_dir is None and db_path is not None:
             parent = Path(db_path).absolute().parent
             data_dir = parent.parent if parent.name == "cache" else parent
-        self.data_dir = Path(data_dir or ROOT / "data").absolute()
+        self.data_dir = Path(data_dir or _data_dir()).absolute()
         self.db_path = Path(db_path or self.data_dir / "cache/search.sqlite").absolute()
         if self.db_path.suffix.lower() in (".jsonl", ".md") or self.db_path.is_symlink():
             raise ValueError("The cache path must be a database file, not a source file or symlink")
